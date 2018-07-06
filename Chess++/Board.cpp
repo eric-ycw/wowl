@@ -363,7 +363,7 @@ void Board::getLegalMoves() {
 		for (int n = 21; n < 99; n++) {
 			if (mailbox[m] * turn > 0 && mailbox[n] * turn <= 0 && mailbox[m] != -9) {
 				if (checkLegal(m, n)) {
-					legalMoveVec.push_back(sf::Vector2i(m, n));
+					legalMoveVec.emplace_back(sf::Vector2i(m, n));
 				}
 
 			}
@@ -580,7 +580,10 @@ bool Board::checkKing(int color, int arr[]) {
 		}
 	}
 	for (int n = 21; n < 99; n++) {
-		if (checkAttack(n, kingsquare, arr) && arr[n] * color < 0 && arr[n] != -9) {
+		if (arr[n] * color > 0 || arr[n] == -9) {
+			continue;
+		}
+		else if (checkAttack(n, kingsquare, arr)) {
 			return true;
 		}
 	}
@@ -738,7 +741,7 @@ void Board::move(int a, int b) {
 	mailbox[b] = mailbox[a];
 	mailbox[a] = 0;
 	//Update move vec
-	moveVec.push_back(sf::Vector2i(a, b));
+	moveVec.emplace_back(sf::Vector2i(a, b));
 	//Special moves
 	specialMoves(a, b, moveVec.size() - 1, mailbox);
 	//Check for turn
@@ -753,7 +756,7 @@ void Board::move(int a, int b, int arr[]) {
 	arr[b] = arr[a];
 	arr[a] = 0;
 	//Update move vec
-	moveVec.push_back(sf::Vector2i(a, b));
+	moveVec.emplace_back(sf::Vector2i(a, b));
 	//Special moves
 	specialMoves(a, b, moveVec.size() - 1, arr);
 	//Check for turn
@@ -866,52 +869,7 @@ void Board::setPosition() {
 		turn = BLACK;
 	}
 }
-//Set board position (from temp board array)
-void Board::setPositionFromArray() {
-	for (int i = 21; i < 99; i++) {
-		int tenth = (i - i % 10) / 10;
-		mailbox[i] = temp64[i - 21 - 2 * (tenth - 2)];
-	}
-}
 
 /*GETTERS*/
 int Board::getTurn() { return turn; }
 int Board::getSquarePiece(int a) { return mailbox[a]; }
-
-/*DEFUNCT FUNCTIONS*/
-/*Get all attack moves for current turn
-void Board::getAttackMoves() {
-//Clear legal move vector
-if (attackMoveVec.size() > 0) {
-attackMoveVec.clear();
-}
-//Get all attack moves
-for (int m = 21; m < 99; m++) {
-for (int n = 21; n < 99; n++) {
-if (mailbox[m] * turn != 0 && mailbox[m] != -9) {
-if (checkAttack(m, n) && mailbox[m] * mailbox[n] <= 0) {
-attackMoveVec.push_back(sf::Vector2i(m, n));
-}
-
-}
-}
-}
-}
-//Checks how many times a square is attacked
-int Board::checkAttacked(int square, bool allcolors) {
-int attackcount = 0;
-getAttackMoves();
-for (int vsize = 0; vsize < attackMoveVec.size(); vsize++) {
-if (attackMoveVec.at(vsize).y == square) {
-if (allcolors) {
-attackcount++;
-}
-else {
-if (mailbox[attackMoveVec.at(vsize).x] * turn < 0) {
-attackcount++;
-}
-}
-}
-}
-return attackcount;
-}*/

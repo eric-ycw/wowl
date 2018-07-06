@@ -139,8 +139,6 @@ private:
 		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9
 	};
 
-	int temp64[64];
-
 	std::vector<sf::Vector2i> moveVec;
 	std::vector<sf::Vector2i> legalMoveVec;
 	std::vector<sf::Vector2i> attackMoveVec;

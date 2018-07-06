@@ -3,15 +3,10 @@
 
 void Wowl::orderMoves(Board b) {
 	for (int i = 0; i < b.legalMoveVec.size(); i++) {
-		//Check pieces first
-		if (b.mailbox[b.legalMoveVec[i].y] != 0 && b.mailbox[b.legalMoveVec[i].y] != 1) {
-			b.legalMoveVec.insert(b.legalMoveVec.begin(), b.legalMoveVec[i]);
-			b.legalMoveVec.erase(b.legalMoveVec.begin() + i);
-		}
 		//If move is a capture, put it at front
 		if (b.mailbox[b.legalMoveVec[i].y] != 0) {
 			b.legalMoveVec.insert(b.legalMoveVec.begin(), b.legalMoveVec[i]);
-			b.legalMoveVec.erase(b.legalMoveVec.begin() + i);
+			b.legalMoveVec.pop_back();
 		}
 	}
 }
