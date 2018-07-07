@@ -127,13 +127,13 @@ bool Board::checkLegal(int a, int b) {
 				//Black pawn adjacency
 				if (mailbox[a - 1] == -1 && newSquareVal == 0 && b == a - 10 - 1) {
 					//Check last move
-					if (moveVec.at(moveVec.size() - 1).x == a - 20 - 1 && moveVec.at(moveVec.size() - 1).y == a - 1) {
+					if (moveVec.back().x == a - 20 - 1 && moveVec.back().y == a - 1) {
 						legal = true;
 						return legal;
 					}
 				}
 				if (mailbox[a + 1] == -1 && newSquareVal == 0 && b == a - 10 + 1) {
-					if (moveVec.at(moveVec.size() - 1).x == a - 20 + 1 && moveVec.at(moveVec.size() - 1).y == a + 1) {
+					if (moveVec.back().x == a - 20 + 1 && moveVec.back().y == a + 1) {
 						legal = true;
 						return legal;
 					}
@@ -166,13 +166,13 @@ bool Board::checkLegal(int a, int b) {
 			}
 			if (a <= 68 && a >= 61) {
 				if (mailbox[a - 1] == 1 && newSquareVal == 0 && b == a + 10 - 1) {
-					if (moveVec.at(moveVec.size() - 1).x == a + 20 - 1 && moveVec.at(moveVec.size() - 1).y == a - 1) {
+					if (moveVec.back().x == a + 20 - 1 && moveVec.back().y == a - 1) {
 						legal = true;
 						return legal;
 					}
 				}
 				if (mailbox[a + 1] == 1 && newSquareVal == 0 && b == a + 10 + 1) {
-					if (moveVec.at(moveVec.size() - 1).x == a + 20 + 1 && moveVec.at(moveVec.size() - 1).y == a + 1) {
+					if (moveVec.back().x == a + 20 + 1 && moveVec.back().y == a + 1) {
 						legal = true;
 						return legal;
 					}
@@ -341,7 +341,7 @@ bool Board::checkLegal(int a, int b) {
 //Get all legal moves for current turn
 void Board::getLegalMoves() {
 	//Clear legal move vector
-	if (legalMoveVec.size() > 0) {
+	if (!legalMoveVec.empty()) {
 		legalMoveVec.clear();
 	}
 	//Get all legal moves
@@ -667,13 +667,13 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 //Defines special behavior for en passant, castling and promotion
 void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 	//White en passant
-	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP && moveVec.size() > 1) {
+	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP && !moveVec.empty()) {
 		if (moveVec[last - 1].y == newpos + 10) {
 			arr[newpos + 10] = 0;
 		}
 	}
 	//Black en passant
-	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP && moveVec.size() > 1) {
+	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP && !moveVec.empty()) {
 		if (moveVec[last - 1].y == newpos - 10) {
 			arr[newpos - 10] = 0;
 		}
@@ -788,13 +788,13 @@ void Board::move(int a, int b, int arr[]) {
 	arr[a] = 0;
 
 	//Special moves
-	int size = moveVec.size();
-	if (size > 1) {
-		tempSpecialMoves(a, b, moveVec[size - 1].x, moveVec[size - 1].y, arr);
+	if (!moveVec.empty()) {
+		tempSpecialMoves(a, b, moveVec.back().x, moveVec.back().y, arr);
 	}
+
 }
 void Board::undo() {
-	if (moveVec.size() > 0) {
+	if (!moveVec.empty()) {
 		moveVec.pop_back();
 	}
 	setPosition();
