@@ -43,7 +43,7 @@ void Board::reserveVectors() {
 }
 
 /*LEGALITY*/
-//Check move legality
+//Check move legality (pseudo-legal moves)
 bool Board::checkLegal(int a, int b) {
 	bool legal = true;
 	int oldSquareVal = mailbox[a];
@@ -71,12 +71,6 @@ bool Board::checkLegal(int a, int b) {
 
 	//Destination cannot be king
 	if (abs(newSquareVal) == 6) {
-		legal = false;
-		return legal;
-	}
-
-	//Check if move puts king in check
-	if (checkMoveCheck(a, b)) {
 		legal = false;
 		return legal;
 	}
@@ -304,10 +298,6 @@ bool Board::checkLegal(int a, int b) {
 			legal = false;
 			return legal;
 		}
-		if (checkMoveCheck(a, b)) {
-			legal = false;
-			return legal;
-		}
 		if (turn == WHITE) {
 			//Short castling
 			if (a + 2 == b && std::get<0>(checkCastling()) == false) {
@@ -338,7 +328,7 @@ bool Board::checkLegal(int a, int b) {
 	}
 	return legal;
 }
-//Get all legal moves for current turn
+//Get all pseudo legal moves for current turn
 void Board::getLegalMoves() {
 	//Clear legal move vector
 	if (!legalMoveVec.empty()) {
@@ -564,17 +554,6 @@ bool Board::checkKing(int color, int arr[]) {
 		else if (checkAttack(n, kingsquare, arr)) {
 			return true;
 		}
-	}
-	return false;
-}
-//Check whether a move would put own king in check
-bool Board::checkMoveCheck(int a, int b) {
-	for (int i = 21; i < 99; i++) {
-		temp[i] = mailbox[i];
-	}
-	move(a, b, temp);
-	if (checkKing(turn, temp)) {
-		return true;
 	}
 	return false;
 }

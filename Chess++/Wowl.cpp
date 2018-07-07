@@ -48,7 +48,13 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 
 	for (int j = 0; j < size; j++) {
 		b.move(b.legalMoveVec[j].x, b.legalMoveVec[j].y); 
-		score = -negaMax(b, depth - 1, depth, -color, -beta, -alpha);
+		if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
+			b.undo();
+			continue;
+		}
+		else {
+			score = -negaMax(b, depth - 1, depth, -color, -beta, -alpha);
+		}
 		b.undo();
 		if (score > max) {
 			max = score;

@@ -62,7 +62,6 @@ public:
 
 	/*KING*/
 	bool checkKing(int, int[]);
-	bool checkMoveCheck(int, int);
 	std::tuple<bool, bool, bool, bool> checkCastling();
 
 	/*MOVES*/
