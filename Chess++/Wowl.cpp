@@ -1,12 +1,12 @@
 #include "stdafx.h"
 #include "Wowl.h"
 
-void Wowl::orderMoves(Board b) {
-	for (int i = 0; i < b.legalMoveVec.size(); i++) {
-		//If move is a capture, put it at front
-		if (b.mailbox[b.legalMoveVec[i].y] != 0) {
-			b.legalMoveVec.insert(b.legalMoveVec.begin(), b.legalMoveVec[i]);
-			b.legalMoveVec.pop_back();
+void Wowl::orderMoves(Board b, std::vector<sf::Vector2i>& lmV) {
+	for (int i = 0; i < lmV.size(); i++) {
+		//Captures
+		if (b.mailbox[lmV[i].y] != 0) {
+			lmV.insert(lmV.begin(), lmV[i]);
+			lmV.pop_back();
 		}
 	}
 }
@@ -21,7 +21,9 @@ int Wowl::negaMax(Board b, int depth, int color, int alpha, int beta) {
 	//Get legal moves and order them
 	b.getLegalMoves();
 	int size = b.legalMoveVec.size();
-	orderMoves(b);
+	if (depth == SEARCH_DEPTH) {
+		orderMoves(b, b.legalMoveVec);
+	}
 
 	//Check for end state
 	if (size == 0) {

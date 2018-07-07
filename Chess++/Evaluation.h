@@ -12,8 +12,12 @@
 #define K_BASE_VAL 20000
 
 //Pawn structure values
-#define DOUBLED_P_PENALTY -40
+#define DOUBLED_P_PENALTY -50
 #define ISOLATED_P_PENALTY -40
+#define PROTECTED_P_BONUS 15
+
+//Center
+#define P_CENTER_BONUS 15
 
 //Game phase
 #define OPENING 1
@@ -36,6 +40,7 @@ public:
 	int blockedPawns(Board);
 	int doubledPawns(Board, int);
 	int isolatedPawns(Board, int);
+	int protectedPawns(Board, int);
 
 	/*PIECE VALUES*/
 	int baseMaterial(Board, int);
@@ -48,7 +53,7 @@ public:
 	int mobility(Board, int);
 
 	/*CENTER*/
-	int centerControl(Board, int);
+	int pawnCenterControl(Board, int);
 
 	int totalEvaluation(Board, int);
 
@@ -64,8 +69,8 @@ private:
 		20, 20, 30, 50, 50, 30, 20, 20,
 		 5,  5, 20, 35, 35, 15,  5,  5,
 		 0,  0, 15, 25, 25,  0,  0,  0,
-		 5,  5,  5, 10, 10,-10,  5,  5,
-		 5, 10, -5,-40,-40, 10, 10,  5,
+		 5,  0,  5,  5,  5, -5,  0,  5,
+		 5, 10, -5,-45,-45, 10, 10,  5,
 		 0,  0,  0,  0,  0,  0,  0,  0
 	};
 	const int knightTable[64]
@@ -74,10 +79,10 @@ private:
 		-40,-20,  0,  0,  0,  0,-20,-40,
 		-30,  0,  5, 10, 10,  5,  0,-30,
 		-30,  5,  5, 10, 10,  5,  5,-30,
-		-30,  0,  5,  5,  5,  5,  0,-30,
+		-30,  0,  5, 10, 10,  5,  0,-30,
 		-30,  5,  5,  5,  5, 10,  5,-30,
 		-40,-20,  0,  5,  5,  0,-20,-40,
-		-50,-10,-10,-10,-10,-10,-10,-50,
+		-50,-15,-10,-10,-10,-10,-15,-50,
 	};
 	const int bishopTable[64]
 	{
@@ -108,9 +113,9 @@ private:
 		-10,  0,  5,  5,  5,  5,  0,-10,
 		 -5,  0,  5,  5,  5,  5,  0, -5,
 		  0,  0,  5,  5,  5,  5,  0, -5,
-		-10,  5,  5,  5,  5,  5,  5,-10,
-		-10,  0,  5,  0,  0,  5,  0,-10,
-		-20,-10,-10, -5, -5,-10,-10,-20
+		-10,  0,  5,  5,  5,  5,  0,-10,
+		-10,  0,  5,  0,  0,  0,  0,-10,
+		-20,-10,-10,  0,  0,-10,-10,-20
 	};
 	const int kingNormalTable[64]
 	{

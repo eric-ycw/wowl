@@ -132,6 +132,17 @@ int Evaluation::isolatedPawns(Board b, int color) {
 	}
 	return pcount * ISOLATED_P_PENALTY;
 }
+int Evaluation::protectedPawns(Board b, int color) {
+	int pcount = 0;
+	for (int i = 21; i < 99; i++) {
+		if (b.mailbox[i] == WP * color) {
+			if (b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+			pcount++;
+			}
+		}
+	}
+	return pcount * PROTECTED_P_BONUS;
+}
 
 /*PIECE VALUES*/
 int Evaluation::baseMaterial(Board b, int color) {
@@ -296,16 +307,25 @@ int Evaluation::mobility(Board b, int color) {
 }
 
 /*CENTER*/
-int Evaluation::centerControl(Board b, int color) {
-	return 1;
+int Evaluation::pawnCenterControl(Board b, int color) {
+	int pcount = 0;
+	for (int i = 54; i < 66; i++) {
+		if (i == 54 || i == 55 || i == 64 || i == 65) {
+			if (b.mailbox[i] == WP * color || b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+				pcount++;
+			}
+		}
+	}
+	return pcount * P_CENTER_BONUS;
 }
 
 int Evaluation::totalEvaluation(Board b, int color) {
 	//Reevaluates game phase
 	setGamePhase(b);
 	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);
-	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK);
+	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK);
 	int position = piecePosition(b, WHITE) - piecePosition(b, BLACK);
-	int total = material + pawns + position;
+	int center = pawnCenterControl(b, WHITE) - pawnCenterControl(b, BLACK);
+	int total = material + pawns + position + center;
 	return total;
 }

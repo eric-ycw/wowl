@@ -770,8 +770,10 @@ void Board::move(int a, int b) {
 	mailbox[a] = 0;
 	//Update move vec
 	moveVec.emplace_back(sf::Vector2i(a, b));
+
 	//Special moves
 	specialMoves(a, b, moveVec.size() - 1, mailbox);
+
 	//Check for turn
 	if (moveVec.size() % 2 == 0) {
 		turn = WHITE;
@@ -784,6 +786,7 @@ void Board::move(int a, int b) {
 void Board::move(int a, int b, int arr[]) {
 	arr[b] = arr[a];
 	arr[a] = 0;
+
 	//Special moves
 	int size = moveVec.size();
 	if (size > 1) {
@@ -809,7 +812,7 @@ void Board::outputBoard() {
 			std::cout << std::endl;
 		}
 	}
-	std::cout << "Turn : " << turn << std::endl << std::endl;
+	std::cout << "Turn : " << turn << std::endl;
 }
 void Board::resetBoard() {
 	//Reset mailbox
@@ -832,6 +835,7 @@ void Board::setPosition(std::vector<std::string> pV) {
 		int oldpos = convertCoord(toCoord(pV[i][0], pV[i][1]));
 		int newpos = convertCoord(toCoord(pV[i][2], pV[i][3]));
 		move(oldpos, newpos);
+
 		//Special moves
 		if (i > 0) {
 			specialMoves(moveVec[i].x, moveVec[i].y, i, mailbox);
@@ -856,6 +860,7 @@ void Board::setPosition() {
 	castled[0] = false;
 	castled[1] = false;
 	int oldc, newc;
+
 	for (int i = 0; i < moveVec.size(); i++) {
 		oldc = moveVec[i].x;
 		newc = moveVec[i].y;
