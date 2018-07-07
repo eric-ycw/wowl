@@ -1,5 +1,5 @@
-#ifndef OWL_INCLUDED
-#define OWL_INCLUDED
+#ifndef WOWL_INCLUDED
+#define WOWL_INCLUDED
 
 #define SEARCH_DEPTH 3
 #define WIN_SCORE 999999

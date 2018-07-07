@@ -69,13 +69,12 @@ public:
 	void move(int, int);
 	void move(int, int, int[]);
 	void undo();
-	void tempUndo();
 	void specialMoves(int, int, int, int[]);
+	void tempSpecialMoves(int, int, int, int, int[]);
 
 	/*BOARD*/
 	void resetBoard();
 	void outputBoard();
-	void copyBoard();
 
 private:
 

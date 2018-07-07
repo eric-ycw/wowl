@@ -305,7 +305,7 @@ int Evaluation::totalEvaluation(Board b, int color) {
 	setGamePhase(b);
 	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);
 	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK);
-	int position = piecePosition(b, WHITE) + mobility(b, WHITE) - piecePosition(b, BLACK) - mobility(b, BLACK);
+	int position = piecePosition(b, WHITE) - piecePosition(b, BLACK);
 	int total = material + pawns + position;
 	return total;
 }

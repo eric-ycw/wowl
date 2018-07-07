@@ -34,15 +34,15 @@ int Wowl::negaMax(Board b, int depth, int color, int alpha, int beta) {
 	}
 
 	for (int j = 0; j < size; j++) {
-		b.move(b.legalMoveVec.at(j).x, b.legalMoveVec.at(j).y);
+		b.move(b.legalMoveVec[j].x, b.legalMoveVec[j].y);
 		score = -negaMax(b, depth - 1, -color, -beta, -alpha);
 		b.undo();
 		if (score > max) {
 			max = score;
 			if (depth == SEARCH_DEPTH) {
-				bestMove.x = b.legalMoveVec.at(j).x;
-				bestMove.y = b.legalMoveVec.at(j).y;
-				std::cout << "move : " << b.legalMoveVec.at(j).x << " " << b.legalMoveVec.at(j).y << std::endl;
+				bestMove.x = b.legalMoveVec[j].x;
+				bestMove.y = b.legalMoveVec[j].y;
+				std::cout << "move : " << b.legalMoveVec[j].x << " " << b.legalMoveVec[j].y << std::endl;
 				std::cout << "score : " << score << std::endl << std::endl;
 			}
 		}

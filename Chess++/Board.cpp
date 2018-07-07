@@ -46,29 +46,31 @@ void Board::reserveVectors() {
 //Check move legality
 bool Board::checkLegal(int a, int b) {
 	bool legal = true;
+	int oldSquareVal = mailbox[a];
+	int newSquareVal = mailbox[b];
 
 	//Turn + own piece
 	if (turn == WHITE) {
-		if (mailbox[a] < 0 || mailbox[b] > 0) {
+		if (oldSquareVal < 0 || newSquareVal > 0) {
 			legal = false;
 			return legal;
 		}
 	}
 	else if (turn == BLACK) {
-		if (mailbox[a] > 0 || mailbox[b] < 0) {
+		if (oldSquareVal > 0 || newSquareVal < 0) {
 			legal = false;
 			return legal;
 		}
 	}
 
 	//Out of bounds
-	if (mailbox[b] == -9) {
+	if (newSquareVal == -9) {
 		legal = false;
 		return legal;
 	}
 
 	//Destination cannot be king
-	if (abs(mailbox[b]) == 6) {
+	if (abs(newSquareVal) == 6) {
 		legal = false;
 		return legal;
 	}
@@ -81,17 +83,17 @@ bool Board::checkLegal(int a, int b) {
 
 	/*MOVE PATTERNS*/
 	int sval;
-	if (mailbox[a] < 0) {
-		sval = mailbox[a] * -1;
+	if (oldSquareVal < 0) {
+		sval = oldSquareVal * -1;
 	}
 	else {
-		sval = mailbox[a];
+		sval = oldSquareVal;
 	}
 	switch (sval) {
 	case WP:
 	{
 		legal = false;
-		if (mailbox[a] == WP) {
+		if (oldSquareVal == WP) {
 			//Pawns cannot move backwards
 			if (b > a) {
 				return legal;
@@ -99,7 +101,7 @@ bool Board::checkLegal(int a, int b) {
 			//Check for second-rank pawns
 			if (a <= 88 && a >= 81) {
 				if (a - 20 == b) {
-					if (mailbox[b] == 0 && mailbox[b + 10] == 0) {
+					if (newSquareVal == 0 && mailbox[b + 10] == 0) {
 						legal = true;
 						return legal;
 					}
@@ -107,14 +109,14 @@ bool Board::checkLegal(int a, int b) {
 			}
 			//Move forward one square
 			if (a - 10 == b) {
-				if (mailbox[b] == 0) {
+				if (newSquareVal == 0) {
 					legal = true;
 					return legal;
 				}
 			}
 			//Diagonal capture
 			if (a - 10 - 1 == b || a - 10 + 1 == b) {
-				if (mailbox[b] < 0) {
+				if (newSquareVal < 0) {
 					legal = true;
 					return legal;
 				}
@@ -123,14 +125,14 @@ bool Board::checkLegal(int a, int b) {
 			//Check if on fifth rank
 			if (a <= 58 && a >= 51) {
 				//Black pawn adjacency
-				if (mailbox[a - 1] == -1 && mailbox[b] == 0 && b == a - 10 - 1) {
+				if (mailbox[a - 1] == -1 && newSquareVal == 0 && b == a - 10 - 1) {
 					//Check last move
 					if (moveVec.at(moveVec.size() - 1).x == a - 20 - 1 && moveVec.at(moveVec.size() - 1).y == a - 1) {
 						legal = true;
 						return legal;
 					}
 				}
-				if (mailbox[a + 1] == -1 && mailbox[b] == 0 && b == a - 10 + 1) {
+				if (mailbox[a + 1] == -1 && newSquareVal == 0 && b == a - 10 + 1) {
 					if (moveVec.at(moveVec.size() - 1).x == a - 20 + 1 && moveVec.at(moveVec.size() - 1).y == a + 1) {
 						legal = true;
 						return legal;
@@ -138,38 +140,38 @@ bool Board::checkLegal(int a, int b) {
 				}
 			}
 		}
-		else if (mailbox[a] == BP) {
+		else if (oldSquareVal == BP) {
 			if (b < a) {
 				return legal;
 			}
 			if (a <= 38 && a >= 31) {
 				if (a + 20 == b) {
-					if (mailbox[b] == 0 && mailbox[b - 10] == 0) {
+					if (newSquareVal == 0 && mailbox[b - 10] == 0) {
 						legal = true;
 						return legal;
 					}
 				}
 			}
 			if (a + 10 == b) {
-				if (mailbox[b] == 0) {
+				if (newSquareVal == 0) {
 					legal = true;
 					return legal;
 				}
 			}
 			if (a + 10 - 1 == b || a + 10 + 1 == b) {
-				if (mailbox[b] > 0) {
+				if (newSquareVal > 0) {
 					legal = true;
 					return legal;
 				}
 			}
 			if (a <= 68 && a >= 61) {
-				if (mailbox[a - 1] == 1 && mailbox[b] == 0 && b == a + 10 - 1) {
+				if (mailbox[a - 1] == 1 && newSquareVal == 0 && b == a + 10 - 1) {
 					if (moveVec.at(moveVec.size() - 1).x == a + 20 - 1 && moveVec.at(moveVec.size() - 1).y == a - 1) {
 						legal = true;
 						return legal;
 					}
 				}
-				if (mailbox[a + 1] == 1 && mailbox[b] == 0 && b == a + 10 + 1) {
+				if (mailbox[a + 1] == 1 && newSquareVal == 0 && b == a + 10 + 1) {
 					if (moveVec.at(moveVec.size() - 1).x == a + 20 + 1 && moveVec.at(moveVec.size() - 1).y == a + 1) {
 						legal = true;
 						return legal;
@@ -195,16 +197,12 @@ bool Board::checkLegal(int a, int b) {
 		for (int type = 0; type < 4; type++) {
 			for (int dis = 1; dis < 8; dis++) {
 				switch (type) {
-					//Top left
 				case 0: checkpos = a - 11 * dis;
 					break;
-					//Top right
 				case 1: checkpos = a - 9 * dis;
 					break;
-					//Bottom right
 				case 2: checkpos = a + 11 * dis;
 					break;
-					//Bottom left
 				case 3: checkpos = a + 9 * dis;
 					break;
 				}
@@ -233,16 +231,12 @@ bool Board::checkLegal(int a, int b) {
 		for (int type = 0; type < 4; type++) {
 			for (int dis = 1; dis < 8; dis++) {
 				switch (type) {
-					//Up
 				case 0: checkpos = a - 10 * dis;
 					break;
-					//Down
 				case 1: checkpos = a + 10 * dis;
 					break;
-					//Left
 				case 2: checkpos = a - dis;
 					break;
-					//Right
 				case 3: checkpos = a + dis;
 					break;
 				}
@@ -269,28 +263,20 @@ bool Board::checkLegal(int a, int b) {
 		for (int type = 0; type < 8; type++) {
 			for (int dis = 1; dis < 8; dis++) {
 				switch (type) {
-					//Up
 				case 0: checkpos = a - 10 * dis;
 					break;
-					//Down
 				case 1: checkpos = a + 10 * dis;
 					break;
-					//Left
 				case 2: checkpos = a - dis;
 					break;
-					//Right
 				case 3: checkpos = a + dis;
 					break;
-					//Top left
 				case 4: checkpos = a - 11 * dis;
 					break;
-					//Top right
 				case 5: checkpos = a - 9 * dis;
 					break;
-					//Bottom right
 				case 6: checkpos = a + 11 * dis;
 					break;
-					//Bottom left
 				case 7: checkpos = a + 9 * dis;
 					break;
 				}
@@ -376,30 +362,33 @@ void Board::getLegalMoves() {
 bool Board::checkAttack(int a, int b, int arr[]) {
 	bool canattack = true;
 
+	int oldSquareVal = arr[a];
+	int newSquareVal = arr[b];
+
 	//Out of bounds
-	if (arr[b] == -9) {
+	if (newSquareVal == -9) {
 		canattack = false;
 		return canattack;
 	}
 
 	/*MOVE PATTERNS*/
 	int sval;
-	if (arr[a] < 0) {
-		sval = arr[a] * -1;
+	if (oldSquareVal < 0) {
+		sval = oldSquareVal * -1;
 	}
 	else {
-		sval = arr[a];
+		sval = oldSquareVal;
 	}
 	switch (sval) {
 	case WP:
 	{
 		canattack = false;
-		if (arr[a] == 1) {
+		if (oldSquareVal == 1) {
 			if (b > a) {
 				return canattack;
 			}
 			if (a - 10 - 1 == b || a - 10 + 1 == b) {
-				if (arr[b] <= 0) {
+				if (newSquareVal <= 0) {
 					canattack = true;
 				}
 			}
@@ -410,7 +399,7 @@ bool Board::checkAttack(int a, int b, int arr[]) {
 				return canattack;
 			}
 			if (a + 10 - 1 == b || a + 10 + 1 == b) {
-				if (arr[b] >= 0) {
+				if (newSquareVal >= 0) {
 					canattack = true;
 				}
 			}
@@ -436,16 +425,12 @@ bool Board::checkAttack(int a, int b, int arr[]) {
 		for (int type = 0; type < 4; type++) {
 			for (int dis = 1; dis < 8; dis++) {
 				switch (type) {
-					//Top left
 				case 0: checkpos = a - 11 * dis;
 					break;
-					//Top right
 				case 1: checkpos = a - 9 * dis;
 					break;
-					//Bottom right
 				case 2: checkpos = a + 11 * dis;
 					break;
-					//Bottom left
 				case 3: checkpos = a + 9 * dis;
 					break;
 				}
@@ -474,16 +459,12 @@ bool Board::checkAttack(int a, int b, int arr[]) {
 		for (int type = 0; type < 4; type++) {
 			for (int dis = 1; dis < 8; dis++) {
 				switch (type) {
-					//Up
 				case 0: checkpos = a - 10 * dis;
 					break;
-					//Down
 				case 1: checkpos = a + 10 * dis;
 					break;
-					//Left
 				case 2: checkpos = a - dis;
 					break;
-					//Right
 				case 3: checkpos = a + dis;
 					break;
 				}
@@ -512,28 +493,20 @@ bool Board::checkAttack(int a, int b, int arr[]) {
 		for (int type = 0; type < 8; type++) {
 			for (int dis = 1; dis < 8; dis++) {
 				switch (type) {
-					//Up
 				case 0: checkpos = a - 10 * dis;
 					break;
-					//Down
 				case 1: checkpos = a + 10 * dis;
 					break;
-					//Left
 				case 2: checkpos = a - dis;
 					break;
-					//Right
 				case 3: checkpos = a + dis;
 					break;
-					//Top left
 				case 4: checkpos = a - 11 * dis;
 					break;
-					//Top right
 				case 5: checkpos = a - 9 * dis;
 					break;
-					//Bottom right
 				case 6: checkpos = a + 11 * dis;
 					break;
-					//Bottom left
 				case 7: checkpos = a + 9 * dis;
 					break;
 				}
@@ -574,9 +547,20 @@ bool Board::checkAttack(int a, int b, int arr[]) {
 //Check whether king is in check
 bool Board::checkKing(int color, int arr[]) {
 	int kingsquare;
-	for (int m = 21; m < 99; m++) {
-		if (arr[m] == color * 6) {
-			kingsquare = m;
+	if (color == WHITE) {
+		for (int m = 98; m > 20; m--) {
+			if (arr[m] == WHITE * 6) {
+				kingsquare = m;
+				break;
+			}
+		}
+	}
+	else {
+		for (int m = 21; m < 99; m++) {
+			if (arr[m] == BLACK * 6) {
+				kingsquare = m;
+				break;
+			}
 		}
 	}
 	for (int n = 21; n < 99; n++) {
@@ -588,23 +572,16 @@ bool Board::checkKing(int color, int arr[]) {
 		}
 	}
 	return false;
-	//TODO: Need to check why this works
-	/*if (checkAttacked(kingsquare, true) > 0) {
-		return true;
-	}
-	else {
-		return false;
-	}*/
 }
 //Check whether a move would put own king in check
 bool Board::checkMoveCheck(int a, int b) {
-	copyBoard();
+	for (int i = 21; i < 99; i++) {
+		temp[i] = mailbox[i];
+	}
 	move(a, b, temp);
-	if (checkKing(turn * -1, temp)) {
-		tempUndo();
+	if (checkKing(turn, temp)) {
 		return true;
 	}
-	tempUndo();
 	return false;
 }
 
@@ -636,29 +613,29 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 	}
 	for (int c = 0; c < moveVec.size(); c++) {
 		//White king has moved
-		if (moveVec.at(c).x == 95) {
+		if (moveVec[c].x == 95) {
 			std::get<0>(castling) = false;
 			std::get<1>(castling) = false;
 		}
 		//Black king has moved
-		if (moveVec.at(c).x == 25) {
+		if (moveVec[c].x == 25) {
 			std::get<2>(castling) = false;
 			std::get<3>(castling) = false;
 		}
 		//White h-file rook has moved
-		if (moveVec.at(c).x == 98) {
+		if (moveVec[c].x == 98) {
 			std::get<0>(castling) = false;
 		}
 		//White a-file rook has moved
-		if (moveVec.at(c).x == 91) {
+		if (moveVec[c].x == 91) {
 			std::get<1>(castling) = false;
 		}
 		//Black h-file rook has moved
-		if (moveVec.at(c).x == 28) {
+		if (moveVec[c].x == 28) {
 			std::get<2>(castling) = false;
 		}
 		//Black a-file rook has moved
-		if (moveVec.at(c).x == 21) {
+		if (moveVec[c].x == 21) {
 			std::get<3>(castling) = false;
 		}
 	}
@@ -691,13 +668,13 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 	//White en passant
 	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP && moveVec.size() > 1) {
-		if (moveVec.at(last - 1).y == newpos + 10) {
+		if (moveVec[last - 1].y == newpos + 10) {
 			arr[newpos + 10] = 0;
 		}
 	}
 	//Black en passant
 	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP && moveVec.size() > 1) {
-		if (moveVec.at(last - 1).y == newpos - 10) {
+		if (moveVec[last - 1].y == newpos - 10) {
 			arr[newpos - 10] = 0;
 		}
 	}
@@ -737,6 +714,57 @@ void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 		arr[newpos] = BQ;
 	}
 }
+//Special move behaviour without moveVec
+void Board::tempSpecialMoves(int oldpos, int newpos, int lastoldpos, int lastnewpos, int arr[]) {
+	//White en passant
+	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP) {
+		if (lastnewpos == newpos + 10) {
+			arr[newpos + 10] = 0;
+		}
+	}
+	//Black en passant
+	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP) {
+		if (lastnewpos == newpos - 10) {
+			arr[newpos - 10] = 0;
+		}
+	}
+	//Short castling
+	else if (oldpos - newpos == -2 && abs(arr[newpos]) == WK) {
+		arr[newpos + 1] = 0;
+		//White
+		if (arr[newpos] > 0) {
+			arr[oldpos + 1] = WR;
+			castled[0] = true;
+		}
+		//Black
+		else {
+			arr[oldpos + 1] = BR;
+			castled[1] = true;
+		}
+	}
+	//Long castling
+	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK) {
+		arr[newpos - 2] = 0;
+		//White
+		if (arr[newpos] > 0) {
+			arr[oldpos - 1] = WR;
+			castled[0] = true;
+		}
+		//Black
+		else {
+			arr[oldpos - 1] = BR;
+			castled[1] = true;
+		}
+	}
+	//White promotion (to queen)
+	if (arr[newpos] == WP && newpos >= 21 && newpos <= 28) {
+		arr[newpos] = WQ;
+	}
+	else if (arr[newpos] == BP && newpos >= 91 && newpos <= 98) {
+		arr[newpos] = BQ;
+	}
+}
+//moveVec move
 void Board::move(int a, int b) {
 	mailbox[b] = mailbox[a];
 	mailbox[a] = 0;
@@ -752,19 +780,14 @@ void Board::move(int a, int b) {
 		turn = BLACK;
 	}
 }
+//Temp array move
 void Board::move(int a, int b, int arr[]) {
 	arr[b] = arr[a];
 	arr[a] = 0;
-	//Update move vec
-	moveVec.emplace_back(sf::Vector2i(a, b));
 	//Special moves
-	specialMoves(a, b, moveVec.size() - 1, arr);
-	//Check for turn
-	if (moveVec.size() % 2 == 0) {
-		turn = WHITE;
-	}
-	else {
-		turn = BLACK;
+	int size = moveVec.size();
+	if (size > 1) {
+		tempSpecialMoves(a, b, moveVec[size - 1].x, moveVec[size - 1].y, arr);
 	}
 }
 void Board::undo() {
@@ -772,17 +795,6 @@ void Board::undo() {
 		moveVec.pop_back();
 	}
 	setPosition();
-	//setPositionFromArray();
-}
-void Board::tempUndo() {
-	moveVec.pop_back();
-	//Check for turn
-	if (moveVec.size() % 2 == 0) {
-		turn = WHITE;
-	}
-	else {
-		turn = BLACK;
-	}
 }
 
 /*BOARD*/
@@ -809,13 +821,6 @@ void Board::resetBoard() {
 	castled[1] = false;
 	//Reset move vec
 	moveVec.clear();
-}
-void Board::copyBoard() {
-	for (int i = 21; i < 99; i++) {
-		/*int tenth = (i - i % 10) / 10;
-		temp64[i - 21 - 2 * (tenth - 2)] = mailbox[i];*/
-		temp[i] = mailbox[i];
-	}
 }
 
 /*SETTERS*/
