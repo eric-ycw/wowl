@@ -58,7 +58,7 @@ public:
 	void getLegalMoves();
 
 	/*ATTACKS*/
-	bool checkAttack(int, int, int[]);
+	bool checkAttack(int, int, const int[]);
 
 	/*KING*/
 	bool checkKing(int, int[]);

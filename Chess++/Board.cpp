@@ -359,17 +359,11 @@ void Board::getLegalMoves() {
 
 /*ATTACKS*/
 //Check if square can be attacked
-bool Board::checkAttack(int a, int b, int arr[]) {
+bool Board::checkAttack(int a, int b, const int arr[]) {
 	bool canattack = true;
 
 	int oldSquareVal = arr[a];
 	int newSquareVal = arr[b];
-
-	//Out of bounds
-	if (newSquareVal == -9) {
-		canattack = false;
-		return canattack;
-	}
 
 	/*MOVE PATTERNS*/
 	int sval;

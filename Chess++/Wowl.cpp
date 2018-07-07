@@ -30,6 +30,11 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 		tempVec.resize(initial + 1);
 	}
 
+	//Terminate at end node
+	if (depth == 0) {
+		return color * WowlEval.totalEvaluation(b, WHITE);
+	}
+
 	//Get legal moves and order them
 	b.getLegalMoves();
 	int size = b.legalMoveVec.size();
@@ -39,11 +44,6 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 	//Check for end state
 	if (size == 0) {
 		return -color * WIN_SCORE;
-	}
-
-	//Terminate at end node
-	if (depth == 0) {
-		return color * WowlEval.totalEvaluation(b, WHITE);
 	}
 
 	for (int j = 0; j < size; j++) {
@@ -84,4 +84,25 @@ void Wowl::IID(Board b, std::vector<sf::Vector2i>& lmV, int depth, int color) {
 
 void Wowl::findBestMove(Board b, int depth, int color) {
 	IID(b, b.legalMoveVec, depth, color);
+}
+
+long Wowl::perft(Board b, int depth) {
+
+	int nodes = 0;
+
+	if (depth == 0) { return 1; }
+
+	b.getLegalMoves();
+	int size = b.legalMoveVec.size();
+
+	for (int i = 0; i < size; i++) {
+		b.move(b.legalMoveVec[i].x, b.legalMoveVec[i].y);
+		nodes += perft(b, depth - 1);
+		b.undo();
+		if (depth == SEARCH_DEPTH) {
+			std::cout << nodes << std::endl;
+		}
+	}
+
+	return nodes;
 }

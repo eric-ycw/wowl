@@ -16,8 +16,12 @@
 #define ISOLATED_P_PENALTY -40
 #define PROTECTED_P_BONUS 15
 
+//Position
+#define R_OPEN_FILE_BONUS 30;
+
 //Center
 #define P_CENTER_BONUS 15
+#define P_EXTENDED_CENTER_BONUS 5
 
 //Game phase
 #define OPENING 1
@@ -54,6 +58,10 @@ public:
 
 	/*CENTER*/
 	int pawnCenterControl(Board, int);
+	int pawnExtendedCenterControl(Board, int);
+
+	/*GETTERS*/
+	int isOpenFile(Board, int);
 
 	int totalEvaluation(Board, int);
 

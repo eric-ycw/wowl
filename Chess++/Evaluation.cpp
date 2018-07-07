@@ -40,7 +40,7 @@ void Evaluation::setGamePhase(Board b) {
 				count++;
 			}
 		}
-		//Less than seven major/minor pieces
+		//Less than eight major/minor pieces
 		if (count < 8) {
 			gamePhase = ENDGAME;
 		}
@@ -209,17 +209,19 @@ int Evaluation::structureMaterial(Board b, int color) {
 	for (int i = 21; i < 99; i++) {
 		if (color * b.mailbox[i] > 0) {
 			switch (abs(b.mailbox[i])) {
-			//Knights are better in closed positions
 			case WN:
+				//Knights are better in closed positions
 				mval += blockedPawns(b) * 5;
 				break;
-			//Bishops are worse in closed positions
 			case WB:
+				//Bishops are worse in closed positions
 				mval -= blockedPawns(b) * 5;
 				break;
-			//Rooks are better in positions with open files
 			case WR:
+				//Rooks are better in positions with open files
 				mval += openFiles(b) * 20 + semiOpenFiles(b) * 10;
+				//Rooks are better on open and semi-open files
+				mval += isOpenFile(b, i) * R_OPEN_FILE_BONUS;
 				break;
 			}
 		}
@@ -318,6 +320,38 @@ int Evaluation::pawnCenterControl(Board b, int color) {
 	}
 	return pcount * P_CENTER_BONUS;
 }
+int Evaluation::pawnExtendedCenterControl(Board b, int color) {
+	int pcount = 0;
+	for (int i = 43; i < 77; i++) {
+		if (i % 10 >= 3 && i % 10 <= 6) {
+			if (b.mailbox[i] == WP * color || b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+				pcount++;
+			}
+		}
+	}
+	return pcount * P_EXTENDED_CENTER_BONUS;
+}
+
+/*GETTERS*/
+int Evaluation::isOpenFile(Board b, int square) {
+	int file = square % 10;
+	int pcount;
+	for (int i = 2; i <= 9; i++) {
+		pcount = 0;
+		if (abs(b.mailbox[i * 10 + file] == WP)) {
+			pcount++;
+		}
+	}
+	if (pcount > 1) {
+		return 0;
+	}
+	else if (pcount == 1) {
+		return 1;
+	}
+	else if (pcount == 0) {
+		return 2;
+	}
+}
 
 int Evaluation::totalEvaluation(Board b, int color) {
 	//Reevaluates game phase
@@ -325,7 +359,7 @@ int Evaluation::totalEvaluation(Board b, int color) {
 	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);
 	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK);
 	int position = piecePosition(b, WHITE) - piecePosition(b, BLACK);
-	int center = pawnCenterControl(b, WHITE) - pawnCenterControl(b, BLACK);
+	int center = pawnCenterControl(b, WHITE) + pawnExtendedCenterControl(b, WHITE) - pawnCenterControl(b, BLACK) - pawnExtendedCenterControl(b, BLACK);
 	int total = material + pawns + position + center;
 	return total;
 }
