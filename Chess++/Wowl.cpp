@@ -103,6 +103,10 @@ long Wowl::perft(Board b, int depth) {
 
 	for (int i = 0; i < size; i++) {
 		b.move(b.legalMoveVec[i].x, b.legalMoveVec[i].y);
+		if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
+			b.undo();
+			continue;
+		}
 		nodes += perft(b, depth - 1);
 		b.undo();
 		if (depth == SEARCH_DEPTH) {
