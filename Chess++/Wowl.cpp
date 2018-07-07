@@ -82,7 +82,7 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 void Wowl::IID(Board b, std::vector<sf::Vector2i>& lmV, int depth, int color) {
 	priorityMove.x = -1;
 	priorityMove.y = -1;
-	negaMax(b, depth - 2,  depth - 2, color, -WIN_SCORE, WIN_SCORE);
+	negaMax(b, IDD_SEARCH_DEPTH, IDD_SEARCH_DEPTH, color, -WIN_SCORE, WIN_SCORE);
 	priorityMove = bestMove;
 	std::cout << "IDD best move is " << priorityMove.x << " " << priorityMove.y << std::endl;
 	negaMax(b, depth, depth, color, -WIN_SCORE, WIN_SCORE);

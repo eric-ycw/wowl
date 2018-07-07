@@ -1,7 +1,8 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 4
+#define SEARCH_DEPTH 5
+#define IDD_SEARCH_DEPTH 3
 #define WIN_SCORE 999999
 
 #include "Evaluation.h"

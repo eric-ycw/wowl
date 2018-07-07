@@ -18,6 +18,7 @@
 
 //Position
 #define R_OPEN_FILE_BONUS 30;
+#define HANGING_PIECE_PENALTY -20;
 
 //Center
 #define P_CENTER_BONUS 15
@@ -36,34 +37,35 @@ public:
 	Evaluation() : gamePhase(OPENING) {}
 
 	/*GAME PHASE*/
-	void setGamePhase(Board);
+	void setGamePhase(const Board&);
 
 	/*PAWN STRUCTURE*/
-	int openFiles(Board);
-	int semiOpenFiles(Board);
-	int blockedPawns(Board);
-	int doubledPawns(Board, int);
-	int isolatedPawns(Board, int);
-	int protectedPawns(Board, int);
+	int openFiles(const Board&);
+	int semiOpenFiles(const Board&);
+	int blockedPawns(const Board&);
+	int doubledPawns(const Board&, int);
+	int isolatedPawns(const Board&, int);
+	int protectedPawns(const Board&, int);
 
 	/*PIECE VALUES*/
-	int baseMaterial(Board, int);
-	int comboMaterial(Board, int);
-	int structureMaterial(Board, int);
+	int baseMaterial(const Board&, int);
+	int comboMaterial(const Board&, int);
+	int structureMaterial(const Board&, int);
 
 	/*POSITION*/
 	int flipTableValue(int);
 	int piecePosition(Board, int);
-	int mobility(Board, int);
+	int hangingPieces(const Board&, int);
+	int mobility(const Board&, int);
 
 	/*CENTER*/
-	int pawnCenterControl(Board, int);
-	int pawnExtendedCenterControl(Board, int);
+	int pawnCenterControl(const Board&, int);
+	int pawnExtendedCenterControl(const Board&, int);
 
 	/*GETTERS*/
-	int isOpenFile(Board, int);
+	int isOpenFile(const Board&, int);
 
-	int totalEvaluation(Board, int);
+	int totalEvaluation(Board&, int);
 
 private:
 
@@ -85,9 +87,9 @@ private:
 	{
 		-50,-40,-30,-30,-30,-30,-40,-50,
 		-40,-20,  0,  0,  0,  0,-20,-40,
-		-30,  0,  5, 10, 10,  5,  0,-30,
-		-30,  5,  5, 10, 10,  5,  5,-30,
-		-30,  0,  5, 10, 10,  5,  0,-30,
+		-30,  0,  5,  5,  5,  5,  0,-30,
+		-30,  5,  5,  5,  5,  5,  5,-30,
+		-30,  0,  5,  5,  5,  5,  0,-30,
 		-30,  5, 10,  5,  5, 10,  5,-30,
 		-40,-20,  0,  5,  5,  0,-20,-40,
 		-50,-20,-10,-10,-10,-10,-20,-50,
@@ -120,9 +122,9 @@ private:
 		-10,  0,  0,  0,  0,  0,  0,-10,
 		-10,  0,  5,  5,  5,  5,  0,-10,
 		 -5,  0,  5,  5,  5,  5,  0, -5,
-		  0,  0,  5,  5,  5,  5,  0, -5,
-		-10,  0,  5,  5,  5,  5,  0,-10,
-		-10,  0,  5,  0,  0,  0,  0,-10,
+		  0,  0,  5,  5,  5,  0,  0, -5,
+		-10,  0,  0,  5,  5,  0,  0,-10,
+		-10,  0,  0,  0,  0,  0,  0,-10,
 		-20,-10,-10,  0,  0,-10,-10,-20
 	};
 	const int kingNormalTable[64]

@@ -527,32 +527,39 @@ bool Board::checkAttack(int a, int b, const int arr[]) {
 	}
 }
 
-/*CHECK*/
+/*KING*/
+void Board::setKingSquare(int arr[]) {
+	for (int k = 98; k > 20; k--) {
+		if (arr[k] == WHITE * 6) {
+			kingSquareWhite = k;
+		}
+		if (arr[k] == BLACK * 6) {
+			kingSquareBlack = k;
+		}
+	}
+}
 //Check whether king is in check
 bool Board::checkKing(int color, int arr[]) {
-	int kingsquare;
+	setKingSquare(arr);
+	
 	if (color == WHITE) {
-		for (int m = 98; m > 20; m--) {
-			if (arr[m] == WHITE * 6) {
-				kingsquare = m;
-				break;
+		for (int n = 21; n < 99; n++) {
+			if (arr[n] * color > 0 || arr[n] == -9) {
+				continue;
+			}
+			else if (checkAttack(n, kingSquareWhite, arr)) {
+				return true;
 			}
 		}
 	}
 	else {
-		for (int m = 21; m < 99; m++) {
-			if (arr[m] == BLACK * 6) {
-				kingsquare = m;
-				break;
+		for (int n = 21; n < 99; n++) {
+			if (arr[n] * color > 0 || arr[n] == -9) {
+				continue;
 			}
-		}
-	}
-	for (int n = 21; n < 99; n++) {
-		if (arr[n] * color > 0 || arr[n] == -9) {
-			continue;
-		}
-		else if (checkAttack(n, kingsquare, arr)) {
-			return true;
+			else if (checkAttack(n, kingSquareBlack, arr)) {
+				return true;
+			}
 		}
 	}
 	return false;

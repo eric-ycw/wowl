@@ -2,7 +2,7 @@
 #include "Evaluation.h"
 
 /*GAME PHASE*/
-void Evaluation::setGamePhase(Board b) {
+void Evaluation::setGamePhase(const Board& b) {
 	if (gamePhase == OPENING) {
 		int score = 0;
 		//Sparse backrank --> more developed pieces
@@ -48,7 +48,7 @@ void Evaluation::setGamePhase(Board b) {
 }
 
 /*PAWN STRUCTURE*/
-int Evaluation::openFiles(Board b) {
+int Evaluation::openFiles(const Board& b) {
 	bool filearray[8] = { true, true, true, true, true, true, true, true };
 	int filecount = 0;
 	for (int i = 21; i < 99; i++) {
@@ -63,7 +63,7 @@ int Evaluation::openFiles(Board b) {
 	}
 	return filecount;
 }
-int Evaluation::semiOpenFiles(Board b) {
+int Evaluation::semiOpenFiles(const Board& b) {
 	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int filecount = 0;
 	for (int i = 21; i < 99; i++) {
@@ -78,7 +78,7 @@ int Evaluation::semiOpenFiles(Board b) {
 	}
 	return filecount;
 }
-int Evaluation::blockedPawns(Board b) {
+int Evaluation::blockedPawns(const Board& b) {
 	int bpcount = 0;
 	for (int i = 21; i < 99; i++) {
 		if (b.mailbox[i] == WP && b.mailbox[i - 10] == BP && b.mailbox[i - 11] >= 0 && b.mailbox[i - 9] >= 0) {
@@ -90,7 +90,7 @@ int Evaluation::blockedPawns(Board b) {
 	}
 	return bpcount;
 }
-int Evaluation::doubledPawns(Board b, int color) {
+int Evaluation::doubledPawns(const Board& b, int color) {
 	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int pcount = 0;
 	for (int i = 21; i < 99; i++) {
@@ -105,7 +105,7 @@ int Evaluation::doubledPawns(Board b, int color) {
 	}
 	return pcount * DOUBLED_P_PENALTY;
 }
-int Evaluation::isolatedPawns(Board b, int color) {
+int Evaluation::isolatedPawns(const Board& b, int color) {
 	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int pcount = 0;
 	for (int i = 21; i < 99; i++) {
@@ -132,7 +132,7 @@ int Evaluation::isolatedPawns(Board b, int color) {
 	}
 	return pcount * ISOLATED_P_PENALTY;
 }
-int Evaluation::protectedPawns(Board b, int color) {
+int Evaluation::protectedPawns(const Board& b, int color) {
 	int pcount = 0;
 	for (int i = 21; i < 99; i++) {
 		if (b.mailbox[i] == WP * color) {
@@ -145,7 +145,7 @@ int Evaluation::protectedPawns(Board b, int color) {
 }
 
 /*PIECE VALUES*/
-int Evaluation::baseMaterial(Board b, int color) {
+int Evaluation::baseMaterial(const Board& b, int color) {
 	int mval = 0;
 	for (int i = 21; i < 99; i++) {
 		if (color * b.mailbox[i] > 0) {
@@ -170,7 +170,7 @@ int Evaluation::baseMaterial(Board b, int color) {
 	}
 	return mval;
 }
-int Evaluation::comboMaterial(Board b, int color) {
+int Evaluation::comboMaterial(const Board& b, int color) {
 	int mval = 0;
 	int ncount = 0;
 	int bcount = 0;
@@ -204,7 +204,7 @@ int Evaluation::comboMaterial(Board b, int color) {
 	}
 	return mval;
 }
-int Evaluation::structureMaterial(Board b, int color) {
+int Evaluation::structureMaterial(const Board& b, int color) {
 	int mval = 0;
 	for (int i = 21; i < 99; i++) {
 		if (color * b.mailbox[i] > 0) {
@@ -218,8 +218,6 @@ int Evaluation::structureMaterial(Board b, int color) {
 				mval -= blockedPawns(b) * 5;
 				break;
 			case WR:
-				//Rooks are better in positions with open files
-				mval += openFiles(b) * 20 + semiOpenFiles(b) * 10;
 				//Rooks are better on open and semi-open files
 				mval += isOpenFile(b, i) * R_OPEN_FILE_BONUS;
 				break;
@@ -294,7 +292,23 @@ int Evaluation::piecePosition(Board b, int color) {
 	}
 	return pval;
 }
-int Evaluation::mobility(Board b, int color) {
+int Evaluation::hangingPieces(const Board& b, int color) {
+	int rval = 0;
+	for (int i = 21; i < 99; i++) {
+		if (color * b.mailbox[i] > 0) {
+			switch (abs(b.mailbox[i])) {
+			case WP:
+				break;
+			case WN:
+				break;
+			case WB:
+				break;
+			}
+		}
+	}
+	return rval;
+}
+int Evaluation::mobility(const Board& b, int color) {
 	/*if (b.getTurn() == color) {
 		b.getLegalMoves();
 		return b.legalMoveVec.size();
@@ -309,7 +323,7 @@ int Evaluation::mobility(Board b, int color) {
 }
 
 /*CENTER*/
-int Evaluation::pawnCenterControl(Board b, int color) {
+int Evaluation::pawnCenterControl(const Board& b, int color) {
 	int pcount = 0;
 	for (int i = 54; i < 66; i++) {
 		if (i == 54 || i == 55 || i == 64 || i == 65) {
@@ -320,7 +334,7 @@ int Evaluation::pawnCenterControl(Board b, int color) {
 	}
 	return pcount * P_CENTER_BONUS;
 }
-int Evaluation::pawnExtendedCenterControl(Board b, int color) {
+int Evaluation::pawnExtendedCenterControl(const Board& b, int color) {
 	int pcount = 0;
 	for (int i = 43; i < 77; i++) {
 		if (i % 10 >= 3 && i % 10 <= 6) {
@@ -333,7 +347,7 @@ int Evaluation::pawnExtendedCenterControl(Board b, int color) {
 }
 
 /*GETTERS*/
-int Evaluation::isOpenFile(Board b, int square) {
+int Evaluation::isOpenFile(const Board& b, int square) {
 	int file = square % 10;
 	int pcount;
 	for (int i = 2; i <= 9; i++) {
@@ -353,7 +367,7 @@ int Evaluation::isOpenFile(Board b, int square) {
 	}
 }
 
-int Evaluation::totalEvaluation(Board b, int color) {
+int Evaluation::totalEvaluation(Board& b, int color) {
 	//Reevaluates game phase
 	setGamePhase(b);
 	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);

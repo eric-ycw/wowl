@@ -61,6 +61,7 @@ public:
 	bool checkAttack(int, int, const int[]);
 
 	/*KING*/
+	void setKingSquare(int[]);
 	bool checkKing(int, int[]);
 	std::tuple<bool, bool, bool, bool> checkCastling();
 
@@ -140,5 +141,7 @@ private:
 	std::vector<sf::Vector2i> moveVec;
 	std::vector<sf::Vector2i> legalMoveVec;
 	std::vector<sf::Vector2i> attackMoveVec;
+
+	int kingSquareWhite, kingSquareBlack;
 };
 #endif
