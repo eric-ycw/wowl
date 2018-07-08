@@ -47,7 +47,19 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 			continue;
 		}
 		else {
-			score = -negaMax(b, depth - 1, initial, -color, -beta, -alpha);
+			//NegaScout
+			if (j == 0) {
+				score = -negaMax(b, depth - 1, initial, -color, -beta, -alpha);
+			}
+			else {
+				score = -negaMax(b, depth - 1, initial, -color, -alpha - 1, -alpha);
+				if (alpha < score && score < beta && depth > 1) {
+					int scoutScore = -negaMax(b, depth - 1, initial, -color, -beta, -score);
+					if (scoutScore > score) {
+						score = scoutScore;
+					}
+				}
+			}
 		}
 		b.undo();
 		if (score > max) {
