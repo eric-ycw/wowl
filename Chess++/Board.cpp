@@ -564,6 +564,15 @@ bool Board::checkKing(int color, int arr[]) {
 	}
 	return false;
 }
+bool Board::checkMoveCheck(int a, int b) {
+	move(a, b);
+	if (checkKing(turn * -1, mailbox)) {
+		undo();
+		return true;
+	}
+	undo();
+	return false;
+}
 
 /*CASTLING*/
 //Check castling rights
@@ -648,13 +657,13 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 	//White en passant
 	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP && !moveVec.empty()) {
-		if (moveVec[last - 1].y == newpos + 10) {
+		if (moveVec[last - 1].y == newpos + 10 && arr[newpos + 10] == BP && (moveVec[last - 1].x == oldpos + 1 || moveVec[last - 1].x == oldpos - 1)) {
 			arr[newpos + 10] = 0;
 		}
 	}
 	//Black en passant
 	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP && !moveVec.empty()) {
-		if (moveVec[last - 1].y == newpos - 10) {
+		if (moveVec[last - 1].y == newpos - 10 && arr[newpos - 10] == WP && (moveVec[last - 1].x == oldpos + 1 || moveVec[last - 1].x == oldpos - 1)) {
 			arr[newpos - 10] = 0;
 		}
 	}

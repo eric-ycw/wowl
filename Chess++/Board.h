@@ -47,7 +47,6 @@ public:
 	/*SETTERS*/
 	void setPosition(std::vector<std::string>);
 	void setPosition();
-	void setPositionFromArray();
 
 	/*GETTERS*/
 	int getTurn();
@@ -63,6 +62,7 @@ public:
 	/*KING*/
 	void setKingSquare(int[]);
 	bool checkKing(int, int[]);
+	bool checkMoveCheck(int, int);
 	std::tuple<bool, bool, bool, bool> checkCastling();
 
 	/*MOVES*/

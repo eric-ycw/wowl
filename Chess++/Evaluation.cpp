@@ -143,6 +143,38 @@ int Evaluation::protectedPawns(const Board& b, int color) {
 	}
 	return pcount * PROTECTED_P_BONUS;
 }
+int Evaluation::passedPawns(const Board& b, int color) {
+	int pcount = 0;
+	int rank, file;
+	int sides = 0;
+	for (int i = 21; i < 99; i++) {
+		if (b.mailbox[i] == WP * color) {
+			file = i % 10;
+			rank = (i - file) / 10;
+		}
+	}
+	for (int i = 20 + file - 1; i <= 90 + file - 1; i += 10) {
+		if (b.mailbox[i] == WP * -color) {
+			if ((i - i % 10) / 10 >= rank) {
+				sides++;
+			}
+			break;
+		}
+	}
+	for (int i = 20 + file + 1; i <= 90 + file + 1; i += 10) {
+		if (b.mailbox[i] == WP * -color) {
+			if ((i - i % 10) / 10 >= rank) {
+				sides++;
+			}
+			break;
+		}
+	}
+	if (sides == 2) {
+		pcount++;
+	}
+	return pcount * PASSED_P_BONUS;
+}
+
 
 /*PIECE VALUES*/
 int Evaluation::baseMaterial(const Board& b, int color) {
@@ -234,7 +266,7 @@ int Evaluation::flipTableValue(int square) {
 	int rval = (11 - tenth) * 10 + unit;
 	return rval;
 }
-int Evaluation::piecePosition(Board b, int color) {
+int Evaluation::piecePosition(Board& b, int color) {
 	int pval = 0;
 	for (int i = 21; i < 99; i++) {
 		if (color * b.mailbox[i] > 0) {
@@ -252,10 +284,14 @@ int Evaluation::piecePosition(Board b, int color) {
 				pval += rookTable[b.to64Coord(i)];
 				break;
 			case WQ:
-				pval += queenTable[b.to64Coord(i)];
+				if (gamePhase == OPENING) {
+					pval += queenOpeningTable[b.to64Coord(i)];
+				}
+				else if (gamePhase >= MIDGAME) {
+					pval += queenNormalTable[b.to64Coord(i)];
+				}
 				break;
 			case WK:
-				setGamePhase(b);
 				if (gamePhase <= MIDGAME) {
 					pval += kingNormalTable[b.to64Coord(i)];
 				}
@@ -276,7 +312,12 @@ int Evaluation::piecePosition(Board b, int color) {
 				pval += rookTable[b.to64Coord(flipTableValue(i))];
 				break;
 			case BQ:
-				pval += queenTable[b.to64Coord(flipTableValue(i))];
+				if (gamePhase == OPENING) {
+					pval += queenOpeningTable[b.to64Coord(flipTableValue(i))];
+				}
+				else if (gamePhase >= MIDGAME) {
+					pval += queenNormalTable[b.to64Coord(flipTableValue(i))];
+				}
 				break;
 			case BK:
 				setGamePhase(b);
@@ -291,22 +332,6 @@ int Evaluation::piecePosition(Board b, int color) {
 		}
 	}
 	return pval;
-}
-int Evaluation::hangingPieces(const Board& b, int color) {
-	int rval = 0;
-	for (int i = 21; i < 99; i++) {
-		if (color * b.mailbox[i] > 0) {
-			switch (abs(b.mailbox[i])) {
-			case WP:
-				break;
-			case WN:
-				break;
-			case WB:
-				break;
-			}
-		}
-	}
-	return rval;
 }
 int Evaluation::mobility(const Board& b, int color) {
 	/*if (b.getTurn() == color) {
@@ -345,6 +370,17 @@ int Evaluation::pawnExtendedCenterControl(const Board& b, int color) {
 	}
 	return pcount * P_EXTENDED_CENTER_BONUS;
 }
+int Evaluation::pieceExtendedCenterControl(const Board& b, int color) {
+	int pcount = 0;
+	for (int i = 43; i < 77; i++) {
+		if (i % 10 >= 3 && i % 10 <= 6) {
+			if (b.mailbox[i] == WN * color || b.mailbox[i] == WB * color) {
+				pcount++;
+			}
+		}
+	}
+	return pcount * PIECE_EXTENDED_CENTER_BONUS;
+}
 
 /*GETTERS*/
 int Evaluation::isOpenFile(const Board& b, int square) {
@@ -371,9 +407,9 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	//Reevaluates game phase
 	setGamePhase(b);
 	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);
-	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK);
+	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) + passedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK) - passedPawns(b, BLACK);
 	int position = piecePosition(b, WHITE) - piecePosition(b, BLACK);
-	int center = pawnCenterControl(b, WHITE) + pawnExtendedCenterControl(b, WHITE) - pawnCenterControl(b, BLACK) - pawnExtendedCenterControl(b, BLACK);
+	int center = pawnCenterControl(b, WHITE) + pawnExtendedCenterControl(b, WHITE) + pieceExtendedCenterControl(b, WHITE) - pawnCenterControl(b, BLACK) - pawnExtendedCenterControl(b, BLACK) - pieceExtendedCenterControl(b, BLACK);
 	int total = material + pawns + position + center;
 	return total;
 }

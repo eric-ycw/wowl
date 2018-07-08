@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <assert.h>
 #include "Wowl.h"
 
 void Wowl::orderMoves(Board b, std::vector<sf::Vector2i>& lmV) {
@@ -18,13 +19,8 @@ void Wowl::orderMoves(Board b, std::vector<sf::Vector2i>& lmV) {
 
 int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int beta) {
 
-
-	int score;
-	Evaluation WowlEval;
-	int max = -WIN_SCORE;
-	int a = alpha;
 	static std::vector<std::vector<sf::Vector2i>> tempVec(initial  + 1);
-
+	Evaluation WowlEval;
 
 	if (tempVec.size() <= initial) {
 		tempVec.resize(initial + 1);
@@ -32,8 +28,11 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 
 	//Terminate at end node
 	if (depth == 0) {
-		return color * WowlEval.totalEvaluation(b, WHITE);
+		return WowlEval.totalEvaluation(b, color);
 	}
+
+	int score;
+	int max = -WIN_SCORE;
 
 	//Get legal moves and order them
 	b.getLegalMoves();
@@ -43,17 +42,17 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 
 	//Check for end state
 	if (size == 0) {
-		return -color * WIN_SCORE;
+		return -WIN_SCORE;
 	}
 
 	for (int j = 0; j < size; j++) {
-		b.move(b.legalMoveVec[j].x, b.legalMoveVec[j].y); 
+		b.move(b.legalMoveVec[j].x, b.legalMoveVec[j].y);
 		if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
 			b.undo();
 			continue;
 		}
 		else {
-			score = -negaMax(b, depth - 1, depth, -color, -beta, -alpha);
+			score = -negaMax(b, depth - 1, initial, -color, -beta, -alpha);
 		}
 		b.undo();
 		if (score > max) {
@@ -62,8 +61,8 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 				bestMove.x = b.legalMoveVec[j].x;
 				bestMove.y = b.legalMoveVec[j].y;
 				if (initial == SEARCH_DEPTH) {
-					std::cout << "move : " << b.legalMoveVec[j].x << " " << b.legalMoveVec[j].y << std::endl;
-					std::cout << "score : " << score << std::endl << std::endl;
+					std::cout << "best move : " << bestMove.x << " " << bestMove.y << " at depth " << depth << " by " << color << std::endl;
+					std::cout << "best score : " << max << std::endl;
 				}
 			}
 		}
@@ -79,7 +78,7 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 	return max;
 }
 
-void Wowl::IID(Board b, std::vector<sf::Vector2i>& lmV, int depth, int color) {
+void Wowl::IID(Board b, std::vector<sf::Vector2i> lmV, int depth, int color) {
 	priorityMove.x = -1;
 	priorityMove.y = -1;
 	negaMax(b, IDD_SEARCH_DEPTH, IDD_SEARCH_DEPTH, color, -WIN_SCORE, WIN_SCORE);
