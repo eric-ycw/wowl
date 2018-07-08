@@ -5,14 +5,14 @@
 
 //Piece values
 #define P_BASE_VAL 100
-#define N_BASE_VAL 350
-#define B_BASE_VAL 360
+#define N_BASE_VAL 355
+#define B_BASE_VAL 370
 #define R_BASE_VAL 520
 #define Q_BASE_VAL 980
 #define K_BASE_VAL 40000
 
 //Pawn structure values
-#define DOUBLED_P_PENALTY -15
+#define DOUBLED_P_PENALTY -10
 #define ISOLATED_P_PENALTY -10
 #define PROTECTED_P_BONUS 5
 #define PASSED_P_BONUS 40
@@ -22,7 +22,7 @@
 
 //Center
 #define P_CENTER_BONUS 5
-#define P_EXTENDED_CENTER_BONUS 5
+#define P_EXTENDED_CENTER_BONUS 4
 #define PIECE_EXTENDED_CENTER_BONUS 5
 
 //Tempo
@@ -85,7 +85,7 @@ private:
 		 5,  5, 20, 25, 25, 15,  5,  5,
 		 0,  0, 15, 25, 25,  5,  0,  0,
 		 5,  0,  5,  0,  0, -5,  0,  5,
-		 5, 10,-10,-30,-30, 10, 10,  5,
+		 5, 10,-10,-20,-20, 10, 10,  5,
 		 0,  0,  0,  0,  0,  0,  0,  0
 	};
 	const int knightTable[64]
@@ -97,15 +97,15 @@ private:
 		-30,  0, 10, 10, 10, 10,  0,-30,
 		-30,  5, 10,  5,  5, 10,  5,-30,
 		-40,-20,  0,  5,  5,  0,-20,-40,
-		-50,-30,-10,-10,-10,-10,-30,-50,
+		-50,-25,-10,-10,-10,-10,-25,-50,
 	};
 	const int bishopTable[64]
 	{
 		-20,-10,-10,-10,-10,-10,-10,-20,
 		-10,  0,  0,  0,  0,  0,  0,-10,
 		-10,  0,  5,  5,  5,  5,  0,-10,
-		-10, 10,  5, 10, 10,  5, 10,-10,
-		-10,  0, 10, 15, 15, 10,  0,-10,
+		-10, 15,  5, 10, 10,  5, 15,-10,
+		-10,  0, 15, 15, 15, 15,  0,-10,
 		-10, 10, 10, 10, 10, 10, 10,-10,
 		-10, 20,  0,  5,  5,  0, 20,-10,
 		-20,-15,-15,-15,-15,-15,-15,-20,

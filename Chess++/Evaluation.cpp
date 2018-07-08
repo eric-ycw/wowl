@@ -147,6 +147,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 	int pcount = 0;
 	int rank, file;
 	int sides = 0;
+	bool none = true;
 	for (int i = 21; i < 99; i++) {
 		if (b.mailbox[i] == WP * color) {
 			file = i % 10;
@@ -158,16 +159,24 @@ int Evaluation::passedPawns(const Board& b, int color) {
 			if ((i - i % 10) / 10 >= rank) {
 				sides++;
 			}
+			none = false;
 			break;
 		}
+	}
+	if (none) {
+		sides++;
 	}
 	for (int i = 20 + file + 1; i <= 90 + file + 1; i += 10) {
 		if (b.mailbox[i] == WP * -color) {
 			if ((i - i % 10) / 10 >= rank) {
 				sides++;
 			}
+			none = false;
 			break;
 		}
+	}
+	if (none) {
+		sides++;
 	}
 	if (sides == 2) {
 		pcount++;

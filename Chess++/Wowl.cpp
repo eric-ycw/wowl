@@ -4,11 +4,6 @@
 
 void Wowl::orderMoves(Board b, std::vector<sf::Vector2i>& lmV) {
 	for (int i = 0; i < lmV.size(); i++) {
-		//Captures
-		if (b.mailbox[lmV[i].y] != 0) {
-			lmV.insert(lmV.begin(), lmV[i]);
-			lmV.erase(lmV.begin() + i + 1);
-		}
 		//IDD move
 		if (lmV[i] == priorityMove) {
 			lmV.insert(lmV.begin(), lmV[i]);
@@ -28,7 +23,7 @@ int Wowl::negaMax(Board b, int depth, int initial, int color, int alpha, int bet
 
 	//Terminate at end node
 	if (depth == 0) {
-		return WowlEval.totalEvaluation(b, color);
+		return color * WowlEval.totalEvaluation(b, WHITE);
 	}
 
 	int score;
