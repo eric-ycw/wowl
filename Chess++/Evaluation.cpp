@@ -336,18 +336,35 @@ int Evaluation::piecePosition(Board& b, int color) {
 	}
 	return pval;
 }
-int Evaluation::mobility(const Board& b, int color) {
-	/*if (b.getTurn() == color) {
-		b.getLegalMoves();
-		return b.legalMoveVec.size();
+int Evaluation::space(const Board&b, int color) {
+	int file;
+	int rank = 0;
+	int sval = 0;
+	for (int i = 21; i < 99; i++) {
+		if (b.mailbox[i] == color * WP && rank == 0) {
+			file = i % 10;
+			rank = (i - file) / 10;
+			if (color == WHITE) {
+				sval = (8 - rank) * SPACE_BONUS;
+			}
+			else {
+				sval = (rank - 3) * SPACE_BONUS;
+			}
+			rank = 0;
+		}
+	}
+	return sval;
+}
+int Evaluation::kingSafety(Board& b, int color) {
+	b.setKingSquare(b.mailbox);
+	int rval = 0;
+	if (color == WHITE) {
+		rval = isOpenFile(b, b.kingSquareWhite) + isOpenFile(b, b.kingSquareWhite + 1) + isOpenFile(b, b.kingSquareWhite - 1);
 	}
 	else {
-		b.turn *= -1;
-		b.getLegalMoves();
-		b.turn *= -1;
-		return b.legalMoveVec.size();
-	}*/
-	return 0;
+		rval = isOpenFile(b, b.kingSquareBlack) + isOpenFile(b, b.kingSquareBlack + 1) + isOpenFile(b, b.kingSquareBlack - 1);
+	}
+	return rval * K_OPEN_FILE_PENALTY;
 }
 
 /*CENTER*/
@@ -373,12 +390,16 @@ int Evaluation::pawnExtendedCenterControl(const Board& b, int color) {
 	}
 	return pcount * P_EXTENDED_CENTER_BONUS;
 }
-int Evaluation::pieceExtendedCenterControl(const Board& b, int color) {
+int Evaluation::pieceExtendedCenterControl(Board& b, int color) {
 	int pcount = 0;
-	for (int i = 43; i < 77; i++) {
-		if (i % 10 >= 3 && i % 10 <= 6) {
-			if (b.mailbox[i] == WN * color || b.mailbox[i] == WB * color) {
-				pcount++;
+	for (int i = 21; i < 99; i++) {
+		if (b.mailbox[i] == WN * color || b.mailbox[i] == WB * color) {
+			for (int j = 43; j < 77; j++) {
+				if (j % 10 >= 3 && j % 10 <= 6) {
+					if (b.checkAttack(i, j, b.mailbox)) {
+						pcount++;
+					}
+				}
 			}
 		}
 	}
@@ -388,11 +409,13 @@ int Evaluation::pieceExtendedCenterControl(const Board& b, int color) {
 /*GETTERS*/
 int Evaluation::isOpenFile(const Board& b, int square) {
 	int file = square % 10;
-	int pcount;
-	for (int i = 2; i <= 9; i++) {
-		pcount = 0;
-		if (abs(b.mailbox[i * 10 + file] == WP)) {
-			pcount++;
+	int pcount = 0;
+	if (b.mailbox[square] != -9) {
+		for (int i = 2; i <= 9; i++) {
+			pcount = 0;
+			if (abs(b.mailbox[i * 10 + file] == WP)) {
+				pcount++;
+			}
 		}
 	}
 	if (pcount > 1) {
@@ -411,7 +434,7 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	setGamePhase(b);
 	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);
 	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) + passedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK) - passedPawns(b, BLACK);
-	int position = piecePosition(b, WHITE) - piecePosition(b, BLACK);
+	int position = piecePosition(b, WHITE) + space(b, WHITE) - piecePosition(b, BLACK) - space(b, BLACK);
 	int center = pawnCenterControl(b, WHITE) + pawnExtendedCenterControl(b, WHITE) + pieceExtendedCenterControl(b, WHITE) - pawnCenterControl(b, BLACK) - pawnExtendedCenterControl(b, BLACK) - pieceExtendedCenterControl(b, BLACK);
 	int total = material + pawns + position + center;
 	return total;

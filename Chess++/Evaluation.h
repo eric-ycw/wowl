@@ -14,16 +14,18 @@
 //Pawn structure values
 #define DOUBLED_P_PENALTY -15
 #define ISOLATED_P_PENALTY -15
-#define PROTECTED_P_BONUS 8
+#define PROTECTED_P_BONUS 5
 #define PASSED_P_BONUS 40
 
 //Position
 #define R_OPEN_FILE_BONUS 30;
+#define K_OPEN_FILE_PENALTY -15;
+#define SPACE_BONUS 5;
 
 //Center
-#define P_CENTER_BONUS 10
+#define P_CENTER_BONUS 5
 #define P_EXTENDED_CENTER_BONUS 10
-#define PIECE_EXTENDED_CENTER_BONUS 5
+#define PIECE_EXTENDED_CENTER_BONUS 8
 
 //Tempo
 #define TEMPO_PENALTY -20
@@ -60,12 +62,13 @@ public:
 	/*POSITION*/
 	int flipTableValue(int);
 	int piecePosition(Board&, int);
-	int mobility(const Board&, int);
+	int space(const Board&, int);
+	int kingSafety(Board&, int);
 
 	/*CENTER*/
 	int pawnCenterControl(const Board&, int);
 	int pawnExtendedCenterControl(const Board&, int);
-	int pieceExtendedCenterControl(const Board&, int);
+	int pieceExtendedCenterControl(Board&, int);
 
 	/*GETTERS*/
 	int isOpenFile(const Board&, int);
@@ -83,8 +86,8 @@ private:
 		80, 80, 80, 80, 80, 80, 80, 80,
 		20, 20, 30, 50, 50, 30, 20, 20,
 		 5,  5, 20, 25, 25, 15,  5,  5,
-		 5,  5, 15, 25, 25,  5,  5,  5,
-		 5,  0,  5,  0,  0, -5,  0,  5,
+		 5,  5, 20, 25, 25,  5,  5,  5,
+		 5,  0,  5,  0,  0,  0,  0,  5,
 		 5, 10,-10,-15,-15, 10, 10,  5,
 		 0,  0,  0,  0,  0,  0,  0,  0
 	};
