@@ -358,13 +358,43 @@ int Evaluation::space(const Board&b, int color) {
 int Evaluation::kingSafety(Board& b, int color) {
 	b.setKingSquare(b.mailbox);
 	int rval = 0;
+	int pval = 0;
+	int cval = 0;
 	if (color == WHITE) {
+		if (b.castled[0]) {
+			cval++;
+		}
 		rval = isOpenFile(b, b.kingSquareWhite) + isOpenFile(b, b.kingSquareWhite + 1) + isOpenFile(b, b.kingSquareWhite - 1);
+		if (gamePhase <= MIDGAME && b.castled[0]) {
+			if (b.mailbox[b.kingSquareWhite - 10] != WP) {
+				pval++;
+			}
+			if (b.mailbox[b.kingSquareWhite - 11] != WP) {
+				pval++;
+			}
+			if (b.mailbox[b.kingSquareWhite - 9] != WP) {
+				pval++;
+			}
+		}
 	}
 	else {
+		if (b.castled[1]) {
+			cval++;
+		}
 		rval = isOpenFile(b, b.kingSquareBlack) + isOpenFile(b, b.kingSquareBlack + 1) + isOpenFile(b, b.kingSquareBlack - 1);
+		if (gamePhase <= MIDGAME && b.castled[1]) {
+			if (b.mailbox[b.kingSquareBlack + 10] != BP) {
+				pval++;
+			}
+			if (b.mailbox[b.kingSquareBlack + 11] != BP) {
+				pval++;
+			}
+			if (b.mailbox[b.kingSquareBlack + 9] != BP) {
+				pval++;
+			}
+		}
 	}
-	return rval * K_OPEN_FILE_PENALTY;
+	return rval * K_OPEN_FILE_PENALTY + pval * K_P_SHIELD_PENALTY + cval * K_CASTLED_BONUS;
 }
 
 /*CENTER*/
