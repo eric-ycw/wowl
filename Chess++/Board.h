@@ -38,7 +38,6 @@ public:
 	sf::Vector2f toCoord(char, char);
 	int convertCoord(sf::Vector2f);
 	sf::Vector2i convertCoord(int);
-	std::string toNotation(sf::Vector2f vec);
 	int to64Coord(int);
 
 	/*VECTORS*/

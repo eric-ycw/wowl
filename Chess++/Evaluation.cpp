@@ -8,12 +8,12 @@ void Evaluation::setGamePhase(const Board& b) {
 		//Sparse backrank --> more developed pieces
 		for (int i = 21; i < 29; i++) {
 			if (b.mailbox[i] == 0) {
-				score++;
+				score += 2;
 			}
 		}
 		for (int i = 91; i < 99; i++) {
 			if (b.mailbox[i] == 0) {
-				score++;
+				score += 2;
 			}
 		}
 
@@ -24,12 +24,7 @@ void Evaluation::setGamePhase(const Board& b) {
 			}
 		}
 
-		//Move count
-		for (int i = 0; i < b.moveVec.size(); i++) {
-			score++;
-		}
-
-		if (score >= 24) {
+		if (score >= 16) {
 			gamePhase = MIDGAME;
 		}
 	}
@@ -329,7 +324,6 @@ int Evaluation::piecePosition(Board& b, int color) {
 				}
 				break;
 			case BK:
-				setGamePhase(b);
 				if (gamePhase <= MIDGAME) {
 					pval += kingNormalTable[b.to64Coord(flipTableValue(i))];
 				}

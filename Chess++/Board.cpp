@@ -19,13 +19,6 @@ sf::Vector2i Board::convertCoord(int pos) {
 	int coord_y = (pos - coord_x) / 10 - 2;
 	return sf::Vector2i(int(coord_x), int(coord_y));
 }
-//Converts coord vector (without SIZE factor) to notation
-std::string Board::toNotation(sf::Vector2f vec) {
-	std::string s = "  ";
-	s[0] = char(vec.x + 97);
-	s[1] = char(7 - vec.y + 49);
-	return s;
-}
 //Converts mailbox coord to 64 coord
 int Board::to64Coord(int square) {
 	int unit = square % 10;
@@ -336,12 +329,22 @@ void Board::getLegalMoves() {
 	}
 	//Get all legal moves
 	for (int m = 21; m < 99; m++) {
-		for (int n = 21; n < 99; n++) {
-			if (mailbox[m] * turn > 0 && mailbox[n] * turn <= 0 && mailbox[m] != -9) {
-				if (checkLegal(m, n)) {
-					legalMoveVec.emplace_back(sf::Vector2i(m, n));
+		if (mailbox[m] == -9) {
+			continue;
+		}
+		else {
+			for (int n = 21; n < 99; n++) {
+				if (mailbox[n] == -9) {
+					continue;
 				}
+				else {
+					if (mailbox[m] * turn > 0 && mailbox[n] * turn <= 0) {
+						if (checkLegal(m, n)) {
+							legalMoveVec.emplace_back(sf::Vector2i(m, n));
+						}
 
+					}
+				}
 			}
 		}
 	}
@@ -707,13 +710,13 @@ void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 void Board::tempSpecialMoves(int oldpos, int newpos, int lastoldpos, int lastnewpos, int arr[]) {
 	//White en passant
 	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP) {
-		if (lastnewpos == newpos + 10) {
+		if (lastnewpos == newpos + 10 && arr[newpos + 10] == BP && (lastoldpos == oldpos + 1 || lastoldpos == oldpos - 1)) {
 			arr[newpos + 10] = 0;
 		}
 	}
 	//Black en passant
 	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP) {
-		if (lastnewpos == newpos - 10) {
+		if (lastnewpos == newpos - 10 && arr[newpos - 10] == WP && (lastoldpos == oldpos + 1 || lastoldpos == oldpos - 1)) {
 			arr[newpos - 10] = 0;
 		}
 	}
@@ -804,14 +807,11 @@ void Board::outputBoard() {
 	std::cout << "Turn : " << turn << std::endl;
 }
 void Board::resetBoard() {
-	//Reset mailbox
 	for (int i = 21; i < 99; i++) {
 		mailbox[i] = start[i];
 	}
-	//Reset castled array
 	castled[0] = false;
 	castled[1] = false;
-	//Reset move vec
 	moveVec.clear();
 }
 
@@ -825,13 +825,11 @@ void Board::setPosition(std::vector<std::string> pV) {
 		int newpos = convertCoord(toCoord(pV[i][2], pV[i][3]));
 		move(oldpos, newpos);
 
-		//Special moves
 		if (i > 0) {
 			specialMoves(moveVec[i].x, moveVec[i].y, i, mailbox);
 		}
 	}
 
-	//Check for turn
 	if (pV.size() % 2 == 0) {
 		turn = WHITE;
 	}
@@ -841,7 +839,6 @@ void Board::setPosition(std::vector<std::string> pV) {
 }
 //Set board position (from internal move vector)
 void Board::setPosition() {
-	//Reset board without clearing movevec
 	for (int i = 21; i < 99; i++) {
 		mailbox[i] = start[i];
 	}
@@ -849,19 +846,19 @@ void Board::setPosition() {
 	castled[0] = false;
 	castled[1] = false;
 	int oldc, newc;
+	int size = moveVec.size();
 
-	for (int i = 0; i < moveVec.size(); i++) {
+	for (int i = 0; i < size; i++) {
 		oldc = moveVec[i].x;
 		newc = moveVec[i].y;
 		mailbox[newc] = mailbox[oldc];
 		mailbox[oldc] = 0;
-		//Special moves
 		if (i > 0) {
 			specialMoves(oldc, newc, i, mailbox);
 		}
 	}
-	//Check for turn
-	if (moveVec.size() % 2 == 0) {
+
+	if (size % 2 == 0) {
 		turn = WHITE;
 	}
 	else {

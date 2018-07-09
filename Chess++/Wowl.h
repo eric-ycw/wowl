@@ -18,7 +18,7 @@ public:
 
 	/*SEARCH*/
 	void IID(Board, std::vector<sf::Vector2i>, int, int color);
-	int negaMax(Board, int, int, int, int, int);
+	int negaSearch(Board, int, int, int, int, int);
 
 	void findBestMove(Board, int, int);
 	
