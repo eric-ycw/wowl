@@ -2,7 +2,7 @@
 #define WOWL_INCLUDED
 
 #define SEARCH_DEPTH 5
-#define IDD_SEARCH_DEPTH 3
+#define ASPIRATION_WINDOW 100
 #define WIN_SCORE 999999
 
 #include "Evaluation.h"
@@ -17,7 +17,7 @@ public:
 	void orderMoves(Board, std::vector<sf::Vector2i>&);
 
 	/*SEARCH*/
-	void IID(Board, std::vector<sf::Vector2i>, int, int color);
+	void ID(Board, std::vector<sf::Vector2i>, int, int color);
 	int negaSearch(Board, int, int, int, int, int);
 
 	void findBestMove(Board, int, int);
@@ -25,6 +25,7 @@ public:
 	long perft(Board, int);
 
 private:
-
+	int estimate = 0;
+	int nodes = 0;
 };
 #endif

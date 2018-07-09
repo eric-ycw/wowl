@@ -143,19 +143,23 @@ int Evaluation::passedPawns(const Board& b, int color) {
 	int rank, file;
 	int sides = 0;
 	bool none = true;
+	bool haspawn = false;
 	for (int i = 21; i < 99; i++) {
 		if (b.mailbox[i] == WP * color) {
 			file = i % 10;
 			rank = (i - file) / 10;
+			haspawn = true;
 		}
 	}
-	for (int i = 20 + file - 1; i <= 90 + file - 1; i += 10) {
-		if (b.mailbox[i] == WP * -color) {
-			if ((i - i % 10) / 10 >= rank) {
-				sides++;
+	if (haspawn) {
+		for (int i = 20 + file - 1; i <= 90 + file - 1; i += 10) {
+			if (b.mailbox[i] == WP * -color) {
+				if ((i - i % 10) / 10 >= rank) {
+					sides++;
+				}
+				none = false;
+				break;
 			}
-			none = false;
-			break;
 		}
 	}
 	if (none) {
