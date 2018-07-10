@@ -1,13 +1,28 @@
 #include "stdafx.h"
-#include <assert.h>
 #include "Wowl.h"
 
-void Wowl::orderMoves(Board b, std::vector<sf::Vector2i>& lmV) {
+void Wowl::orderMoves(Board b, std::vector<sf::Vector2i>& lmV, int depth, int initial, U64 poskey) {
+	if (depth != SEARCH_DEPTH) {
+		if (hashTable.table.find(poskey) != hashTable.table.end()) {
+			int val = hashTable.table.at(poskey);
+			hashMove.x = (val - val % 100) / 100;
+			hashMove.y = val % 100;
+		}
+	}
 	for (int i = 0; i < lmV.size(); i++) {
-		//ID move
-		if (lmV[i] == priorityMove) {
-			lmV.insert(lmV.begin(), lmV[i]);
-			lmV.erase(lmV.begin() + i + 1);
+		if (depth == SEARCH_DEPTH) {
+			//Move from iterative deepening
+			if (lmV[i] == priorityMove) {
+				lmV.insert(lmV.begin(), lmV[i]);
+				lmV.erase(lmV.begin() + i + 1);
+			}
+		}
+		else {
+			//Move stored in hash table
+			if (lmV[i] == hashMove) {
+				lmV.insert(lmV.begin(), lmV[i]);
+				lmV.erase(lmV.begin() + i + 1);
+			}
 		}
 	}
 }
@@ -15,6 +30,7 @@ void Wowl::orderMoves(Board b, std::vector<sf::Vector2i>& lmV) {
 int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int beta) {
 
 	Evaluation WowlEval;
+	U64 key = hashTable.generatePosKey(b);
 
 	if (depth == 0) {
 		return color * WowlEval.totalEvaluation(b, WHITE);
@@ -30,9 +46,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		return -WIN_SCORE;
 	}
 
-	if (depth == SEARCH_DEPTH) {
-		orderMoves(b, b.legalMoveVec);
-	}
+	orderMoves(b, b.legalMoveVec, depth, initial, key);
 
 	for (int j = 0; j < size; j++) {
 		b.move(b.legalMoveVec[j].x, b.legalMoveVec[j].y);
@@ -58,6 +72,9 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		b.undo();
 		if (score > max) {
 			max = score;
+			//Store move in hash table
+			hashTable.table[key] = b.legalMoveVec[j].x * 100 + b.legalMoveVec[j].y;
+			//Update best move
 			if (depth == initial) {
 				bestMove.x = b.legalMoveVec[j].x;
 				bestMove.y = b.legalMoveVec[j].y;
@@ -79,19 +96,30 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 }
 
 void Wowl::ID(Board b, std::vector<sf::Vector2i> lmV, int depth, int color) {
+	int id_alpha = -WIN_SCORE;
+	int id_beta = WIN_SCORE;
 	for (int idepth = 1; idepth < SEARCH_DEPTH; idepth++) {
 		priorityMove.x = -1;
 		priorityMove.y = -1;
-		estimate = negaSearch(b, idepth, idepth, color, -WIN_SCORE, WIN_SCORE);
+		estimate = negaSearch(b, idepth, idepth, color, id_alpha, id_beta);
 		priorityMove = bestMove;
-		std::cout << "ID best move is " << priorityMove.x << " " << priorityMove.y << std::endl;
+		std::cout << "ID best move is " << priorityMove.x << " " << priorityMove.y << " at depth " << idepth << std::endl;
+		std::cout << id_alpha << " " << id_beta << " at depth " << idepth << std::endl << std::endl;
+		if (estimate <= id_alpha || estimate >= id_beta) {
+			id_alpha = -WIN_SCORE;
+			id_beta = WIN_SCORE;
+			idepth--;
+			continue;
+		}
+		id_alpha = estimate - ASPIRATION_WINDOW;
+		id_beta = estimate + ASPIRATION_WINDOW;
 	}
 	int nodes = 0;
-	std::cout << estimate - ASPIRATION_WINDOW << " " << estimate + ASPIRATION_WINDOW << std::endl;
-	negaSearch(b, depth, depth, color, estimate - ASPIRATION_WINDOW, estimate + ASPIRATION_WINDOW);
+	negaSearch(b, depth, depth, color, id_alpha, id_beta);
 }
 
 void Wowl::findBestMove(Board b, int depth, int color) {
+	b.setEnPassantSquare();
 	ID(b, b.legalMoveVec, depth, color);
 }
 

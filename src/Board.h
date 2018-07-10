@@ -31,8 +31,12 @@ class Board
 {
 	friend class Evaluation;
 	friend class Wowl;
+	friend class Hash;
 
 public:
+
+	//Constructor
+	Board() { reserveVectors(); }
 
 	/*CONVERTERS*/
 	sf::Vector2f toCoord(char, char);
@@ -70,6 +74,7 @@ public:
 	void undo();
 	void specialMoves(int, int, int, int[]);
 	void tempSpecialMoves(int, int, int, int, int[]);
+	void setEnPassantSquare();
 
 	/*BOARD*/
 	void resetBoard();
@@ -80,6 +85,7 @@ private:
 	/*VARIABLES*/
 	int turn;
 	bool castled[2] = { false, false };
+	int epSquare;
 
 	int mailbox[120] = {
 		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,

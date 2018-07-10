@@ -604,30 +604,31 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 		std::get<3>(castling) = false;
 	}
 	for (int c = 0; c < moveVec.size(); c++) {
+		int oldpos = moveVec[c].x;
 		//White king has moved
-		if (moveVec[c].x == 95) {
+		if (oldpos == 95) {
 			std::get<0>(castling) = false;
 			std::get<1>(castling) = false;
 		}
 		//Black king has moved
-		if (moveVec[c].x == 25) {
+		if (oldpos == 25) {
 			std::get<2>(castling) = false;
 			std::get<3>(castling) = false;
 		}
 		//White h-file rook has moved
-		if (moveVec[c].x == 98) {
+		if (oldpos == 98) {
 			std::get<0>(castling) = false;
 		}
 		//White a-file rook has moved
-		if (moveVec[c].x == 91) {
+		if (oldpos == 91) {
 			std::get<1>(castling) = false;
 		}
 		//Black h-file rook has moved
-		if (moveVec[c].x == 28) {
+		if (oldpos == 28) {
 			std::get<2>(castling) = false;
 		}
 		//Black a-file rook has moved
-		if (moveVec[c].x == 21) {
+		if (oldpos == 21) {
 			std::get<3>(castling) = false;
 		}
 	}
@@ -790,6 +791,34 @@ void Board::undo() {
 		moveVec.pop_back();
 	}
 	setPosition();
+}
+void Board::setEnPassantSquare() {
+	if (moveVec.empty()) {
+		epSquare = -1;
+		return;
+	}
+
+	int oldsq = moveVec.back().x;
+	int newsq = moveVec.back().y;
+	int color = mailbox[newsq];
+
+	if (mailbox[newsq] != WP || mailbox[newsq] != BP) {
+		epSquare = -1;
+		return;
+	}
+	if (abs(oldsq - newsq) != 20) {
+		epSquare = -1;
+		return;
+	}
+	if (mailbox[newsq + 1] != WP * -color && mailbox[newsq - 1] != WP * -color) {
+		epSquare = -1;
+		return;
+	}
+	if (mailbox[newsq + color * 10] != 0) {
+		epSquare = -1;
+		return;
+	}
+	epSquare = newsq + color * 10;
 }
 
 /*BOARD*/

@@ -1,11 +1,12 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 5
-#define ASPIRATION_WINDOW 150
+#define SEARCH_DEPTH 6
+#define ASPIRATION_WINDOW 50
 #define WIN_SCORE 999999
 
 #include "Evaluation.h"
+#include "Hash.h"
 
 class Wowl {
 
@@ -13,11 +14,14 @@ public:
 
 	sf::Vector2i bestMove;
 	sf::Vector2i priorityMove;
+	sf::Vector2i hashMove;
 
-	void orderMoves(Board, std::vector<sf::Vector2i>&);
+	Hash hashTable;
+
+	void orderMoves(Board, std::vector<sf::Vector2i>&, int, int, U64);
 
 	/*SEARCH*/
-	void ID(Board, std::vector<sf::Vector2i>, int, int color);
+	void ID(Board, std::vector<sf::Vector2i>, int, int);
 	int negaSearch(Board, int, int, int, int, int);
 
 	void findBestMove(Board, int, int);

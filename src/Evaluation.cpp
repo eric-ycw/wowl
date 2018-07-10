@@ -24,7 +24,7 @@ void Evaluation::setGamePhase(const Board& b) {
 			}
 		}
 
-		if (score >= 16) {
+		if (score >= 18) {
 			gamePhase = MIDGAME;
 		}
 	}
@@ -113,44 +113,53 @@ int Evaluation::passedPawns(const Board& b, int color) {
 	int rank, file;
 	int sides = 0;
 	bool none = true;
-	bool haspawn = false;
 	for (int i = 21; i < 99; i++) {
+		none = true;
+		sides = 0;
 		if (b.mailbox[i] == WP * color) {
 			file = i % 10;
 			rank = (i - file) / 10;
-			haspawn = true;
-		}
-	}
-	if (haspawn) {
-		for (int i = 20 + file - 1; i <= 90 + file - 1; i += 10) {
-			if (b.mailbox[i] == WP * -color) {
-				if ((i - i % 10) / 10 >= rank) {
-					sides++;
+			//No pawn blocks ahead
+			if (color == WHITE) {
+				for (int j = rank; j >= 2; j--) {
+					if (b.mailbox[j] == WP * -color) {
+						sides -= 2;
+						none = false;
+					}
 				}
-				none = false;
-				break;
+			}
+			else {
+				for (int j = rank; j <= 9; j++) {
+					if (b.mailbox[j] == WP * -color) {
+						sides -= 2;
+						none = false;
+					}
+				}
+			}
+			//Check adjacent files
+			for (int j = 20 + file - 1; j <= 90 + file - 1; j += 10) {
+				if (b.mailbox[j] == WP * -color) {
+					if ((j - j % 10) / 10 >= rank) {
+						sides++;
+					}
+					none = false;
+				}
+			}
+			for (int j = 20 + file + 1; j <= 90 + file + 1; j += 10) {
+				if (b.mailbox[j] == WP * -color) {
+					if ((j - j % 10) / 10 >= rank) {
+						sides++;
+					}
+					none = false;
+				}
+			}
+			if (none) {
+				sides += 2;
+			}
+			if (sides == 2) {
+				pcount += (color == WHITE) ? 9 - rank : rank - 2;
 			}
 		}
-	}
-	if (none) {
-		sides++;
-	}
-	if (haspawn) {
-		for (int i = 20 + file + 1; i <= 90 + file + 1; i += 10) {
-			if (b.mailbox[i] == WP * -color) {
-				if ((i - i % 10) / 10 >= rank) {
-					sides++;
-				}
-				none = false;
-				break;
-			}
-		}
-	}
-	if (none) {
-		sides++;
-	}
-	if (sides == 2) {
-		pcount++;
 	}
 	return pcount * PASSED_P_BONUS;
 }
@@ -434,7 +443,7 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	//Reevaluates game phase
 	setGamePhase(b);
 	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);
-	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) + passedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK) - passedPawns(b, BLACK);
+	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK);
 	int position = piecePosition(b, WHITE) + space(b, WHITE) - piecePosition(b, BLACK) - space(b, BLACK);
 	int center = pawnCenterControl(b, WHITE) + pieceExtendedCenterControl(b, WHITE) - pawnCenterControl(b, BLACK) - pieceExtendedCenterControl(b, BLACK);
 	int total = material + pawns + position + center;
