@@ -43,36 +43,6 @@ void Evaluation::setGamePhase(const Board& b) {
 }
 
 /*PAWN STRUCTURE*/
-int Evaluation::openFiles(const Board& b) {
-	bool filearray[8] = { true, true, true, true, true, true, true, true };
-	int filecount = 0;
-	for (int i = 21; i < 99; i++) {
-		if (abs(b.mailbox[i]) == WP) {
-			filearray[i % 10 - 1] = false;
-		}
-	}
-	for (int i = 0; i < 8; i++) {
-		if (filearray[i]) {
-			filecount++;
-		}
-	}
-	return filecount;
-}
-int Evaluation::semiOpenFiles(const Board& b) {
-	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	int filecount = 0;
-	for (int i = 21; i < 99; i++) {
-		if (abs(b.mailbox[i]) == WP) {
-			filearray[i % 10 - 1]++;
-		}
-	}
-	for (int i = 0; i < 8; i++) {
-		if (filearray[i] == 1) {
-			filecount++;
-		}
-	}
-	return filecount;
-}
 int Evaluation::blockedPawns(const Board& b) {
 	int bpcount = 0;
 	for (int i = 21; i < 99; i++) {
@@ -165,13 +135,15 @@ int Evaluation::passedPawns(const Board& b, int color) {
 	if (none) {
 		sides++;
 	}
-	for (int i = 20 + file + 1; i <= 90 + file + 1; i += 10) {
-		if (b.mailbox[i] == WP * -color) {
-			if ((i - i % 10) / 10 >= rank) {
-				sides++;
+	if (haspawn) {
+		for (int i = 20 + file + 1; i <= 90 + file + 1; i += 10) {
+			if (b.mailbox[i] == WP * -color) {
+				if ((i - i % 10) / 10 >= rank) {
+					sides++;
+				}
+				none = false;
+				break;
 			}
-			none = false;
-			break;
 		}
 	}
 	if (none) {
@@ -403,41 +375,36 @@ int Evaluation::kingSafety(Board& b, int color) {
 
 /*CENTER*/
 int Evaluation::pawnCenterControl(const Board& b, int color) {
-	int pcount = 0;
-	for (int i = 54; i < 66; i++) {
-		if (i == 54 || i == 55 || i == 64 || i == 65) {
-			if (b.mailbox[i] == WP * color || b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
-				pcount++;
-			}
-		}
-	}
-	return pcount * P_CENTER_BONUS;
-}
-int Evaluation::pawnExtendedCenterControl(const Board& b, int color) {
-	int pcount = 0;
+	int pawnInExtendedCenter = 0;
+	int pawnInCenter = 0;
 	for (int i = 43; i < 77; i++) {
 		if (i % 10 >= 3 && i % 10 <= 6) {
 			if (b.mailbox[i] == WP * color || b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
-				pcount++;
+				pawnInExtendedCenter++;
+			}
+			if (i == 54 || i == 55 || i == 64 || i == 65) {
+				if (b.mailbox[i] == WP * color || b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+					pawnInCenter++;
+				}
 			}
 		}
 	}
-	return pcount * P_EXTENDED_CENTER_BONUS;
+	return pawnInExtendedCenter * P_EXTENDED_CENTER_BONUS + pawnInCenter * P_CENTER_BONUS;
 }
 int Evaluation::pieceExtendedCenterControl(Board& b, int color) {
-	int pcount = 0;
+	int controlledSquares = 0;
 	for (int i = 21; i < 99; i++) {
 		if (b.mailbox[i] == WN * color || b.mailbox[i] == WB * color) {
 			for (int j = 43; j < 77; j++) {
 				if (j % 10 >= 3 && j % 10 <= 6) {
 					if (b.checkAttack(i, j, b.mailbox)) {
-						pcount++;
+						controlledSquares++;
 					}
 				}
 			}
 		}
 	}
-	return pcount * PIECE_EXTENDED_CENTER_BONUS;
+	return controlledSquares * PIECE_EXTENDED_CENTER_BONUS;
 }
 
 /*GETTERS*/
@@ -469,7 +436,7 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);
 	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) + passedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK) - passedPawns(b, BLACK);
 	int position = piecePosition(b, WHITE) + space(b, WHITE) - piecePosition(b, BLACK) - space(b, BLACK);
-	int center = pawnCenterControl(b, WHITE) + pawnExtendedCenterControl(b, WHITE) + pieceExtendedCenterControl(b, WHITE) - pawnCenterControl(b, BLACK) - pawnExtendedCenterControl(b, BLACK) - pieceExtendedCenterControl(b, BLACK);
+	int center = pawnCenterControl(b, WHITE) + pieceExtendedCenterControl(b, WHITE) - pawnCenterControl(b, BLACK) - pieceExtendedCenterControl(b, BLACK);
 	int total = material + pawns + position + center;
 	return total;
 }

@@ -21,13 +21,13 @@
 #define R_OPEN_FILE_BONUS 30;
 #define K_OPEN_FILE_PENALTY -30;
 #define K_P_SHIELD_PENALTY -30;
-#define K_CASTLED_BONUS 80;
+#define K_CASTLED_BONUS 50;
 #define SPACE_BONUS 5;
 
 //Center
 #define P_CENTER_BONUS 5
 #define P_EXTENDED_CENTER_BONUS 10
-#define PIECE_EXTENDED_CENTER_BONUS 8
+#define PIECE_EXTENDED_CENTER_BONUS 10
 
 //Tempo
 #define TEMPO_PENALTY -20
@@ -48,8 +48,6 @@ public:
 	void setGamePhase(const Board&);
 
 	/*PAWN STRUCTURE*/
-	int openFiles(const Board&);
-	int semiOpenFiles(const Board&);
 	int blockedPawns(const Board&);
 	int doubledPawns(const Board&, int);
 	int isolatedPawns(const Board&, int);
@@ -69,7 +67,6 @@ public:
 
 	/*CENTER*/
 	int pawnCenterControl(const Board&, int);
-	int pawnExtendedCenterControl(const Board&, int);
 	int pieceExtendedCenterControl(Board&, int);
 
 	/*GETTERS*/
@@ -84,10 +81,10 @@ private:
 	/*PIECE SQUARE TABLES*/
 	const int pawnTable[64]
 	{
-		 0,  0,  0,  0,  0,  0,  0,  0,
-		80, 80, 80, 80, 80, 80, 80, 80,
-		20, 20, 30, 50, 50, 30, 20, 20,
-		 5,  5, 20, 25, 25, 15,  5,  5,
+		99, 99, 99, 99, 99, 99, 99, 99,
+		99, 99, 99, 99, 99, 99, 99, 99,
+		40, 40, 40, 50, 50, 40, 40, 40,
+		10, 10, 20, 25, 25, 15, 10, 10,
 		 5,  5, 20, 25, 25,  5,  5,  5,
 		 5,  0,  5,  0,  0,  0,  0,  5,
 		 5, 10,-10,-15,-15, 10, 10,  5,
@@ -133,8 +130,8 @@ private:
 		-20,-20,-20,-20,-20,-20,-20,-20,
 		-20,-20,-20,-20,-20,-20,-20,-20,
 		-20,-20,-20,-20,-20,-20,-20,-20,
-		-20,-20,-15,-10,-15,-20,-20,-20,
-		-20,-15,-10,-10,-10,-15,-15,-20,
+		-20,-20,-15,-15,-15,-20,-20,-20,
+		-20,-15,-15,-15,-15,-15,-15,-20,
 		-40,-15,-20, 10,-20,-15,-15,-40
 	};
 	const int queenNormalTable[64]
@@ -144,8 +141,8 @@ private:
 		-10,  0,  0,  0,  0,  0,  0,-10,
 		-10,  0,  0,  0,  0,  0,  0, 10,
 		 -5,  0,  0,  0,  0,  0,  0, 10,
-		-10,  5,  0,  0,  0,  0,  0,-10,
-		-10,  0,  5,  0,  0,  0,  0,-10,
+		-10,  0,  0,  0,  0,  0,  0,-10,
+		-10,  0,  0,  0,  0,  0,  0,-10,
 		-20,-10,-10,  0,  0,-10,-10,-20
 	};
 	const int kingNormalTable[64]

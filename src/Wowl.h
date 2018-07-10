@@ -2,7 +2,7 @@
 #define WOWL_INCLUDED
 
 #define SEARCH_DEPTH 5
-#define ASPIRATION_WINDOW 100
+#define ASPIRATION_WINDOW 150
 #define WIN_SCORE 999999
 
 #include "Evaluation.h"
