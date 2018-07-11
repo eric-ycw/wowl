@@ -169,124 +169,20 @@ bool Board::checkLegal(int a, int b) {
 	}
 		break;
 	case WN:
-	{
-		legal = false;
-		if (a - 20 - 1 == b || a - 20 + 1 == b || a - 10 - 2 == b || a - 10 + 2 == b || a + 20 - 1 == b || a + 20 + 1 == b || a + 10 - 2 == b || a + 10 + 2 == b) {
-			legal = true;
-			return legal;
-		}
-	}
+		return checkAttackKnight(a, b, mailbox);
 		break;
 	case WB:
-	{
-		legal = false;
-		int checkpos = 0;
-		for (int type = 0; type < 4; type++) {
-			for (int dis = 1; dis < 8; dis++) {
-				switch (type) {
-				case 0: checkpos = a - 11 * dis;
-					break;
-				case 1: checkpos = a - 9 * dis;
-					break;
-				case 2: checkpos = a + 11 * dis;
-					break;
-				case 3: checkpos = a + 9 * dis;
-					break;
-				}
-				//Blocked by piece
-				if (mailbox[checkpos] * turn != 0) {
-					//Check final time
-					if (checkpos == b) {
-						legal = true;
-						return legal;
-					}
-					goto BISHOPNEXT;
-				}
-				if (checkpos == b) {
-					legal = true;
-					return legal;
-				}
-			}
-		BISHOPNEXT:;
-		}
-	}
+		return checkAttackBishop(a, b, mailbox);
 		break;
 	case WR:
-	{
-		legal = false;
-		int checkpos = 0;
-		for (int type = 0; type < 4; type++) {
-			for (int dis = 1; dis < 8; dis++) {
-				switch (type) {
-				case 0: checkpos = a - 10 * dis;
-					break;
-				case 1: checkpos = a + 10 * dis;
-					break;
-				case 2: checkpos = a - dis;
-					break;
-				case 3: checkpos = a + dis;
-					break;
-				}
-				if (mailbox[checkpos] * turn != 0) {
-					if (checkpos == b) {
-						legal = true;
-						return legal;
-					}
-					goto ROOKNEXT;
-				}
-				if (checkpos == b) {
-					legal = true;
-					return legal;
-				}
-			}
-		ROOKNEXT:;
-		}
-	}
+		return checkAttackRook(a, b, mailbox);
 		break;
 	case WQ:
-	{
-		legal = false;
-		int checkpos = 0;
-		for (int type = 0; type < 8; type++) {
-			for (int dis = 1; dis < 8; dis++) {
-				switch (type) {
-				case 0: checkpos = a - 10 * dis;
-					break;
-				case 1: checkpos = a + 10 * dis;
-					break;
-				case 2: checkpos = a - dis;
-					break;
-				case 3: checkpos = a + dis;
-					break;
-				case 4: checkpos = a - 11 * dis;
-					break;
-				case 5: checkpos = a - 9 * dis;
-					break;
-				case 6: checkpos = a + 11 * dis;
-					break;
-				case 7: checkpos = a + 9 * dis;
-					break;
-				}
-				if (mailbox[checkpos] * turn != 0) {
-					if (checkpos == b) {
-						legal = true;
-						return legal;
-					}
-					goto QUEENNEXT;
-				}
-				if (checkpos == b) {
-					legal = true;
-					return legal;
-				}
-			}
-		QUEENNEXT:;
-		}
-	}
+		return checkAttackQueen(a, b, mailbox);
 		break;
 	case WK:
 	{
 		legal = true;
-		//Eliminate impossible moves
 		if (!(a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b || a + 2 == b || a - 2 == b)) {
 			legal = false;
 			return legal;
@@ -368,166 +264,196 @@ bool Board::checkAttack(int a, int b, const int arr[]) {
 	}
 	switch (sval) {
 	case WP:
-	{
-		canattack = false;
 		if (oldSquareVal == 1) {
-			if (b > a) {
-				return canattack;
-			}
-			if (a - 10 - 1 == b || a - 10 + 1 == b) {
-				if (newSquareVal <= 0) {
-					canattack = true;
-				}
-			}
-			return canattack;
+			return checkAttackPawn(a, b, arr, WHITE);
 		}
 		else {
-			if (b < a) {
-				return canattack;
-			}
-			if (a + 10 - 1 == b || a + 10 + 1 == b) {
-				if (newSquareVal >= 0) {
-					canattack = true;
-				}
-			}
-			return canattack;
+			return checkAttackPawn(a, b, arr, BLACK);
 		}
-	}
 		break;
 
 	case WN:
-	{
-		canattack = false;
-		if (a - 20 - 1 == b || a - 20 + 1 == b || a - 10 - 2 == b || a - 10 + 2 == b || a + 20 - 1 == b || a + 20 + 1 == b || a + 10 - 2 == b || a + 10 + 2 == b) {
-			canattack = true;
-		}
-		return canattack;
-	}
+		return checkAttackKnight(a, b, arr);
 		break;
 
 	case WB:
-	{
-		canattack = false;
-		int checkpos = 0;
-		for (int type = 0; type < 4; type++) {
-			for (int dis = 1; dis < 8; dis++) {
-				switch (type) {
-				case 0: checkpos = a - 11 * dis;
-					break;
-				case 1: checkpos = a - 9 * dis;
-					break;
-				case 2: checkpos = a + 11 * dis;
-					break;
-				case 3: checkpos = a + 9 * dis;
-					break;
-				}
-				if (arr[checkpos] * turn != 0) {
-					if (checkpos == b) {
-						canattack = true;
-						return canattack;
-					}
-					goto BISHOPNEXT;
-				}
-				if (checkpos == b) {
-					canattack = true;
-					return canattack;
-				}
-			}
-		BISHOPNEXT:;
-		}
-		return canattack;
-	}
+		return checkAttackBishop(a, b, arr);
 		break;
 
 	case WR:
-	{
-		canattack = false;
-		int checkpos = 0;
-		for (int type = 0; type < 4; type++) {
-			for (int dis = 1; dis < 8; dis++) {
-				switch (type) {
-				case 0: checkpos = a - 10 * dis;
-					break;
-				case 1: checkpos = a + 10 * dis;
-					break;
-				case 2: checkpos = a - dis;
-					break;
-				case 3: checkpos = a + dis;
-					break;
-				}
-				if (arr[checkpos] * turn != 0) {
-					if (checkpos == b) {
-						canattack = true;
-						return canattack;
-					}
-					goto ROOKNEXT;
-				}
-				if (checkpos == b) {
-					canattack = true;
-					return canattack;
-				}
-			}
-		ROOKNEXT:;
-		}
-		return canattack;
-	}
-	break;
+		return checkAttackRook(a, b, arr);
+		break;
 
 	case WQ:
-	{
-		canattack = false;
-		int checkpos = 0;
-		for (int type = 0; type < 8; type++) {
-			for (int dis = 1; dis < 8; dis++) {
-				switch (type) {
-				case 0: checkpos = a - 10 * dis;
-					break;
-				case 1: checkpos = a + 10 * dis;
-					break;
-				case 2: checkpos = a - dis;
-					break;
-				case 3: checkpos = a + dis;
-					break;
-				case 4: checkpos = a - 11 * dis;
-					break;
-				case 5: checkpos = a - 9 * dis;
-					break;
-				case 6: checkpos = a + 11 * dis;
-					break;
-				case 7: checkpos = a + 9 * dis;
-					break;
-				}
-				if (arr[checkpos] * turn != 0) {
-					if (checkpos == b) {
-						canattack = true;
-						return canattack;
-					}
-					goto QUEENNEXT;
-				}
-				if (checkpos == b) {
-					canattack = true;
-					return canattack;
-				}
-			}
-		QUEENNEXT:;
-		}
-		return canattack;
-	}
+		return checkAttackQueen(a, b, arr);
 		break;
 
 	case WK:
-	{
-		canattack = true;
-		//Eliminate impossible moves
-		if (!(a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b)) {
-			canattack = false;
-			return canattack;
-		}
-		return canattack;
-	}
+		return checkAttackKing(a, b, arr);
 		break;
 
 	}
+}
+bool Board::checkAttackPawn(int a, int b, const int arr[], int color) {
+	bool canattack = false;
+	if ((a - color * 11 == b || a - color * 9 == b) && arr[b] * arr[a] <= 0) {
+		canattack = true;
+	}
+	return canattack;
+}
+bool Board::checkAttackKnight(int a, int b, const int arr[]) {
+	bool canattack = false;
+	if ((a - 20 - 1 == b || a - 20 + 1 == b || a - 10 - 2 == b || a - 10 + 2 == b || a + 20 - 1 == b || a + 20 + 1 == b || a + 10 - 2 == b || a + 10 + 2 == b) && arr[b] * arr[a] <= 0) {
+		canattack = true;
+	}
+	return canattack;
+}
+bool Board::checkAttackBishop(int a, int b, const int arr[]) {
+	bool canattack = false;
+	int checkpos = 0;
+	for (int type = 0; type < 4; type++) {
+		for (int dis = 1; dis < 8; dis++) {
+			switch (type) {
+			case 0: checkpos = a - 11 * dis;
+				break;
+			case 1: checkpos = a - 9 * dis;
+				break;
+			case 2: checkpos = a + 11 * dis;
+				break;
+			case 3: checkpos = a + 9 * dis;
+				break;
+			}
+			if (arr[checkpos] * arr[a] != 0) {
+				if (checkpos == b) {
+					canattack = true;
+					return canattack;
+				}
+				goto BISHOPNEXT;
+			}
+			if (checkpos == b) {
+				canattack = true;
+				return canattack;
+			}
+		}
+	BISHOPNEXT:;
+	}
+	return canattack;
+}
+bool Board::checkAttackRook(int a, int b, const int arr[]) {
+	bool canattack = false;
+	int checkpos = 0;
+	for (int type = 0; type < 4; type++) {
+		for (int dis = 1; dis < 8; dis++) {
+			switch (type) {
+			case 0: checkpos = a - 10 * dis;
+				break;
+			case 1: checkpos = a + 10 * dis;
+				break;
+			case 2: checkpos = a - dis;
+				break;
+			case 3: checkpos = a + dis;
+				break;
+			}
+			if (arr[checkpos] * arr[a] != 0) {
+				if (checkpos == b) {
+					canattack = true;
+					return canattack;
+				}
+				goto ROOKNEXT;
+			}
+			if (checkpos == b) {
+				canattack = true;
+				return canattack;
+			}
+		}
+	ROOKNEXT:;
+	}
+	return canattack;
+	
+}
+bool Board::checkAttackQueen(int a, int b, const int arr[]) {
+	bool canattack = false;
+	if (checkAttackBishop(a, b, arr)) {
+		canattack = true;
+		return canattack;
+	}
+	if (checkAttackRook(a, b, arr)) {
+		canattack = true;
+		return canattack;
+	}
+	return canattack;
+}
+bool Board::checkAttackKing(int a, int b, const int arr[]) {
+	bool canattack = false;
+	if (a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b) {
+		canattack = true;
+		return canattack;
+	}
+	return canattack;
+}
+std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
+	int sqval;
+	std::tuple<int, int> attackerArray[5];
+	for (int i = 0; i < 5; i++) {
+		std::get<0>(attackerArray[i]) = 0;
+		std::get<1>(attackerArray[i]) = 0;
+	}
+
+	for (int i = 21; i < 99; i++) {
+		sqval = mailbox[i];
+		if (sqval == -9 || sqval * color <= 0) {
+			continue;
+		}
+		if (sqval < 0) {
+			sqval *= -1;
+		}
+		switch (sqval) {
+		case WP:
+			if (checkAttackPawn(i, square, mailbox, mailbox[i])) {
+				std::get<0>(attackerArray[0])++;
+				std::get<1>(attackerArray[0]) = i;
+			}
+			break;
+		case WN:
+			if (checkAttackKnight(i, square, mailbox)) {
+				std::get<0>(attackerArray[1])++;
+				std::get<1>(attackerArray[1]) = i;
+			}
+			break;
+		case WB:
+			if (checkAttackBishop(i, square, mailbox)) {
+				std::get<0>(attackerArray[1])++;
+				std::get<1>(attackerArray[1]) = i;
+			}
+			break;
+		case WR:
+			if (checkAttackRook(i, square, mailbox)) {
+				std::get<0>(attackerArray[2])++;
+				std::get<1>(attackerArray[2]) = i;
+			}
+			break;
+		case WQ:
+			if (checkAttackQueen(i, square, mailbox)) {
+				std::get<0>(attackerArray[3])++;
+				std::get<1>(attackerArray[3]) = i;
+			}
+			break;
+		case WK:
+			if (checkAttackKing(i, square, mailbox)) {
+				std::get<0>(attackerArray[4])++;
+			}
+			break;
+		}
+	}
+
+	for (int i = 0; i < 5; i++) {
+		if (std::get<0>(attackerArray[i]) > 0) {
+			std::get<0>(attackerArray[i]) = i + 1;
+			return attackerArray[i];
+		}
+	}
+	assert (std::get<0>(attackerArray[0]) == 0);
+	return attackerArray[0];
 }
 
 /*KING*/
@@ -672,7 +598,7 @@ void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 		}
 	}
 	//Short castling
-	else if (oldpos - newpos == -2 && abs(arr[newpos]) == WK) {
+	else if (oldpos - newpos == -2 && abs(arr[newpos]) == WK && abs(arr[newpos + 1]) == WR) {
 		arr[newpos + 1] = 0;
 		//White
 		if (arr[newpos] > 0) {
@@ -686,7 +612,7 @@ void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 		}
 	}
 	//Long castling
-	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK) {
+	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK && abs(arr[newpos - 1]) == WR) {
 		arr[newpos - 2] = 0;
 		//White
 		if (arr[newpos] > 0) {
@@ -722,7 +648,7 @@ void Board::tempSpecialMoves(int oldpos, int newpos, int lastoldpos, int lastnew
 		}
 	}
 	//Short castling
-	else if (oldpos - newpos == -2 && abs(arr[newpos]) == WK) {
+	else if (oldpos - newpos == -2 && abs(arr[newpos]) == WK && abs(arr[newpos + 1]) == WR) {
 		arr[newpos + 1] = 0;
 		//White
 		if (arr[newpos] > 0) {
@@ -736,7 +662,7 @@ void Board::tempSpecialMoves(int oldpos, int newpos, int lastoldpos, int lastnew
 		}
 	}
 	//Long castling
-	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK) {
+	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK && abs(arr[newpos - 1]) == WR) {
 		arr[newpos - 2] = 0;
 		//White
 		if (arr[newpos] > 0) {
@@ -819,6 +745,30 @@ void Board::setEnPassantSquare() {
 		return;
 	}
 	epSquare = newsq + color * 10;
+}
+void Board::getCaptureMoves() {
+	//Clear capture move vector
+	if (!captureVec.empty()) {
+		captureVec.clear();
+	}
+	//Get all capture moves
+	for (int m = 21; m < 99; m++) {
+		if (mailbox[m] == -9) {
+			continue;
+		}
+		else {
+			for (int n = 21; n < 99; n++) {
+				if (mailbox[n] == -9 || mailbox[n] * mailbox[m] >= 0) {
+					continue;
+				}
+				else {
+					if (checkLegal(m, n)) {
+						captureVec.emplace_back(sf::Vector2i(m, n));
+					}
+				}
+			}
+		}
+	}
 }
 
 /*BOARD*/

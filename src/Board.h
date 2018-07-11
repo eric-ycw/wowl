@@ -25,6 +25,7 @@
 #include <vector>
 #include <tuple>
 #include <algorithm>
+#include <assert.h>
 #include <SFML\System\Vector2.hpp>
 
 class Board 
@@ -61,6 +62,13 @@ public:
 
 	/*ATTACKS*/
 	bool checkAttack(int, int, const int[]);
+	bool checkAttackPawn(int, int, const int[], int);
+	bool checkAttackKnight(int, int, const int[]);
+	bool checkAttackBishop(int, int, const int[]);
+	bool checkAttackRook(int, int, const int[]);
+	bool checkAttackQueen(int, int, const int[]);
+	bool checkAttackKing(int, int, const int[]);
+	std::tuple<int, int> getSmallestAttacker(int, int);
 
 	/*KING*/
 	void setKingSquare(int[]);
@@ -75,6 +83,7 @@ public:
 	void specialMoves(int, int, int, int[]);
 	void tempSpecialMoves(int, int, int, int, int[]);
 	void setEnPassantSquare();
+	void getCaptureMoves();
 
 	/*BOARD*/
 	void resetBoard();
@@ -146,6 +155,7 @@ private:
 	std::vector<sf::Vector2i> moveVec;
 	std::vector<sf::Vector2i> legalMoveVec;
 	std::vector<sf::Vector2i> attackMoveVec;
+	std::vector<sf::Vector2i> captureVec;
 
 	int kingSquareWhite, kingSquareBlack;
 };

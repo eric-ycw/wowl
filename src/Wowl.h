@@ -1,8 +1,9 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 6
+#define SEARCH_DEPTH 5
 #define ASPIRATION_WINDOW 50
+#define DELTA 980
 #define WIN_SCORE 999999
 
 #include "Evaluation.h"
@@ -18,13 +19,15 @@ public:
 
 	Hash hashTable;
 
+	/*EVALUATION*/
+	int SEE(Board, int, int);
+
 	void orderMoves(Board, std::vector<sf::Vector2i>&, int, int, U64);
 
 	/*SEARCH*/
-	void ID(Board, std::vector<sf::Vector2i>, int, int);
+	void ID(Board, int, int);
 	int negaSearch(Board, int, int, int, int, int);
-
-	void findBestMove(Board, int, int);
+	int qSearch(Board, int, int, int);
 	
 	long perft(Board, int);
 

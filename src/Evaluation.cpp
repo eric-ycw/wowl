@@ -388,11 +388,11 @@ int Evaluation::pawnCenterControl(const Board& b, int color) {
 	int pawnInCenter = 0;
 	for (int i = 43; i < 77; i++) {
 		if (i % 10 >= 3 && i % 10 <= 6) {
-			if (b.mailbox[i] == WP * color || b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+			if (b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
 				pawnInExtendedCenter++;
 			}
 			if (i == 54 || i == 55 || i == 64 || i == 65) {
-				if (b.mailbox[i] == WP * color || b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+				if (b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
 					pawnInCenter++;
 				}
 			}
@@ -416,6 +416,7 @@ int Evaluation::pieceExtendedCenterControl(Board& b, int color) {
 	return controlledSquares * PIECE_EXTENDED_CENTER_BONUS;
 }
 
+
 /*GETTERS*/
 int Evaluation::isOpenFile(const Board& b, int square) {
 	int file = square % 10;
@@ -438,14 +439,16 @@ int Evaluation::isOpenFile(const Board& b, int square) {
 		return 2;
 	}
 }
+int Evaluation::getGamePhase() { return gamePhase; }
 
 int Evaluation::totalEvaluation(Board& b, int color) {
 	//Reevaluates game phase
 	setGamePhase(b);
-	int material = baseMaterial(b, WHITE) + comboMaterial(b, WHITE) + structureMaterial(b, WHITE) - baseMaterial(b, BLACK) - comboMaterial(b, BLACK) - structureMaterial(b, BLACK);
-	int pawns = doubledPawns(b, WHITE) + isolatedPawns(b, WHITE) + protectedPawns(b, WHITE) - doubledPawns(b, BLACK) - isolatedPawns(b, BLACK) - protectedPawns(b, BLACK);
-	int position = piecePosition(b, WHITE) + space(b, WHITE) - piecePosition(b, BLACK) - space(b, BLACK);
-	int center = pawnCenterControl(b, WHITE) + pieceExtendedCenterControl(b, WHITE) - pawnCenterControl(b, BLACK) - pieceExtendedCenterControl(b, BLACK);
-	int total = material + pawns + position + center;
+	int material = baseMaterial(b, color) + comboMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - comboMaterial(b, -color) - structureMaterial(b, -color);
+	int pawns = doubledPawns(b, color) + isolatedPawns(b, color) + protectedPawns(b, color) - doubledPawns(b, -color) - isolatedPawns(b, -color) - protectedPawns(b, -color);
+	int position = piecePosition(b, color) + space(b, color) - piecePosition(b, -color) - space(b, -color);
+	int center = pawnCenterControl(b, color) + pieceExtendedCenterControl(b, color) - pawnCenterControl(b, -color) - pieceExtendedCenterControl(b, -color);
+	int sideToMove = (b.getTurn() == color) ? 1 : 0;
+	int total = material + pawns + position + center + sideToMove * SIDE_TO_MOVE_BONUS;
 	return total;
 }

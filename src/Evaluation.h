@@ -12,24 +12,25 @@
 #define K_BASE_VAL 40000
 
 //Pawn structure values
-#define DOUBLED_P_PENALTY -10
-#define ISOLATED_P_PENALTY -15
+#define DOUBLED_P_PENALTY -5
+#define ISOLATED_P_PENALTY -8
 #define PROTECTED_P_BONUS 5
 #define PASSED_P_BONUS 20
 
 //Position
-#define R_OPEN_FILE_BONUS 30;
-#define K_OPEN_FILE_PENALTY -30;
-#define K_P_SHIELD_PENALTY -30;
-#define K_CASTLED_BONUS 30;
-#define SPACE_BONUS 6;
+#define R_OPEN_FILE_BONUS 30
+#define K_OPEN_FILE_PENALTY -30
+#define K_P_SHIELD_PENALTY -20
+#define K_CASTLED_BONUS 60
+#define SPACE_BONUS 6
 
 //Center
 #define P_CENTER_BONUS 5
 #define P_EXTENDED_CENTER_BONUS 10
-#define PIECE_EXTENDED_CENTER_BONUS 6
+#define PIECE_EXTENDED_CENTER_BONUS 10
 
 //Tempo
+#define SIDE_TO_MOVE_BONUS 5
 #define TEMPO_PENALTY -20
 
 //Game phase
@@ -71,6 +72,7 @@ public:
 
 	/*GETTERS*/
 	int isOpenFile(const Board&, int);
+	int getGamePhase();
 
 	int totalEvaluation(Board&, int);
 
@@ -86,27 +88,27 @@ private:
 		40, 40, 40, 50, 50, 40, 40, 40,
 		10, 10, 20, 30, 30, 15, 10, 10,
 		 5,  5, 20, 25, 25,  5,  5,  5,
-		 0,  0,  5,  0,  0,  0,  0,  0,
-		 5, 10,-10,-15,-15, 10, 10,  5,
+		 0,  0,  0,  0,  0,-10,  0,  0,
+		 5, 10,-10,-15,-15, 20, 10,  5,
 		 0,  0,  0,  0,  0,  0,  0,  0
 	};
 	const int knightTable[64]
 	{
 		-70,-50,-30,-30,-30,-30,-50,-70,
 		-50,-20,  0,  0,  0,  0,-20,-50,
-		-50,  0,  5,  5,  5,  5,  0,-50,
-		-50,  0, 10, 10, 10, 10,  0,-50,
-		-50,  0, 10, 10, 10, 10,  0,-50,
-		-50,  5, 10,  5,  5, 10,  5,-50,
+		-50,  0, 10, 12, 12, 10,  0,-50,
+		-50,  0, 10, 12, 12, 10,  0,-50,
+		-50,  0, 10, 12, 12, 10,  0,-50,
+		-50,  5, 10,  8,  8, 10,  5,-50,
 		-50,-20,  0,  5,  5,  0,-20,-50,
-		-70,-20,-10,-10,-10,-10,-20,-70,
+		-70,-15,-10,-10,-10,-10,-20,-70,
 	};
 	const int bishopTable[64]
 	{
 		-20,-10,-10,-10,-10,-10,-10,-20,
 		-20,  0,  0,  0,  0,  0,  0,-20,
 		-20,  0,  5, 10, 10,  5,  0,-20,
-		-20, 15, 10, 10, 10, 10, 15,-20,
+		-20, 15, 10, 15, 15, 10, 15,-20,
 		-20,  0, 15, 15, 15, 15,  0,-20,
 		-20, 10, 10, 10, 10, 10, 10,-20,
 		-20, 20,  0,  5,  5,  0, 20,-20,
@@ -114,14 +116,14 @@ private:
 	};
 	const int rookTable[64]
 	{
-		 0,  0,  0,  0,  0,  0,  0,  0,
-		 5, 10, 10, 10, 10, 10, 10,  5,
+		 0,  5,  5,  5,  5,  5,  5,  0,
+		 5, 20, 20, 20, 20, 20, 20,  5,
+		-5,  5,  5,  5,  5,  5,  5, -5,
+		-5,  0,  5,  5,  5,  5,  0, -5,
+		-5,  0,  5,  5,  5,  5,  0, -5,
+		-5,  0,  5,  5,  5,  5,  0, -5,
 		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		 0,  0,  0,  5,  5,  0,  0,  0
+		 0, -5,  5, 10, 10,  0, -5,  0
 	};
 	const int queenOpeningTable[64]
 	{
@@ -138,8 +140,8 @@ private:
 	{
 		-20,-10,-10, -5, -5,-10,-10,-20,
 		-10,  0,  0,  0,  0,  0,  0,-10,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-10,  0,  0,  0,  0,  0,  0, 10,
+		-10,  0,  5,  5,  5,  5,  0,-10,
+		-10,  0,  5,  5,  5,  5,  0, 10,
 		 -5,  0,  0,  0,  0,  0,  0, 10,
 		-10,  0,  0,  0,  0,  0,  0,-10,
 		-10,  0,  0,  0,  0,  0,  0,-10,
@@ -154,7 +156,7 @@ private:
 		-70,-70,-70,-70,-70,-70,-70,-70,
 		-30,-70,-70,-50,-50,-70,-70,-30,
 		  0,  0,-50,-50,-50,-50,  0,  0,
-		  0,  0, 20,-20,-20,  0, 30,  0
+		  0,  0, 20,  0,  0,  0, 30,  0
 	};
 	const int kingEndTable[64]
 	{
