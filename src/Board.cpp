@@ -30,9 +30,10 @@ int Board::to64Coord(int square) {
 /*VECTORS*/
 //Reserve memory for vectors
 void Board::reserveVectors() {
-	moveVec.reserve(200);
-	legalMoveVec.reserve(999);
-	attackMoveVec.reserve(999);
+	moveVec.reserve(150);
+	legalMoveVec.reserve(50);
+	attackMoveVec.reserve(50);
+	captureVec.reserve(30);
 }
 
 /*LEGALITY*/
@@ -587,13 +588,13 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 	//White en passant
 	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP && !moveVec.empty()) {
-		if (moveVec[last - 1].y == newpos + 10 && arr[newpos + 10] == BP && (moveVec[last - 1].x == oldpos + 1 || moveVec[last - 1].x == oldpos - 1)) {
+		if (moveVec[last - 1].y == newpos + 10 && arr[newpos + 10] == BP && moveVec[last - 1].x == newpos - 10) {
 			arr[newpos + 10] = 0;
 		}
 	}
 	//Black en passant
 	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP && !moveVec.empty()) {
-		if (moveVec[last - 1].y == newpos - 10 && arr[newpos - 10] == WP && (moveVec[last - 1].x == oldpos + 1 || moveVec[last - 1].x == oldpos - 1)) {
+		if (moveVec[last - 1].y == newpos - 10 && arr[newpos - 10] == WP && moveVec[last - 1].x == newpos + 10) {
 			arr[newpos - 10] = 0;
 		}
 	}
@@ -612,7 +613,7 @@ void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 		}
 	}
 	//Long castling
-	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK && abs(arr[newpos - 1]) == WR) {
+	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK && abs(arr[newpos - 2]) == WR) {
 		arr[newpos - 2] = 0;
 		//White
 		if (arr[newpos] > 0) {
@@ -637,13 +638,13 @@ void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 void Board::tempSpecialMoves(int oldpos, int newpos, int lastoldpos, int lastnewpos, int arr[]) {
 	//White en passant
 	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP) {
-		if (lastnewpos == newpos + 10 && arr[newpos + 10] == BP && (lastoldpos == oldpos + 1 || lastoldpos == oldpos - 1)) {
+		if (lastnewpos == newpos + 10 && arr[newpos + 10] == BP  && lastoldpos == newpos - 10) {
 			arr[newpos + 10] = 0;
 		}
 	}
 	//Black en passant
 	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP) {
-		if (lastnewpos == newpos - 10 && arr[newpos - 10] == WP && (lastoldpos == oldpos + 1 || lastoldpos == oldpos - 1)) {
+		if (lastnewpos == newpos - 10 && arr[newpos - 10] == WP && lastoldpos == newpos + 10) {
 			arr[newpos - 10] = 0;
 		}
 	}
@@ -662,7 +663,7 @@ void Board::tempSpecialMoves(int oldpos, int newpos, int lastoldpos, int lastnew
 		}
 	}
 	//Long castling
-	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK && abs(arr[newpos - 1]) == WR) {
+	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK && abs(arr[newpos - 2]) == WR) {
 		arr[newpos - 2] = 0;
 		//White
 		if (arr[newpos] > 0) {

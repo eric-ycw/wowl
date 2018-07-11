@@ -1,7 +1,8 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 5
+#define SEARCH_DEPTH 6
+#define TT_CLEAR_AGE 6
 #define ASPIRATION_WINDOW 50
 #define DELTA 980
 #define WIN_SCORE 999999
@@ -20,7 +21,7 @@ public:
 	Hash hashTable;
 
 	/*EVALUATION*/
-	int SEE(Board, int, int);
+	int SEE(Board&, int, int);
 
 	void orderMoves(Board, std::vector<sf::Vector2i>&, int, int, U64);
 

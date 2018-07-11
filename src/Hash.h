@@ -12,7 +12,7 @@
 typedef unsigned long long int U64;
 
 struct HashVal {
-	int hashBestMove, hashDepth, hashScore, hashFlag;
+	int hashBestMove, hashDepth, hashScore, hashFlag, hashAge;
 };
 
 class Hash {

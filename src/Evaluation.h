@@ -26,8 +26,8 @@
 
 //Center
 #define P_CENTER_BONUS 5
-#define P_EXTENDED_CENTER_BONUS 10
-#define PIECE_EXTENDED_CENTER_BONUS 10
+#define P_EXTENDED_CENTER_BONUS 8
+#define PIECE_EXTENDED_CENTER_BONUS 8
 
 //Tempo
 #define SIDE_TO_MOVE_BONUS 5
@@ -123,7 +123,7 @@ private:
 		-5,  0,  5,  5,  5,  5,  0, -5,
 		-5,  0,  5,  5,  5,  5,  0, -5,
 		-5,  0,  0,  0,  0,  0,  0, -5,
-		 0, -5,  5, 10, 10,  0, -5,  0
+		 0,  0,  5, 10, 10,  0,  0,  0
 	};
 	const int queenOpeningTable[64]
 	{
@@ -156,7 +156,7 @@ private:
 		-70,-70,-70,-70,-70,-70,-70,-70,
 		-30,-70,-70,-50,-50,-70,-70,-30,
 		  0,  0,-50,-50,-50,-50,  0,  0,
-		  0,  0, 20,  0,  0,  0, 30,  0
+		  0,  0, 20,-10,  0,  0,  0,  0
 	};
 	const int kingEndTable[64]
 	{

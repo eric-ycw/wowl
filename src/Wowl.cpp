@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Wowl.h"
 
-int Wowl::SEE(Board b, int square, int color) {
+int Wowl::SEE(Board& b, int square, int color) {
 	int val = 0;
 	int piece = std::get<0>(b.getSmallestAttacker(square, color));
 	int target = b.mailbox[square];
@@ -62,11 +62,6 @@ int Wowl::qSearch(Board b, int alpha, int beta, int color) {
 	if (stand_pat >= beta) {
 		return beta;
 	}
-	if (qEval.getGamePhase() <= MIDGAME) {
-		if (stand_pat < alpha - DELTA) {
-			return alpha;
-		}
-	}
 	if (stand_pat > alpha) {
 		alpha = stand_pat;
 	}
@@ -121,8 +116,16 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		}
 	}
 
+	if (depth == SEARCH_DEPTH) {
+		for (auto entry : hashTable.tt) {
+			entry.second.hashAge++;
+			if (entry.second.hashAge >= TT_CLEAR_AGE) {
+				hashTable.tt.erase(entry.first);
+			}
+		}
+	}
+
 	if (depth == 0) {
-		//int base_score = WowlEval.totalEvaluation(b, color);
 		return qSearch(b, alpha, beta, color);
 	}
 
@@ -190,6 +193,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	//Store in hash table
 	hashTable.tt[key].hashDepth = depth;
 	hashTable.tt[key].hashScore = max;
+	hashTable.tt[key].hashAge = 0;
 	if (max <= alpha) {
 		hashTable.tt[key].hashFlag = HASH_ALPHA;
 	}
