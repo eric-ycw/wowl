@@ -21,7 +21,7 @@
 #define R_OPEN_FILE_BONUS 30
 #define K_OPEN_FILE_PENALTY -30
 #define K_P_SHIELD_PENALTY -20
-#define K_CASTLED_BONUS 60
+#define K_CASTLED_BONUS 50
 #define SPACE_BONUS 6
 
 //Center
@@ -156,7 +156,7 @@ private:
 		-70,-70,-70,-70,-70,-70,-70,-70,
 		-30,-70,-70,-50,-50,-70,-70,-30,
 		  0,  0,-50,-50,-50,-50,  0,  0,
-		  0,  0, 20,-10,  0,  0,  0,  0
+		  0,  0,  5,-10,  0,  0,  5,  0
 	};
 	const int kingEndTable[64]
 	{

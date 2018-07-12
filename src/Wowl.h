@@ -1,9 +1,9 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 6
+#define SEARCH_DEPTH 5
 #define TT_CLEAR_AGE 6
-#define ASPIRATION_WINDOW 50
+#define ASPIRATION_WINDOW 35
 #define DELTA 980
 #define WIN_SCORE 999999
 

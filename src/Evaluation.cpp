@@ -379,6 +379,7 @@ int Evaluation::kingSafety(Board& b, int color) {
 			}
 		}
 	}
+
 	return rval * K_OPEN_FILE_PENALTY + pval * K_P_SHIELD_PENALTY + cval * K_CASTLED_BONUS;
 }
 
@@ -446,7 +447,7 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	setGamePhase(b);
 	int material = baseMaterial(b, color) + comboMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - comboMaterial(b, -color) - structureMaterial(b, -color);
 	int pawns = doubledPawns(b, color) + isolatedPawns(b, color) + protectedPawns(b, color) - doubledPawns(b, -color) - isolatedPawns(b, -color) - protectedPawns(b, -color);
-	int position = piecePosition(b, color) + space(b, color) - piecePosition(b, -color) - space(b, -color);
+	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
 	int center = pawnCenterControl(b, color) + pieceExtendedCenterControl(b, color) - pawnCenterControl(b, -color) - pieceExtendedCenterControl(b, -color);
 	int sideToMove = (b.getTurn() == color) ? 1 : 0;
 	int total = material + pawns + position + center + sideToMove * SIDE_TO_MOVE_BONUS;

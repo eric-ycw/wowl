@@ -22,7 +22,6 @@ int Wowl::SEE(Board& b, int square, int color) {
 			}
 			b.undo();
 		}
-
 	}
 	return val;
 }
@@ -71,14 +70,8 @@ int Wowl::qSearch(Board b, int alpha, int beta, int color) {
 	for (int j = 0; j < size; j++) {
 		if (SEE(b, b.captureVec[j].y, color) > 0) {
 			b.move(b.captureVec[j].x, b.captureVec[j].y);
-			if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
-				b.undo();
-				continue;
-			}
-			else {
-				score = -qSearch(b, -beta, -alpha, -color);
-				b.undo();
-			}
+			score = -qSearch(b, -beta, -alpha, -color);
+			b.undo();
 			if (score >= beta) {
 				return beta;
 			}
@@ -87,6 +80,7 @@ int Wowl::qSearch(Board b, int alpha, int beta, int color) {
 			}
 		}
 	}
+
 	return alpha;
 }
 int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int beta) {
@@ -134,7 +128,6 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 
 	b.getLegalMoves();
 	int size = b.legalMoveVec.size();
-
 	if (size == 0) {
 		if (b.checkKing(color, b.mailbox)) {
 			return -WIN_SCORE;
@@ -220,13 +213,15 @@ void Wowl::ID(Board b, int depth, int color) {
 		std::cout << estimate << " at depth " << idepth << std::endl << std::endl;
 		std::cout << "ID best move is " << priorityMove.x << " " << priorityMove.y << " at depth " << idepth << std::endl;
 
-		if ((estimate <= id_alpha) || (estimate >= id_beta)) {
+		if ((estimate <= id_alpha) || (estimate >= id_beta) || idepth < 2) {
 			if (estimate == WIN_SCORE || estimate == -WIN_SCORE) {
 				break;
 			}
 			id_alpha = -WIN_SCORE;
 			id_beta = WIN_SCORE;
-			idepth--;
+			if (idepth >= 2) {
+				idepth--;
+			}
 			continue;
 		}
 		id_alpha = estimate - ASPIRATION_WINDOW;
