@@ -19,6 +19,7 @@ void Hash::initHashKeys() {
 	}
 }
 U64 Hash::generatePosKey(Board& b) {
+
 	int sqval, piece, coord;
 	U64 finalKey = 0;
 

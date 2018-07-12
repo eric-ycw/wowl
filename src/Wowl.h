@@ -2,9 +2,8 @@
 #define WOWL_INCLUDED
 
 #define SEARCH_DEPTH 5
-#define TT_CLEAR_AGE 6
-#define ASPIRATION_WINDOW 35
-#define DELTA 980
+#define TT_CLEAR_AGE 8
+#define ASPIRATION_WINDOW 25
 #define WIN_SCORE 999999
 
 #include "Evaluation.h"
@@ -21,19 +20,25 @@ public:
 	Hash hashTable;
 
 	/*EVALUATION*/
-	int SEE(Board&, int, int);
+	int SEE(Board, int, int);
 
+	/*MOVES*/
 	void orderMoves(Board, std::vector<sf::Vector2i>&, int, int, U64);
 
 	/*SEARCH*/
 	void ID(Board, int, int);
 	int negaSearch(Board, int, int, int, int, int);
 	int qSearch(Board, int, int, int);
+
+	/*HASH TABLE*/
+	void storeMoveInfo(U64, int, int, int, int);
 	
 	long perft(Board, int);
 
 private:
 	int estimate = 0;
-	int nodes = 0;
+	int negaNodes;
+	int qSearchNodes;
 };
+
 #endif

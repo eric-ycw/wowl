@@ -232,11 +232,11 @@ int Evaluation::structureMaterial(const Board& b, int color) {
 			switch (abs(b.mailbox[i])) {
 			case WN:
 				//Knights are better in closed positions
-				mval += blockedPawns(b) * 5;
+				mval += blockedPawns(b) * 3;
 				break;
 			case WB:
 				//Bishops are worse in closed positions
-				mval -= blockedPawns(b) * 5;
+				mval -= blockedPawns(b) * 3;
 				break;
 			case WR:
 				//Rooks are better on open and semi-open files
@@ -450,6 +450,6 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
 	int center = pawnCenterControl(b, color) + pieceExtendedCenterControl(b, color) - pawnCenterControl(b, -color) - pieceExtendedCenterControl(b, -color);
 	int sideToMove = (b.getTurn() == color) ? 1 : 0;
-	int total = material + pawns + position + center + sideToMove * SIDE_TO_MOVE_BONUS;
+	int total = material + position + center + pawns + sideToMove * SIDE_TO_MOVE_BONUS;
 	return total;
 }

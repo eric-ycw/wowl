@@ -58,7 +58,10 @@ public:
 
 	/*LEGALITY*/
 	bool checkLegal(int, int);
+	bool checkLegalPawn(int, int, int);
+	bool checkLegalKing(int, int, int);
 	void getLegalMoves();
+	void getCaptureMoves();
 
 	/*ATTACKS*/
 	bool checkAttack(int, int, const int[]);
@@ -83,7 +86,6 @@ public:
 	void specialMoves(int, int, int, int[]);
 	void tempSpecialMoves(int, int, int, int, int[]);
 	void setEnPassantSquare();
-	void getCaptureMoves();
 
 	/*BOARD*/
 	void resetBoard();
@@ -159,4 +161,5 @@ private:
 
 	int kingSquareWhite, kingSquareBlack;
 };
+
 #endif

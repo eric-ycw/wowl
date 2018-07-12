@@ -79,95 +79,7 @@ bool Board::checkLegal(int a, int b) {
 	}
 	switch (sval) {
 	case WP:
-	{
-		legal = false;
-		if (oldSquareVal == WP) {
-			//Pawns cannot move backwards
-			if (b > a) {
-				return legal;
-			}
-			//Check for second-rank pawns
-			if (a <= 88 && a >= 81) {
-				if (a - 20 == b) {
-					if (newSquareVal == 0 && mailbox[b + 10] == 0) {
-						legal = true;
-						return legal;
-					}
-				}
-			}
-			//Move forward one square
-			if (a - 10 == b) {
-				if (newSquareVal == 0) {
-					legal = true;
-					return legal;
-				}
-			}
-			//Diagonal capture
-			if (a - 10 - 1 == b || a - 10 + 1 == b) {
-				if (newSquareVal < 0) {
-					legal = true;
-					return legal;
-				}
-			}
-			//En passant
-			//Check if on fifth rank
-			if (a <= 58 && a >= 51) {
-				//Black pawn adjacency
-				if (mailbox[a - 1] == -1 && newSquareVal == 0 && b == a - 10 - 1) {
-					//Check last move
-					if (moveVec.back().x == a - 20 - 1 && moveVec.back().y == a - 1) {
-						legal = true;
-						return legal;
-					}
-				}
-				if (mailbox[a + 1] == -1 && newSquareVal == 0 && b == a - 10 + 1) {
-					if (moveVec.back().x == a - 20 + 1 && moveVec.back().y == a + 1) {
-						legal = true;
-						return legal;
-					}
-				}
-			}
-		}
-		else if (oldSquareVal == BP) {
-			if (b < a) {
-				return legal;
-			}
-			if (a <= 38 && a >= 31) {
-				if (a + 20 == b) {
-					if (newSquareVal == 0 && mailbox[b - 10] == 0) {
-						legal = true;
-						return legal;
-					}
-				}
-			}
-			if (a + 10 == b) {
-				if (newSquareVal == 0) {
-					legal = true;
-					return legal;
-				}
-			}
-			if (a + 10 - 1 == b || a + 10 + 1 == b) {
-				if (newSquareVal > 0) {
-					legal = true;
-					return legal;
-				}
-			}
-			if (a <= 68 && a >= 61) {
-				if (mailbox[a - 1] == 1 && newSquareVal == 0 && b == a + 10 - 1) {
-					if (moveVec.back().x == a + 20 - 1 && moveVec.back().y == a - 1) {
-						legal = true;
-						return legal;
-					}
-				}
-				if (mailbox[a + 1] == 1 && newSquareVal == 0 && b == a + 10 + 1) {
-					if (moveVec.back().x == a + 20 + 1 && moveVec.back().y == a + 1) {
-						legal = true;
-						return legal;
-					}
-				}
-			}
-		}
-	}
+		return checkLegalPawn(a, b, oldSquareVal);
 		break;
 	case WN:
 		return checkAttackKnight(a, b, mailbox);
@@ -182,43 +94,125 @@ bool Board::checkLegal(int a, int b) {
 		return checkAttackQueen(a, b, mailbox);
 		break;
 	case WK:
-	{
-		legal = true;
-		if (!(a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b || a + 2 == b || a - 2 == b)) {
-			legal = false;
-			return legal;
-		}
-		if (turn == WHITE) {
-			//Short castling
-			if (a + 2 == b && std::get<0>(checkCastling()) == false) {
-				legal = false;
-				return legal;
-			}
-			//Long castling
-			if (a - 2 == b && std::get<1>(checkCastling()) == false) {
-				legal = false;
-				return legal;
-			}
-		}
-		else if (turn == BLACK) {
-			//Short castling
-			if (a + 2 == b && std::get<2>(checkCastling()) == false) {
-				legal = false;
-				return legal;
-			}
-			//Long castling
-			if (a - 2 == b && std::get<3>(checkCastling()) == false) {
-				legal = false;
-				return legal;
-			}
-		}
-		return legal;
-	}
+		return checkLegalKing(a, b, turn);
 		break;
 	}
 	return legal;
 }
-//Get all pseudo legal moves for current turn
+bool Board::checkLegalPawn(int a, int b, int color) {
+	bool legal = false;
+	int target = mailbox[b];
+
+	//Move forward one square
+	if (a - color * 10 == b) {
+		if (target == 0) {
+			legal = true;
+			return legal;
+		}
+	}
+	//Diagonal capture
+	if (a - color * 10 - 1 == b || a - color * 10 + 1 == b) {
+		if (target * color < 0) {
+			legal = true;
+			return legal;
+		}
+	}
+
+	if (color == WHITE) {
+		//Pawns cannot move backwards
+		if (b > a) {
+			return legal;
+		}
+		//Check for second-rank pawns
+		if (a <= 88 && a >= 81) {
+			if (a - 20 == b) {
+				if (target == 0 && mailbox[b + 10] == 0) {
+					legal = true;
+					return legal;
+				}
+			}
+		}
+		//En passant
+		//Check if on fifth rank
+		if (a <= 58 && a >= 51) {
+			//Black pawn adjacency
+			if (mailbox[a - 1] == -1 && target == 0 && b == a - 10 - 1) {
+				//Check last move
+				if (moveVec.back().x == a - 20 - 1 && moveVec.back().y == a - 1) {
+					legal = true;
+					return legal;
+				}
+			}
+			if (mailbox[a + 1] == -1 && target == 0 && b == a - 10 + 1) {
+				if (moveVec.back().x == a - 20 + 1 && moveVec.back().y == a + 1) {
+					legal = true;
+					return legal;
+				}
+			}
+		}
+	}
+	else if (color == BLACK) {
+		if (b < a) {
+			return legal;
+		}
+		if (a <= 38 && a >= 31) {
+			if (a + 20 == b) {
+				if (target == 0 && mailbox[b - 10] == 0) {
+					legal = true;
+					return legal;
+				}
+			}
+		}
+		if (a <= 68 && a >= 61) {
+			if (mailbox[a - 1] == 1 && target == 0 && b == a + 10 - 1) {
+				if (moveVec.back().x == a + 20 - 1 && moveVec.back().y == a - 1) {
+					legal = true;
+					return legal;
+				}
+			}
+			if (mailbox[a + 1] == 1 && target == 0 && b == a + 10 + 1) {
+				if (moveVec.back().x == a + 20 + 1 && moveVec.back().y == a + 1) {
+					legal = true;
+					return legal;
+				}
+			}
+		}
+	}
+
+	return legal;
+}
+bool Board::checkLegalKing(int a, int b, int color) {
+	bool legal = true;
+	if (!(a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b || a + 2 == b || a - 2 == b)) {
+		legal = false;
+		return legal;
+	}
+	if (color == WHITE) {
+		//Short castling
+		if (a + 2 == b && std::get<0>(checkCastling()) == false) {
+			legal = false;
+			return legal;
+		}
+		//Long castling
+		if (a - 2 == b && std::get<1>(checkCastling()) == false) {
+			legal = false;
+			return legal;
+		}
+	}
+	else if (color == BLACK) {
+		//Short castling
+		if (a + 2 == b && std::get<2>(checkCastling()) == false) {
+			legal = false;
+			return legal;
+		}
+		//Long castling
+		if (a - 2 == b && std::get<3>(checkCastling()) == false) {
+			legal = false;
+			return legal;
+		}
+	}
+	return legal;
+}
 void Board::getLegalMoves() {
 	//Clear legal move vector
 	if (!legalMoveVec.empty()) {
@@ -240,6 +234,30 @@ void Board::getLegalMoves() {
 							legalMoveVec.emplace_back(sf::Vector2i(m, n));
 						}
 
+					}
+				}
+			}
+		}
+	}
+}
+void Board::getCaptureMoves() {
+	//Clear capture move vector
+	if (!captureVec.empty()) {
+		captureVec.clear();
+	}
+	//Get all capture moves
+	for (int m = 21; m < 99; m++) {
+		if (mailbox[m] == -9) {
+			continue;
+		}
+		else {
+			for (int n = 21; n < 99; n++) {
+				if (mailbox[n] == -9 || mailbox[n] * mailbox[m] >= 0) {
+					continue;
+				}
+				else {
+					if (checkLegal(m, n)) {
+						captureVec.emplace_back(sf::Vector2i(m, n));
 					}
 				}
 			}
@@ -393,11 +411,18 @@ bool Board::checkAttackKing(int a, int b, const int arr[]) {
 	return canattack;
 }
 std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
-	int sqval;
+
 	std::tuple<int, int> attackerArray[5];
 	for (int i = 0; i < 5; i++) {
 		std::get<0>(attackerArray[i]) = 0;
 		std::get<1>(attackerArray[i]) = 0;
+	}
+
+	int sqval;
+	if (mailbox[square] * color >= 0) {
+		assert(std::get<0>(attackerArray[0]) == 0);
+		assert(std::get<1>(attackerArray[0]) == 0);
+		return attackerArray[0];
 	}
 
 	for (int i = 21; i < 99; i++) {
@@ -453,7 +478,8 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 			return attackerArray[i];
 		}
 	}
-	assert (std::get<0>(attackerArray[0]) == 0);
+	assert(std::get<0>(attackerArray[0]) == 0);
+	assert(std::get<1>(attackerArray[0]) == 0);
 	return attackerArray[0];
 }
 
@@ -746,30 +772,6 @@ void Board::setEnPassantSquare() {
 		return;
 	}
 	epSquare = newsq + color * 10;
-}
-void Board::getCaptureMoves() {
-	//Clear capture move vector
-	if (!captureVec.empty()) {
-		captureVec.clear();
-	}
-	//Get all capture moves
-	for (int m = 21; m < 99; m++) {
-		if (mailbox[m] == -9) {
-			continue;
-		}
-		else {
-			for (int n = 21; n < 99; n++) {
-				if (mailbox[n] == -9 || mailbox[n] * mailbox[m] >= 0) {
-					continue;
-				}
-				else {
-					if (checkLegal(m, n)) {
-						captureVec.emplace_back(sf::Vector2i(m, n));
-					}
-				}
-			}
-		}
-	}
 }
 
 /*BOARD*/

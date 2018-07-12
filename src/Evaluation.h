@@ -14,23 +14,23 @@
 //Pawn structure values
 #define DOUBLED_P_PENALTY -5
 #define ISOLATED_P_PENALTY -8
-#define PROTECTED_P_BONUS 5
+#define PROTECTED_P_BONUS 2
 #define PASSED_P_BONUS 20
 
 //Position
-#define R_OPEN_FILE_BONUS 30
+#define R_OPEN_FILE_BONUS 40
 #define K_OPEN_FILE_PENALTY -30
 #define K_P_SHIELD_PENALTY -20
-#define K_CASTLED_BONUS 50
-#define SPACE_BONUS 6
+#define K_CASTLED_BONUS 60
+#define SPACE_BONUS 5
 
 //Center
-#define P_CENTER_BONUS 5
-#define P_EXTENDED_CENTER_BONUS 8
+#define P_CENTER_BONUS 3
+#define P_EXTENDED_CENTER_BONUS 10
 #define PIECE_EXTENDED_CENTER_BONUS 8
 
 //Tempo
-#define SIDE_TO_MOVE_BONUS 5
+#define SIDE_TO_MOVE_BONUS 10
 #define TEMPO_PENALTY -20
 
 //Game phase
@@ -84,11 +84,11 @@ private:
 	const int pawnTable[64]
 	{
 		99, 99, 99, 99, 99, 99, 99, 99,
-		99, 99, 99, 99, 99, 99, 99, 99,
-		40, 40, 40, 50, 50, 40, 40, 40,
-		10, 10, 20, 30, 30, 15, 10, 10,
-		 5,  5, 20, 25, 25,  5,  5,  5,
-		 0,  0,  0,  0,  0,-10,  0,  0,
+		55, 55, 55, 55, 55, 55, 55, 55,
+		40, 40, 40, 40, 40, 40, 40, 40,
+		10, 10, 15, 30, 30, 15, 10, 10,
+		 0,  0, 15, 20, 20,  0,  0,  0,
+		 0,  0, -5,  0,  0,-15,  0,  0,
 		 5, 10,-10,-15,-15, 20, 10,  5,
 		 0,  0,  0,  0,  0,  0,  0,  0
 	};
@@ -111,7 +111,7 @@ private:
 		-20, 15, 10, 15, 15, 10, 15,-20,
 		-20,  0, 15, 15, 15, 15,  0,-20,
 		-20, 10, 10, 10, 10, 10, 10,-20,
-		-20, 20,  0,  5,  5,  0, 20,-20,
+		-20, 15,  0,  5,  5,  0, 15,-20,
 		-20,-15,-15,-15,-15,-15,-15,-20,
 	};
 	const int rookTable[64]
@@ -170,4 +170,5 @@ private:
 		-50,-30,-30,-30,-30,-30,-30,-50
 	};
 };
+
 #endif
