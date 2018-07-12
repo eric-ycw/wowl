@@ -1,7 +1,7 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 5
+#define SEARCH_DEPTH 6
 #define TT_CLEAR_AGE 8
 #define ASPIRATION_WINDOW 25
 #define WIN_SCORE 999999
@@ -14,7 +14,6 @@ class Wowl {
 public:
 
 	sf::Vector2i bestMove;
-	sf::Vector2i priorityMove;
 	sf::Vector2i hashMove;
 
 	Hash hashTable;
@@ -24,9 +23,10 @@ public:
 
 	/*MOVES*/
 	void orderMoves(Board, std::vector<sf::Vector2i>&, int, int, U64);
+	void resetKillerMoves();
 
 	/*SEARCH*/
-	void ID(Board, int, int);
+	void DLS(Board, int, int);
 	int negaSearch(Board, int, int, int, int, int);
 	int qSearch(Board, int, int, int);
 
@@ -37,6 +37,7 @@ public:
 
 private:
 	int estimate = 0;
+	int killerMoves[2][SEARCH_DEPTH + 1];
 	int negaNodes;
 	int qSearchNodes;
 };

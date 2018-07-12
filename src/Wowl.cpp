@@ -40,18 +40,29 @@ void Wowl::orderMoves(Board b, std::vector<sf::Vector2i>& lmV, int depth, int in
 			lmV.erase(lmV.begin() + i + 1);
 			continue;
 		}
-		//Move from iterative deepening
-		if (lmV[i] == priorityMove) {
-			lmV.insert(lmV.begin(), lmV[i]);
-			lmV.erase(lmV.begin() + i + 1);
-			continue;
-		}
 		//Good captures
 		if (SEE(b, lmV[i].y, b.getTurn()) > 0 && std::get<1>(b.getSmallestAttacker(lmV[i].y, b.getTurn())) == lmV[i].x) {
 			lmV.insert(lmV.begin(), lmV[i]);
 			lmV.erase(lmV.begin() + i + 1);
 			continue;
 		}
+		//Killer moves
+		if (lmV[i].x == (killerMoves[0][depth] - killerMoves[0][depth] % 100) / 100 && lmV[i].y == killerMoves[0][depth] % 100) {
+			lmV.insert(lmV.begin(), lmV[i]);
+			lmV.erase(lmV.begin() + i + 1);
+			continue;
+		}
+		if (lmV[i].x == (killerMoves[1][depth] - killerMoves[1][depth] % 100) / 100 && lmV[i].y == killerMoves[1][depth] % 100) {
+			lmV.insert(lmV.begin(), lmV[i]);
+			lmV.erase(lmV.begin() + i + 1);
+			continue;
+		}
+	}
+}
+void Wowl::resetKillerMoves() {
+	for (int i = 0; i < SEARCH_DEPTH; i++) {
+		killerMoves[0][i] = 0;
+		killerMoves[1][i] = 0;
 	}
 }
 
@@ -142,6 +153,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	}
 
 	if (depth == 0) {
+		negaNodes++;
 		return qSearch(b, alpha, beta, color);
 	}
 
@@ -169,20 +181,19 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		}
 		else {
 			negaNodes++;
-			score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
 			//NegaScout
-			/*if (j == 0) {
+			if (j == 0) {
 				score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
 			}
 			else {
 				score = -negaSearch(b, depth - 1, initial, -color, -alpha - 1, -alpha);
-				if (alpha < score && score < beta && depth > 1) {
+				if (alpha < score && score < beta) {
 					int scoutScore = -negaSearch(b, depth - 1, initial, -color, -beta, -score);
 					if (scoutScore > score) {
 						score = scoutScore;
 					}
 				}
-			}*/
+			}
 		}
 		b.undo();
 		if (score > max) {
@@ -195,7 +206,6 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 				if (hashTable.tt.at(key).hashDepth <= depth) {
 					hashTable.tt[key].hashBestMove = b.legalMoveVec[j].x * 100 + b.legalMoveVec[j].y;
 				}
-
 			}
 			//Update best move
 			if (depth == initial) {
@@ -211,6 +221,9 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 			alpha = score;
 		}
 		if (alpha >= beta) {
+			//Store killer move
+			killerMoves[1][depth] = killerMoves[0][depth];
+			killerMoves[0][depth] = b.legalMoveVec[j].x * 100 + b.legalMoveVec[j].y;
 			break;
 		}
 	}
@@ -226,26 +239,24 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	}
 	return max;
 }
-void Wowl::ID(Board b, int depth, int color) {
+void Wowl::DLS(Board b, int depth, int color) {
 
 	negaNodes = 0;
 	qSearchNodes = 0;
 	b.setEnPassantSquare();
+	resetKillerMoves();
 
 	int id_alpha = -WIN_SCORE;
 	int id_beta = WIN_SCORE;
 	bool research = false;
-	priorityMove.x = -1;
-	priorityMove.y = -1;
 
 	for (int idepth = 3; idepth < SEARCH_DEPTH; idepth++) {
 
 		estimate = negaSearch(b, idepth, idepth, color, id_alpha, id_beta);
-		priorityMove = bestMove;
 
 		std::cout << id_alpha << " " << id_beta << " at depth " << idepth << std::endl;
 		std::cout << estimate << " at depth " << idepth << std::endl;
-		std::cout << "ID best move is " << priorityMove.x << " " << priorityMove.y << " at depth " << idepth << std::endl << std::endl;
+		std::cout << "ID best move is " << bestMove.x << " " << bestMove.y << " at depth " << idepth << std::endl << std::endl;
 
 		if ((estimate <= id_alpha) || (estimate >= id_beta)) {
 			if (estimate == WIN_SCORE || estimate == -WIN_SCORE) {

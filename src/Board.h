@@ -93,7 +93,6 @@ public:
 
 private:
 
-	/*VARIABLES*/
 	int turn;
 	bool castled[2] = { false, false };
 	int epSquare;

@@ -31,6 +31,7 @@
 
 //Tempo
 #define SIDE_TO_MOVE_BONUS 10
+#define KING_MOVE_PENALTY -10
 #define TEMPO_PENALTY -20
 
 //Game phase
@@ -156,7 +157,7 @@ private:
 		-70,-70,-70,-70,-70,-70,-70,-70,
 		-30,-70,-70,-50,-50,-70,-70,-30,
 		  0,  0,-50,-50,-50,-50,  0,  0,
-		  0,  0,  5,-10,  0,  0,  5,  0
+		  0,  0,  0,  0,  0,  0,  0,  0
 	};
 	const int kingEndTable[64]
 	{
