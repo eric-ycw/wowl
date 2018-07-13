@@ -1,3 +1,18 @@
 # wowl-chess
-Wowl is a basic chess engine using mailbox board representation and negamax search with alpha-beta pruning.<br />
+Wowl is a basic chess engine written in C++.<br />
 Requires SFML to compile.
+
+## Board representation
+* 10x12 mailbox
+
+## Search
+* DLS with aspiration window
+* Transposition table
+* Quiescence search
+* SEE
+
+## Evaluation
+* Material evaluation with piece-square tables
+* King safety
+* Space and center control
+* Pawn structure
