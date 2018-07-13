@@ -534,6 +534,27 @@ bool Board::checkMoveCheck(int a, int b) {
 //Check castling rights
 std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 	std::tuple<bool, bool, bool, bool> castling(true, true, true, true);
+	//Piece position
+	if (mailbox[95] != WK) {
+		std::get<0>(castling) = false;
+		std::get<1>(castling) = false;
+	}
+	if (mailbox[98] != WR) {
+		std::get<0>(castling) = false;
+	}
+	if (mailbox[91] != WR) {
+		std::get<1>(castling) = false;
+	}
+	if (mailbox[25] != BK) {
+		std::get<2>(castling) = false;
+		std::get<3>(castling) = false;
+	}
+	if (mailbox[28] != BK) {
+		std::get<2>(castling) = false;
+	}
+	if (mailbox[21] != BK) {
+		std::get<3>(castling) = false;
+	}
 	//King is under check
 	if (checkKing(WHITE, mailbox)) {
 		std::get<0>(castling) = false;

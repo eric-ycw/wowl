@@ -15,18 +15,18 @@
 #define DOUBLED_P_PENALTY -5
 #define ISOLATED_P_PENALTY -8
 #define PROTECTED_P_BONUS 2
-#define PASSED_P_BONUS 20
+#define PASSED_P_BONUS 0
 
 //Position
 #define R_OPEN_FILE_BONUS 40
-#define K_OPEN_FILE_PENALTY -30
+#define K_OPEN_FILE_PENALTY -20
 #define K_P_SHIELD_PENALTY -20
 #define K_CASTLED_BONUS 60
 #define SPACE_BONUS 5
 
 //Center
 #define P_CENTER_BONUS 3
-#define P_EXTENDED_CENTER_BONUS 10
+#define P_EXTENDED_CENTER_BONUS 8
 #define PIECE_EXTENDED_CENTER_BONUS 8
 
 //Tempo
@@ -96,13 +96,13 @@ private:
 	const int knightTable[64]
 	{
 		-50,-50,-30,-30,-30,-30,-50,-50,
-		-50,-20,  0,  0,  0,  0,-20,-50,
+		-50,-15,  0,  0,  0,  0,-15,-50,
 		-50,  0, 10, 12, 12, 10,  0,-50,
-		-50,  0, 10, 12, 12, 10,  0,-50,
-		-50,  0, 10, 12, 12, 10,  0,-50,
-		-50,  5, 10,  8,  8, 10,  5,-50,
-		-50,-20,  0,  5,  5,  0,-20,-50,
-		-50,-15,-10,-10,-10,-10,-20,-50,
+		-50,  0, 10, 15, 15, 10,  0,-50,
+		-50,  0, 10, 15, 15, 10,  0,-50,
+		-50,  5, 12,  8,  8, 12,  5,-50,
+		-50,-15,  0,  5,  5,  0,-15,-50,
+		-50,-20,-10,-10,-10,-10,-25,-50,
 	};
 	const int bishopTable[64]
 	{
@@ -111,9 +111,9 @@ private:
 		-20,  0,  5, 10, 10,  5,  0,-20,
 		-20, 15, 10, 15, 15, 10, 15,-20,
 		-20,  0, 15, 15, 15, 15,  0,-20,
-		-20, 10, 10, 10, 10, 10, 10,-20,
+		-20, 10, 10, 15, 15, 10, 10,-20,
 		-20, 15,  0,  5,  5,  0, 15,-20,
-		-20,-15,-15,-15,-15,-15,-15,-20,
+		-20,-15,-20,-15,-15,-20,-15,-20,
 	};
 	const int rookTable[64]
 	{

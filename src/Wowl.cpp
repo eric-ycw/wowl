@@ -289,8 +289,8 @@ void Wowl::DLS(Board b, int depth, int color) {
 				id_beta = WIN_SCORE;
 			}
 			else {
-				id_alpha = estimate - ASPIRATION_WINDOW * 2;
-				id_beta = estimate + ASPIRATION_WINDOW * 2;
+				id_alpha = estimate - ASPIRATION_WINDOW * 4;
+				id_beta = estimate + ASPIRATION_WINDOW * 4;
 			}
 			idepth--;
 			research = true;

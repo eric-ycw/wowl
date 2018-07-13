@@ -446,7 +446,7 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	//Reevaluates game phase
 	setGamePhase(b);
 	int material = baseMaterial(b, color) + comboMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - comboMaterial(b, -color) - structureMaterial(b, -color);
-	int pawns = doubledPawns(b, color) + isolatedPawns(b, color) + protectedPawns(b, color) - doubledPawns(b, -color) - isolatedPawns(b, -color) - protectedPawns(b, -color);
+	int pawns = doubledPawns(b, color) + isolatedPawns(b, color) + protectedPawns(b, color) + passedPawns(b, color) - doubledPawns(b, -color) - isolatedPawns(b, -color) - protectedPawns(b, -color) - passedPawns(b, -color);
 	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
 	int center = pawnCenterControl(b, color) + pieceExtendedCenterControl(b, color) - pawnCenterControl(b, -color) - pieceExtendedCenterControl(b, -color);
 	int sideToMove = (b.getTurn() == color) ? 1 : 0;
