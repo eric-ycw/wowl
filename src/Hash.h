@@ -2,8 +2,8 @@
 #define HASH_INCLUDED
 
 #define HASH_EXACT 0
-#define HASH_ALPHA 1
-#define HASH_BETA 2
+#define HASH_UPPER_BOUND 1
+#define HASH_LOWER_BOUND 2
 
 #include "Evaluation.h"
 #include <random>

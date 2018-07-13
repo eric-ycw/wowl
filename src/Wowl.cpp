@@ -6,22 +6,46 @@ int Wowl::SEE(Board b, int square, int color) {
 	int val = 0;
 	int piece = std::get<0>(b.getSmallestAttacker(square, color));
 	int target = b.mailbox[square];
+	int targetval = target;
 
 	if (piece > 0) {
-		oldsqr = std::get<1>(b.getSmallestAttacker(square, color));
-		b.move(oldsqr, square);
-		if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
-			b.undo();
-		}
-		else {
-			int netMaterial = abs(target) - SEE(b, square, -color);
-			if (netMaterial > 0) {
-				val = netMaterial;
+		if (!(target == -9 || target == 0)) {
+			oldsqr = std::get<1>(b.getSmallestAttacker(square, color));
+			b.move(oldsqr, square);
+			if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
+				b.undo();
 			}
 			else {
-				val = 0;
+				switch (abs(target)) {
+				case WP:
+					targetval = P_BASE_VAL;
+					break;
+				case WN:
+					targetval = N_BASE_VAL;
+					break;
+				case WB:
+					targetval = B_BASE_VAL;
+					break;
+				case WR:
+					targetval = R_BASE_VAL;
+					break;
+				case WQ:
+					targetval = Q_BASE_VAL;
+					break;
+				case WK:
+					targetval = K_BASE_VAL;
+					break;
+				}
+				assert(targetval > 0);
+				int netMaterial = targetval - SEE(b, square, -color);
+				if (netMaterial > 0) {
+					val = netMaterial;
+				}
+				else {
+					val = 0;
+				}
+				b.undo();
 			}
-			b.undo();
 		}
 	}
 	return val;
@@ -71,10 +95,10 @@ void Wowl::storeMoveInfo(U64 k, int d, int maxScore, int a, int b) {
 	hashTable.tt[k].hashScore = maxScore;
 	hashTable.tt[k].hashAge = 0;
 	if (maxScore <= a) {
-		hashTable.tt[k].hashFlag = HASH_ALPHA;
+		hashTable.tt[k].hashFlag = HASH_UPPER_BOUND;
 	}
 	else if (maxScore >= b) {
-		hashTable.tt[k].hashFlag = HASH_BETA;
+		hashTable.tt[k].hashFlag = HASH_LOWER_BOUND;
 	}
 	else {
 		hashTable.tt[k].hashFlag = HASH_EXACT;
@@ -110,8 +134,7 @@ int Wowl::qSearch(Board b, int alpha, int beta, int color) {
 			if (score > alpha) {
 				alpha = score;
 			}
-		}
-		
+		}	
 	}
 
 	return alpha;
@@ -127,12 +150,12 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 			if (hashTable.tt.at(key).hashFlag == HASH_EXACT) {
 				return hashTable.tt.at(key).hashScore;
 			}
-			else if (hashTable.tt.at(key).hashFlag == HASH_ALPHA) {
+			else if (hashTable.tt.at(key).hashFlag == HASH_UPPER_BOUND) {
 				if (beta > hashTable.tt.at(key).hashScore) {
 					beta = hashTable.tt.at(key).hashScore;
 				}
 			}
-			else if (hashTable.tt.at(key).hashFlag == HASH_BETA) {
+			else if (hashTable.tt.at(key).hashFlag == HASH_LOWER_BOUND) {
 				if (alpha < hashTable.tt.at(key).hashScore) {
 					alpha = hashTable.tt.at(key).hashScore;
 				}
@@ -208,7 +231,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 				}
 			}
 			//Update best move
-			if (depth == initial) {
+			if (depth == SEARCH_DEPTH) {
 				bestMove.x = b.legalMoveVec[j].x;
 				bestMove.y = b.legalMoveVec[j].y;
 			}
@@ -250,13 +273,12 @@ void Wowl::DLS(Board b, int depth, int color) {
 	int id_beta = WIN_SCORE;
 	bool research = false;
 
-	for (int idepth = 3; idepth < SEARCH_DEPTH; idepth++) {
+	for (int idepth = 1; idepth < SEARCH_DEPTH; idepth++) {
 
 		estimate = negaSearch(b, idepth, idepth, color, id_alpha, id_beta);
 
 		std::cout << id_alpha << " " << id_beta << " at depth " << idepth << std::endl;
 		std::cout << estimate << " at depth " << idepth << std::endl;
-		std::cout << "ID best move is " << bestMove.x << " " << bestMove.y << " at depth " << idepth << std::endl << std::endl;
 
 		if ((estimate <= id_alpha) || (estimate >= id_beta)) {
 			if (estimate == WIN_SCORE || estimate == -WIN_SCORE) {

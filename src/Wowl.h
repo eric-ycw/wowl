@@ -1,9 +1,9 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 6
+#define SEARCH_DEPTH 5
 #define TT_CLEAR_AGE 8
-#define ASPIRATION_WINDOW 25
+#define ASPIRATION_WINDOW 35
 #define WIN_SCORE 999999
 
 #include "Evaluation.h"
