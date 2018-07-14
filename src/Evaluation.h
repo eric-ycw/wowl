@@ -12,8 +12,8 @@
 #define K_BASE_VAL 40000
 
 //Pawn structure values
-#define DOUBLED_P_PENALTY -5
-#define ISOLATED_P_PENALTY -8
+#define DOUBLED_P_PENALTY -10
+#define ISOLATED_P_PENALTY -10
 #define PROTECTED_P_BONUS 2
 #define PASSED_P_BONUS 0
 
@@ -111,7 +111,7 @@ private:
 		-20,  0,  5, 10, 10,  5,  0,-20,
 		-20, 15, 10, 15, 15, 10, 15,-20,
 		-20,  0, 15, 15, 15, 15,  0,-20,
-		-20, 10, 10, 15, 15, 10, 10,-20,
+		-20, 10,  8, 10, 10,  8, 10,-20,
 		-20, 15,  0,  5,  5,  0, 15,-20,
 		-20,-15,-20,-15,-15,-20,-15,-20,
 	};

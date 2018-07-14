@@ -1,7 +1,7 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 2
+#define SEARCH_DEPTH 5
 #define TT_CLEAR_AGE 8
 #define ASPIRATION_WINDOW 35
 #define WIN_SCORE 999999
@@ -13,6 +13,7 @@ class Wowl {
 
 public:
 
+	int bestScore = -WIN_SCORE;
 	sf::Vector2i bestMove;
 	sf::Vector2i hashMove;
 
@@ -40,6 +41,7 @@ private:
 	int killerMoves[2][SEARCH_DEPTH + 1];
 	int negaNodes;
 	int qSearchNodes;
+	int captures = 0;
 };
 
 #endif

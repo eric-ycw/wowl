@@ -61,7 +61,7 @@ public:
 	bool checkLegalPawn(int, int, int);
 	bool checkLegalKing(int, int, int);
 	void getLegalMoves();
-	void getCaptureMoves();
+	void getQMoves();
 
 	/*ATTACKS*/
 	bool checkAttack(int, int, const int[]);
@@ -156,7 +156,7 @@ private:
 	std::vector<sf::Vector2i> moveVec;
 	std::vector<sf::Vector2i> legalMoveVec;
 	std::vector<sf::Vector2i> attackMoveVec;
-	std::vector<sf::Vector2i> captureVec;
+	std::vector<sf::Vector2i> qMoveVec;
 
 	int kingSquareWhite, kingSquareBlack;
 };

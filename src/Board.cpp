@@ -33,7 +33,7 @@ void Board::reserveVectors() {
 	moveVec.reserve(150);
 	legalMoveVec.reserve(50);
 	attackMoveVec.reserve(50);
-	captureVec.reserve(30);
+	qMoveVec.reserve(30);
 }
 
 /*LEGALITY*/
@@ -220,7 +220,7 @@ void Board::getLegalMoves() {
 	}
 	//Get all legal moves
 	for (int m = 21; m < 99; m++) {
-		if (mailbox[m] == -9) {
+		if (mailbox[m] == -9 || mailbox[0] == 0) {
 			continue;
 		}
 		else {
@@ -240,24 +240,37 @@ void Board::getLegalMoves() {
 		}
 	}
 }
-void Board::getCaptureMoves() {
-	//Clear capture move vector
-	if (!captureVec.empty()) {
-		captureVec.clear();
+void Board::getQMoves() {
+	if (!qMoveVec.empty()) {
+		qMoveVec.clear();
 	}
-	//Get all capture moves
+	//Get all captures and checks
 	for (int m = 21; m < 99; m++) {
-		if (mailbox[m] == -9) {
+		if (mailbox[m] == -9 || mailbox[m] == 0) {
 			continue;
 		}
 		else {
 			for (int n = 21; n < 99; n++) {
-				if (mailbox[n] == -9 || mailbox[n] * mailbox[m] >= 0) {
+				if (mailbox[n] == -9 || mailbox[n] * mailbox[m] > 0) {
 					continue;
 				}
-				else {
+				else if (mailbox[n] == 0) {
+					//Checks
 					if (checkLegal(m, n)) {
-						captureVec.emplace_back(sf::Vector2i(m, n));
+						move(m, n);
+						if (checkKing(getTurn() * -1, mailbox)) {
+							undo();
+							continue;
+						}
+						else if (checkKing(getTurn(), mailbox)) {
+							qMoveVec.emplace_back(sf::Vector2i(m, n));
+						}
+						undo();
+					}
+				} else {
+					//Captures
+					if (checkLegal(m, n)) {
+						qMoveVec.emplace_back(sf::Vector2i(m, n));
 					}
 				}
 			}
@@ -549,10 +562,10 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 		std::get<2>(castling) = false;
 		std::get<3>(castling) = false;
 	}
-	if (mailbox[28] != BK) {
+	if (mailbox[28] != BR) {
 		std::get<2>(castling) = false;
 	}
-	if (mailbox[21] != BK) {
+	if (mailbox[21] != BR) {
 		std::get<3>(castling) = false;
 	}
 	//King is under check
