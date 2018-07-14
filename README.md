@@ -10,6 +10,7 @@ Requires SFML to compile.
 * Transposition table
 * Quiescence search
 * SEE
+* Killer moves
 
 ## Evaluation
 * Material evaluation with piece-square tables
