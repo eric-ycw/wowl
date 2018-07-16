@@ -1,18 +1,18 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 6
-#define TT_CLEAR_AGE 8
-#define ASPIRATION_WINDOW 35
-#define WIN_SCORE 999999
-#define VAL_UNKWOWN 0
-
 #include "Evaluation.h"
 #include "Hash.h"
 
 class Wowl {
 
 public:
+
+	enum Search {
+		SEARCH_DEPTH = 5,
+		ASPIRATION_WINDOW = 35,
+		NULL_MOVE_REDUCTION = 2
+	};
 
 	sf::Vector2i bestMove;
 	sf::Vector2i hashMove;
@@ -23,12 +23,12 @@ public:
 	int SEE(Board, Evaluation&, int, int) const;
 
 	/*MOVES*/
-	void orderMoves(Board&, Evaluation&, std::vector<sf::Vector2i>&, int, int, U64);
+	void orderMoves(Board&, Evaluation&, std::vector<sf::Vector2i>&, int, U64);
 	void resetKillerMoves();
 
 	/*SEARCH*/
 	void DLS(Board, int, int);
-	int negaSearch(Board, int, int, int, int, int);
+	int negaSearch(Board, int, int, int, int);
 	int qSearch(Board, Evaluation&, int, int, int);
 
 	/*HASH TABLE*/
@@ -38,6 +38,17 @@ public:
 	long perft(Board, int);
 
 private:
+
+	enum Score {
+		WIN_SCORE = 999999,
+		DRAW_SCORE = 0,
+	};
+
+	enum HashConstants {
+		TT_CLEAR_AGE = 0, 
+		VAL_UNKWOWN = 0
+	};
+
 	int estimate = 0;
 	int killerMoves[2][SEARCH_DEPTH + 1];
 	int negaNodes;

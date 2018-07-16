@@ -14,6 +14,8 @@ public:
 		R_BASE_VAL = 520, Q_BASE_VAL = 980, K_BASE_VAL = 40000
 	};
 
+	enum Phase { OPENING = 1, MIDGAME = 2, ENDGAME = 3 };
+
 	/*GAME PHASE*/
 	void setGamePhase(const Board&);
 
@@ -58,14 +60,12 @@ private:
 	};
 
 	enum centerValue { 
-		P_CENTER_BONUS = 3, 
+		P_CENTER_BONUS = 3,
 		P_EXTENDED_CENTER_BONUS = 8,
 		PIECE_EXTENDED_CENTER_BONUS = 8
 	};
 
 	enum { SIDE_TO_MOVE_BONUS = 10 };
-
-	enum Phase { OPENING = 1, MIDGAME = 2, ENDGAME = 3 };
 
 	int gamePhase;
 

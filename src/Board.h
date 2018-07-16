@@ -62,7 +62,7 @@ public:
 
 	/*KING*/
 	void setKingSquare(int[]);
-	bool checkKing(int, int[]);
+	bool inCheck(int, int[]);
 	bool checkMoveCheck(int, int);
 	std::tuple<bool, bool, bool, bool> checkCastling();
 
@@ -71,7 +71,6 @@ public:
 	void move(int, int, int[]);
 	void undo();
 	void nullMove();
-	void undoNullMove();
 	void specialMoves(int, int, int, int[]);
 	void tempSpecialMoves(int, int, int, int, int[]);
 	void setEnPassantSquare();

@@ -13,7 +13,7 @@ int Wowl::SEE(Board b, Evaluation& e, int square, int color) const {
 		if (!(target == -9 || target == 0)) {
 			oldsqr = std::get<1>(b.getSmallestAttacker(square, color));
 			b.move(oldsqr, square);
-			if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
+			if (b.inCheck(b.getTurn() * -1, b.mailbox)) {
 				b.undo();
 			}
 			else {
@@ -52,7 +52,7 @@ int Wowl::SEE(Board b, Evaluation& e, int square, int color) const {
 	return val;
 }
 
-void Wowl::orderMoves(Board& b, Evaluation& e, std::vector<sf::Vector2i>& lmV, int depth, int initial, U64 poskey) {
+void Wowl::orderMoves(Board& b, Evaluation& e, std::vector<sf::Vector2i>& lmV, int depth, U64 poskey) {
 	if (hashTable.tt.find(poskey) != hashTable.tt.end()) {
 		int val = hashTable.tt.at(poskey).hashBestMove;
 		hashMove.x = (val - val % 100) / 100;
@@ -151,7 +151,7 @@ int Wowl::qSearch(Board b, Evaluation& e, int alpha, int beta, int color) {
 
 	return alpha;
 }
-int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int beta) {
+int Wowl::negaSearch(Board b, int depth, int color, int alpha, int beta) {
 
 	Evaluation WowlEval;
 	U64 key = hashTable.generatePosKey(b);
@@ -168,6 +168,16 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 
 	int score;
 
+	//Null move pruning
+	if (depth - 1 - NULL_MOVE_REDUCTION >= 0 && !b.inCheck(color, b.mailbox) && WowlEval.getGamePhase() != WowlEval.ENDGAME) {
+		b.nullMove();
+		score = -negaSearch(b, depth - 1 - NULL_MOVE_REDUCTION, -color, -beta, -beta + 1);
+		b.nullMove();
+		if (score >= beta) {
+			return beta;
+		}
+	}
+
 	b.getLegalMoves();
 	int legalcount = 0;
 	for (const auto& i : b.legalMoveVec) {
@@ -177,34 +187,34 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		}
 	}
 	if (legalcount == 0) {
-		if (b.checkKing(color, b.mailbox)) {
-			return -WIN_SCORE;
+		if (b.inCheck(color, b.mailbox)) {
+			return -WIN_SCORE;  //Checkmate
 		}
 		else {
-			return 0;
+			return DRAW_SCORE;  //Stalemate
 		}
 	}
 
-	orderMoves(b, WowlEval, b.legalMoveVec, depth, initial, key);
+	orderMoves(b, WowlEval, b.legalMoveVec, depth, key);
 	bool firstNode = true;
 
 	for (const auto& i : b.legalMoveVec) {
 		b.move(i.x, i.y);
-		if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
+		if (b.inCheck(b.getTurn() * -1, b.mailbox)) {
 			b.undo();
 			continue;
 		}
 		else {
 			negaNodes++;
-			score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
+			score = -negaSearch(b, depth - 1, -color, -beta, -alpha);
 			/*if (firstNode) {
 				firstNode = false;
-				score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
+				score = -negaSearch(b, depth - 1, -color, -beta, -alpha);
 			}
 			else {
-				score = -negaSearch(b, depth - 1, initial, -color, -alpha - 1, -alpha);
+				score = -negaSearch(b, depth - 1, -color, -alpha - 1, -alpha);
 				if (alpha < score && score < beta) {
-					int scoutScore = -negaSearch(b, depth - 1, initial, -color, -beta, -score);
+					int scoutScore = -negaSearch(b, depth - 1, -color, -beta, -score);
 					if (scoutScore > score) {
 						score = scoutScore;
 					}
@@ -214,7 +224,6 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		b.undo();
 		if (score >= beta) {
 			recordHash(key, depth, beta, hashTable.HASH_BETA);
-			//Store killer move
 			killerMoves[1][depth] = killerMoves[0][depth];
 			killerMoves[0][depth] = i.x * 100 + i.y;
 			return beta;
@@ -249,9 +258,9 @@ void Wowl::DLS(Board b, int depth, int color) {
 	int id_beta = WIN_SCORE;
 	bool research = false;
 
-	for (int idepth = 1; idepth < SEARCH_DEPTH; idepth++) {
+	for (int idepth = 1; idepth <= SEARCH_DEPTH; idepth++) {
 
-		estimate = negaSearch(b, idepth, idepth, color, id_alpha, id_beta);
+		estimate = negaSearch(b, idepth, color, id_alpha, id_beta);
 
 		std::cout << id_alpha << " " << id_beta << " at depth " << idepth << std::endl;
 		std::cout << estimate << " at depth " << idepth << std::endl;
@@ -282,8 +291,6 @@ void Wowl::DLS(Board b, int depth, int color) {
 		research = false;
 	}
 
-	negaSearch(b, depth, depth, color, id_alpha, id_beta);
-
 	std::cout << "Nodes explored in negaSearch : " << negaNodes << std::endl;
 	std::cout << "Nodes explored in qSearch : " << qSearchNodes << std::endl;
 }
@@ -295,7 +302,7 @@ long Wowl::perft(Board b, int depth) {
 	b.getQMoves();
 	for (int i = 0; i < b.qMoveVec.size(); i++) {
 		b.move(b.qMoveVec[i].x, b.qMoveVec[i].y);
-		if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
+		if (b.inCheck(b.getTurn() * -1, b.mailbox)) {
 			b.undo();
 			continue;
 		}
@@ -310,7 +317,7 @@ long Wowl::perft(Board b, int depth) {
 
 	for (int i = 0; i < size; i++) {
 		b.move(b.legalMoveVec[i].x, b.legalMoveVec[i].y);
-		if (b.checkKing(b.getTurn() * -1, b.mailbox)) {
+		if (b.inCheck(b.getTurn() * -1, b.mailbox)) {
 			b.undo();
 			continue;
 		}

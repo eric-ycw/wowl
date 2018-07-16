@@ -1,7 +1,7 @@
 #include "Board.h"
 
 /*CONVERTERS*/
-//Returns coordinates without SIZE factor
+//Returns coordinates without SQUARE_SIZE factor
 sf::Vector2f Board::toCoord(char a, char b) {
 	int x = int(a) - 97;
 	int y = 7 - int(b) + 49;
@@ -12,7 +12,7 @@ int Board::convertCoord(sf::Vector2f vec) {
 	int pos = mailbox64[int(vec.y)][int(vec.x)];
 	return pos;
 }
-//Converts mailbox coord to coord vector (without SIZE factor)
+//Converts mailbox coord to coord vector (without SQUARE_SIZE factor)
 sf::Vector2i Board::convertCoord(int pos) {
 	int coord_x = pos % 10 - 1;
 	int coord_y = (pos - coord_x) / 10 - 2;
@@ -35,7 +35,7 @@ void Board::reserveVectors() {
 }
 
 /*LEGALITY*/
-//Check move legality (pseudo-legal moves)
+//Check if move is pseudolegal
 bool Board::checkLegal(int a, int b) {
 	bool legal = true;
 	int oldSquareVal = mailbox[a];
@@ -257,11 +257,11 @@ void Board::getQMoves() {
 					//Checks
 					if (checkLegal(m, n)) {
 						move(m, n);
-						if (checkKing(getTurn() * -1, mailbox)) {
+						if (inCheck(getTurn() * -1, mailbox)) {
 							undo();
 							continue;
 						}
-						else if (checkKing(getTurn(), mailbox)) {
+						else if (inCheck(getTurn(), mailbox)) {
 							qMoveVec.emplace_back(sf::Vector2i(m, n));
 						}
 						undo();
@@ -505,26 +505,19 @@ void Board::setKingSquare(int arr[]) {
 		}
 	}
 }
-//Check whether king is in check
-bool Board::checkKing(int color, int arr[]) {
-	setKingSquare(arr);
-	
-	if (color == WHITE) {
-		for (int n = 21; n < 99; n++) {
-			if (arr[n] * color > 0 || arr[n] == -9) {
-				continue;
-			}
-			else if (checkAttack(n, kingSquareWhite, arr)) {
+bool Board::inCheck(int color, int arr[]) {
+	setKingSquare(arr);	
+	for (int n = 21; n < 99; n++) {
+		if (arr[n] * color > 0 || arr[n] == -9) {
+			continue;
+		}
+		if (color == WHITE) {
+			if (checkAttack(n, kingSquareWhite, arr)) {
 				return true;
 			}
 		}
-	}
-	else {
-		for (int n = 21; n < 99; n++) {
-			if (arr[n] * color > 0 || arr[n] == -9) {
-				continue;
-			}
-			else if (checkAttack(n, kingSquareBlack, arr)) {
+		else {
+			if (checkAttack(n, kingSquareBlack, arr)) {
 				return true;
 			}
 		}
@@ -533,7 +526,7 @@ bool Board::checkKing(int color, int arr[]) {
 }
 bool Board::checkMoveCheck(int a, int b) {
 	move(a, b);
-	if (checkKing(turn * -1, mailbox)) {
+	if (inCheck(turn * -1, mailbox)) {
 		undo();
 		return true;
 	}
@@ -567,11 +560,11 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 		std::get<3>(castling) = false;
 	}
 	//King is under check
-	if (checkKing(WHITE, mailbox)) {
+	if (inCheck(WHITE, mailbox)) {
 		std::get<0>(castling) = false;
 		std::get<1>(castling) = false;
 	}
-	if (checkKing(BLACK, mailbox)) {
+	if (inCheck(BLACK, mailbox)) {
 		std::get<2>(castling) = false;
 		std::get<3>(castling) = false;
 	}
