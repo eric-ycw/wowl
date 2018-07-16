@@ -777,6 +777,9 @@ void Board::undo() {
 	}
 	setPosition();
 }
+void Board::nullMove() {
+	turn *= -1;
+}
 void Board::setEnPassantSquare() {
 	if (moveVec.empty()) {
 		epSquare = -1;

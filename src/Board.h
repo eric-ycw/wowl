@@ -70,6 +70,8 @@ public:
 	void move(int, int);
 	void move(int, int, int[]);
 	void undo();
+	void nullMove();
+	void undoNullMove();
 	void specialMoves(int, int, int, int[]);
 	void tempSpecialMoves(int, int, int, int, int[]);
 	void setEnPassantSquare();

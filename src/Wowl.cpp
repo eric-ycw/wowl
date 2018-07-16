@@ -155,8 +155,9 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 
 	Evaluation WowlEval;
 	U64 key = hashTable.generatePosKey(b);
+	int tempHashFlag = hashTable.HASH_ALPHA;
 
-	//if (probeHashTable(key, depth, alpha, beta) != VAL_UNKWOWN) { return probeHashTable(key, depth, alpha, beta); }
+	if (probeHashTable(key, depth, alpha, beta) != VAL_UNKWOWN) { return probeHashTable(key, depth, alpha, beta); }
 
 	if (depth == 0) {
 		negaNodes++;
@@ -166,7 +167,6 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	}
 
 	int score;
-	int max = -WIN_SCORE;
 
 	b.getLegalMoves();
 	int legalcount = 0;
@@ -196,7 +196,8 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		}
 		else {
 			negaNodes++;
-			if (firstNode) {
+			score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
+			/*if (firstNode) {
 				firstNode = false;
 				score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
 			}
@@ -208,43 +209,34 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 						score = scoutScore;
 					}
 				}
-			}
+			}*/
 		}
 		b.undo();
-		if (score > max) {
-			max = score;
-
-			if (depth == SEARCH_DEPTH) {
-				bestMove.x = i.x;
-				bestMove.y = i.y;
-				std::cout << "best move : " << bestMove.x << " " << bestMove.y << " at depth " << depth << " by " << color << std::endl;
-				std::cout << "best score : " << max << std::endl << std::endl;
-			}
-
-			//Store best move in hash table (replace if depth is greater)
-			if (hashTable.tt.find(key) != hashTable.tt.end()) {
-				if (hashTable.tt.at(key).hashDepth <= depth) {
-					hashTable.tt[key].hashBestMove = i.x * 100 + i.y;
-				}
-			}
-			else {
-				hashTable.tt[key].hashBestMove = i.x * 100 + i.y;
-			}
-		}
-		if (score > alpha) {
-			alpha = score;
-		}
-		if (alpha >= beta) {
+		if (score >= beta) {
 			recordHash(key, depth, beta, hashTable.HASH_BETA);
 			//Store killer move
 			killerMoves[1][depth] = killerMoves[0][depth];
 			killerMoves[0][depth] = i.x * 100 + i.y;
-			break;
+			return beta;
+		}
+		if (score > alpha) {
+			alpha = score;
+			tempHashFlag = hashTable.HASH_EXACT;
+			
+			if (depth == SEARCH_DEPTH) {
+				bestMove.x = i.x;
+				bestMove.y = i.y;
+				std::cout << "best move : " << bestMove.x << " " << bestMove.y << " at depth " << depth << " by " << color << std::endl;
+				std::cout << "best score : " << alpha << std::endl << std::endl;
+			}
+
+			hashTable.tt[key].hashBestMove = i.x * 100 + i.y;
 		}
 	}
 
-	recordHash(key, depth, beta, hashTable.HASH_ALPHA);
-	return max;
+	recordHash(key, depth, alpha, tempHashFlag);
+
+	return alpha;
 }
 void Wowl::DLS(Board b, int depth, int color) {
 
@@ -290,7 +282,7 @@ void Wowl::DLS(Board b, int depth, int color) {
 		research = false;
 	}
 
-	negaSearch(b, depth, depth, color, -WIN_SCORE, WIN_SCORE);
+	negaSearch(b, depth, depth, color, id_alpha, id_beta);
 
 	std::cout << "Nodes explored in negaSearch : " << negaNodes << std::endl;
 	std::cout << "Nodes explored in qSearch : " << qSearchNodes << std::endl;
