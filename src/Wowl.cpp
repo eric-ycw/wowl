@@ -1,7 +1,5 @@
 #include "Wowl.h"
 
-//Hash Wowl::hashTable;
-
 int Wowl::SEE(Board b, Evaluation& e, int square, int color) const {
 	int oldsqr;
 	int val = 0;

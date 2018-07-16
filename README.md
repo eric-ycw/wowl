@@ -11,6 +11,7 @@ Requires SFML to compile.
 * Quiescence search
 * SEE
 * Killer moves
+* Null move pruning
 
 ## Evaluation
 * Material evaluation with piece-square tables
