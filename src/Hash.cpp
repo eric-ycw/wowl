@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "Hash.h"
 
 U64 Hash::generateRand64() {
@@ -36,7 +35,7 @@ U64 Hash::generatePosKey(Board& b) {
 	}
 	
 	//Side to move
-	if (b.getTurn() == WHITE) {
+	if (b.getTurn() == b.WHITE) {
 		finalKey ^= sideKey;
 	}
 

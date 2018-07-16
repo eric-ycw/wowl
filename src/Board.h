@@ -1,25 +1,6 @@
 #ifndef BOARD_INCLUDED
 #define BOARD_INCLUDED
 
-//Board
-#define BOARD_SIZE 8
-//Pieces
-#define WP 1
-#define WN 2
-#define WB 3
-#define WR 4
-#define WQ 5
-#define WK 6
-#define BP -1
-#define BN -2
-#define BB -3
-#define BR -4
-#define BQ -5
-#define BK -6
-//Turn
-#define WHITE 1
-#define BLACK -1
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -36,14 +17,20 @@ class Board
 
 public:
 
-	//Constructor
 	Board() { reserveVectors(); }
+
+	enum Piece { WP = 1, WN = 2, WB = 3, WR = 4, WQ = 5, WK = 6, 
+				 BP = -1, BN = -2, BB = -3, BR = -4, BQ = -5, BK = -6 };
+
+	enum Color { WHITE = 1, BLACK = -1 };
+
+	enum Size { BOARD_SIZE = 8};
 
 	/*CONVERTERS*/
 	sf::Vector2f toCoord(char, char);
 	int convertCoord(sf::Vector2f);
 	sf::Vector2i convertCoord(int);
-	int to64Coord(int);
+	int to64Coord(int) const;
 
 	/*VECTORS*/
 	void reserveVectors();
@@ -53,24 +40,24 @@ public:
 	void setPosition();
 
 	/*GETTERS*/
-	int getTurn();
-	int getSquarePiece(int);
+	int getTurn() const;
+	int getSquarePiece(int) const;
 
 	/*LEGALITY*/
 	bool checkLegal(int, int);
-	bool checkLegalPawn(int, int, int);
+	bool checkLegalPawn(int, int, int) const;
 	bool checkLegalKing(int, int, int);
 	void getLegalMoves();
 	void getQMoves();
 
 	/*ATTACKS*/
-	bool checkAttack(int, int, const int[]);
-	bool checkAttackPawn(int, int, const int[], int);
-	bool checkAttackKnight(int, int, const int[]);
-	bool checkAttackBishop(int, int, const int[]);
-	bool checkAttackRook(int, int, const int[]);
-	bool checkAttackQueen(int, int, const int[]);
-	bool checkAttackKing(int, int, const int[]);
+	bool checkAttack(int, int, const int[]) const;
+	bool checkAttackPawn(int, int, const int[], int) const;
+	bool checkAttackKnight(int, int, const int[]) const;
+	bool checkAttackBishop(int, int, const int[]) const;
+	bool checkAttackRook(int, int, const int[]) const;
+	bool checkAttackQueen(int, int, const int[]) const;
+	bool checkAttackKing(int, int, const int[]) const;
 	std::tuple<int, int> getSmallestAttacker(int, int);
 
 	/*KING*/
@@ -89,13 +76,14 @@ public:
 
 	/*BOARD*/
 	void resetBoard();
-	void outputBoard();
+	void outputBoard() const;
 
 private:
 
 	int turn;
 	bool castled[2] = { false, false };
 	int epSquare;
+	int kingSquareWhite, kingSquareBlack;
 
 	int mailbox[120] = {
 		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
@@ -158,7 +146,6 @@ private:
 	std::vector<sf::Vector2i> attackMoveVec;
 	std::vector<sf::Vector2i> qMoveVec;
 
-	int kingSquareWhite, kingSquareBlack;
 };
 
 #endif

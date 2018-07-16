@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "Board.h"
 
 /*CONVERTERS*/
@@ -20,7 +19,7 @@ sf::Vector2i Board::convertCoord(int pos) {
 	return sf::Vector2i(int(coord_x), int(coord_y));
 }
 //Converts mailbox coord to 64 coord
-int Board::to64Coord(int square) {
+int Board::to64Coord(int square) const {
 	int unit = square % 10;
 	int tenth = (square - unit) / 10;
 	int rval = square - 21 - 2 * (tenth - 2);
@@ -28,7 +27,6 @@ int Board::to64Coord(int square) {
 }
 
 /*VECTORS*/
-//Reserve memory for vectors
 void Board::reserveVectors() {
 	moveVec.reserve(150);
 	legalMoveVec.reserve(50);
@@ -99,7 +97,7 @@ bool Board::checkLegal(int a, int b) {
 	}
 	return legal;
 }
-bool Board::checkLegalPawn(int a, int b, int color) {
+bool Board::checkLegalPawn(int a, int b, int color) const {
 	bool legal = false;
 	int target = mailbox[b];
 
@@ -240,6 +238,7 @@ void Board::getLegalMoves() {
 		}
 	}
 }
+//Get all captures and checks
 void Board::getQMoves() {
 	if (!qMoveVec.empty()) {
 		qMoveVec.clear();
@@ -279,8 +278,7 @@ void Board::getQMoves() {
 }
 
 /*ATTACKS*/
-//Check if square can be attacked
-bool Board::checkAttack(int a, int b, const int arr[]) {
+bool Board::checkAttack(int a, int b, const int arr[]) const {
 	bool canattack = true;
 
 	int oldSquareVal = arr[a];
@@ -326,21 +324,21 @@ bool Board::checkAttack(int a, int b, const int arr[]) {
 
 	}
 }
-bool Board::checkAttackPawn(int a, int b, const int arr[], int color) {
+bool Board::checkAttackPawn(int a, int b, const int arr[], int color) const {
 	bool canattack = false;
 	if ((a - color * 11 == b || a - color * 9 == b) && arr[b] * arr[a] <= 0) {
 		canattack = true;
 	}
 	return canattack;
 }
-bool Board::checkAttackKnight(int a, int b, const int arr[]) {
+bool Board::checkAttackKnight(int a, int b, const int arr[]) const {
 	bool canattack = false;
 	if ((a - 20 - 1 == b || a - 20 + 1 == b || a - 10 - 2 == b || a - 10 + 2 == b || a + 20 - 1 == b || a + 20 + 1 == b || a + 10 - 2 == b || a + 10 + 2 == b) && arr[b] * arr[a] <= 0) {
 		canattack = true;
 	}
 	return canattack;
 }
-bool Board::checkAttackBishop(int a, int b, const int arr[]) {
+bool Board::checkAttackBishop(int a, int b, const int arr[]) const {
 	bool canattack = false;
 	int checkpos = 0;
 	for (int type = 0; type < 4; type++) {
@@ -371,7 +369,7 @@ bool Board::checkAttackBishop(int a, int b, const int arr[]) {
 	}
 	return canattack;
 }
-bool Board::checkAttackRook(int a, int b, const int arr[]) {
+bool Board::checkAttackRook(int a, int b, const int arr[]) const {
 	bool canattack = false;
 	int checkpos = 0;
 	for (int type = 0; type < 4; type++) {
@@ -403,7 +401,7 @@ bool Board::checkAttackRook(int a, int b, const int arr[]) {
 	return canattack;
 	
 }
-bool Board::checkAttackQueen(int a, int b, const int arr[]) {
+bool Board::checkAttackQueen(int a, int b, const int arr[]) const {
 	bool canattack = false;
 	if (checkAttackBishop(a, b, arr)) {
 		canattack = true;
@@ -415,7 +413,7 @@ bool Board::checkAttackQueen(int a, int b, const int arr[]) {
 	}
 	return canattack;
 }
-bool Board::checkAttackKing(int a, int b, const int arr[]) {
+bool Board::checkAttackKing(int a, int b, const int arr[]) const {
 	bool canattack = false;
 	if (a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b) {
 		canattack = true;
@@ -809,7 +807,7 @@ void Board::setEnPassantSquare() {
 }
 
 /*BOARD*/
-void Board::outputBoard() {
+void Board::outputBoard() const {
 	std::cout << std::endl;
 	for (int i = 0; i < 120; i++) {
 		if (mailbox[i] >= 0) {
@@ -883,5 +881,5 @@ void Board::setPosition() {
 }
 
 /*GETTERS*/
-int Board::getTurn() { return turn; }
-int Board::getSquarePiece(int a) { return mailbox[a]; }
+int Board::getTurn() const { return turn; }
+int Board::getSquarePiece(int a) const { return mailbox[a]; }

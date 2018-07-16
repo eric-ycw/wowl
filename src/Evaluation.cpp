@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "Evaluation.h"
 
 /*GAME PHASE*/
@@ -31,7 +30,7 @@ void Evaluation::setGamePhase(const Board& b) {
 	else if (gamePhase == MIDGAME) {
 		int count = 0;
 		for (int i = 21; i < 99; i++) {
-			if (b.mailbox[i] != 0 && abs(b.mailbox[i]) != WP && abs(b.mailbox[i]) != WK) {
+			if (b.mailbox[i] != 0 && abs(b.mailbox[i]) != b.WP && abs(b.mailbox[i]) != b.WK) {
 				count++;
 			}
 		}
@@ -46,10 +45,10 @@ void Evaluation::setGamePhase(const Board& b) {
 int Evaluation::blockedPawns(const Board& b) {
 	int bpcount = 0;
 	for (int i = 21; i < 99; i++) {
-		if (b.mailbox[i] == WP && b.mailbox[i - 10] == BP && b.mailbox[i - 11] >= 0 && b.mailbox[i - 9] >= 0) {
+		if (b.mailbox[i] == b.WP && b.mailbox[i - 10] ==  b.BP && b.mailbox[i - 11] >= 0 && b.mailbox[i - 9] >= 0) {
 			bpcount++;
 		}
-		if (b.mailbox[i] == BP && b.mailbox[i + 10] == WP && b.mailbox[i + 11] <= 0 && b.mailbox[i + 9] <= 0) {
+		if (b.mailbox[i] ==  b.BP && b.mailbox[i + 10] == b.WP && b.mailbox[i + 11] <= 0 && b.mailbox[i + 9] <= 0) {
 			bpcount++;
 		}
 	}
@@ -59,7 +58,7 @@ int Evaluation::doubledPawns(const Board& b, int color) {
 	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int pcount = 0;
 	for (int i = 21; i < 99; i++) {
-		if (b.mailbox[i] == WP * color) {
+		if (b.mailbox[i] == b.WP * color) {
 			filearray[i % 10 - 1]++;
 		}
 	}
@@ -74,23 +73,23 @@ int Evaluation::isolatedPawns(const Board& b, int color) {
 	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int pcount = 0;
 	for (int i = 21; i < 99; i++) {
-		if (b.mailbox[i] == WP * color) {
+		if (b.mailbox[i] == b.WP * color) {
 			filearray[i % 10 - 1]++;
 		}
 	}
 	for (int i = 0; i < 8; i++) {
 		if (i >= 1 && i <= 6) {
-			if (filearray[i] == WP * color && filearray[i - 1] == 0 && filearray[i + 1] == 0) {
+			if (filearray[i] == b.WP * color && filearray[i - 1] == 0 && filearray[i + 1] == 0) {
 				pcount++;
 			}
 		}
 		else if (i = 0) {
-			if (filearray[0] == WP * color && filearray[1] == 0) {
+			if (filearray[0] == b.WP * color && filearray[1] == 0) {
 				pcount++;
 			}
 		}
 		else if (i = 7) {
-			if (filearray[7] == WP * color && filearray[6] == 0) {
+			if (filearray[7] == b.WP * color && filearray[6] == 0) {
 				pcount++;
 			}
 		}
@@ -100,8 +99,8 @@ int Evaluation::isolatedPawns(const Board& b, int color) {
 int Evaluation::protectedPawns(const Board& b, int color) {
 	int pcount = 0;
 	for (int i = 21; i < 99; i++) {
-		if (b.mailbox[i] == WP * color) {
-			if (b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+		if (b.mailbox[i] == b.WP * color) {
+			if (b.mailbox[i - color * 9] == b.WP * color || b.mailbox[i - color * 11] == b.WP * color) {
 			pcount++;
 			}
 		}
@@ -116,13 +115,13 @@ int Evaluation::passedPawns(const Board& b, int color) {
 	for (int i = 21; i < 99; i++) {
 		none = true;
 		sides = 0;
-		if (b.mailbox[i] == WP * color) {
+		if (b.mailbox[i] == b.WP * color) {
 			file = i % 10;
 			rank = (i - file) / 10;
 			//No pawn blocks ahead
-			if (color == WHITE) {
+			if (color == b.WHITE) {
 				for (int j = rank; j >= 2; j--) {
-					if (b.mailbox[j] == WP * -color) {
+					if (b.mailbox[j] == b.WP * -color) {
 						sides -= 2;
 						none = false;
 					}
@@ -130,7 +129,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 			}
 			else {
 				for (int j = rank; j <= 9; j++) {
-					if (b.mailbox[j] == WP * -color) {
+					if (b.mailbox[j] == b.WP * -color) {
 						sides -= 2;
 						none = false;
 					}
@@ -138,7 +137,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 			}
 			//Check adjacent files
 			for (int j = 20 + file - 1; j <= 90 + file - 1; j += 10) {
-				if (b.mailbox[j] == WP * -color) {
+				if (b.mailbox[j] == b.WP * -color) {
 					if ((j - j % 10) / 10 >= rank) {
 						sides++;
 					}
@@ -146,7 +145,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 				}
 			}
 			for (int j = 20 + file + 1; j <= 90 + file + 1; j += 10) {
-				if (b.mailbox[j] == WP * -color) {
+				if (b.mailbox[j] == b.WP * -color) {
 					if ((j - j % 10) / 10 >= rank) {
 						sides++;
 					}
@@ -157,7 +156,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 				sides += 2;
 			}
 			if (sides == 2) {
-				pcount += (color == WHITE) ? 9 - rank : rank - 2;
+				pcount += (color == b.WHITE) ? 9 - rank : rank - 2;
 			}
 		}
 	}
@@ -171,19 +170,19 @@ int Evaluation::baseMaterial(const Board& b, int color) {
 	for (int i = 21; i < 99; i++) {
 		if (color * b.mailbox[i] > 0) {
 			switch (abs(b.mailbox[i])) {
-			case WP:
+			case b.WP:
 				mval += P_BASE_VAL;
 				break;
-			case WN:
+			case b.WN:
 				mval += N_BASE_VAL;
 				break;
-			case WB:
+			case b.WB:
 				mval += B_BASE_VAL;
 				break;
-			case WR:
+			case b.WR:
 				mval += R_BASE_VAL;
 				break;
-			case WQ:
+			case b.WQ:
 				mval += Q_BASE_VAL;
 				break;
 			}
@@ -199,13 +198,13 @@ int Evaluation::comboMaterial(const Board& b, int color) {
 	for (int i = 21; i < 99; i++) {
 		if (color * b.mailbox[i] > 0) {
 			switch (abs(b.mailbox[i])) {
-			case WN:
+			case b.WN:
 				ncount += 1;
 				break;
-			case WB:
+			case b.WB:
 				bcount += 1;
 				break;
-			case WR:
+			case b.WR:
 				rcount += 1;
 				break;
 			}
@@ -230,15 +229,15 @@ int Evaluation::structureMaterial(const Board& b, int color) {
 	for (int i = 21; i < 99; i++) {
 		if (color * b.mailbox[i] > 0) {
 			switch (abs(b.mailbox[i])) {
-			case WN:
+			case b.WN:
 				//Knights are better in closed positions
 				mval += blockedPawns(b) * 3;
 				break;
-			case WB:
+			case b.WB:
 				//Bishops are worse in closed positions
 				mval -= blockedPawns(b) * 3;
 				break;
-			case WR:
+			case b.WR:
 				//Rooks are better on open and semi-open files
 				mval += isOpenFile(b, i) * R_OPEN_FILE_BONUS;
 				break;
@@ -249,30 +248,30 @@ int Evaluation::structureMaterial(const Board& b, int color) {
 }
 
 /*POSITION*/
-int Evaluation::flipTableValue(int square) {
+int Evaluation::flipTableValue(int square) const {
 	int unit = square % 10;
 	int tenth = (square - unit) / 10;
 	int rval = (11 - tenth) * 10 + unit;
 	return rval;
 }
-int Evaluation::piecePosition(Board& b, int color) {
+int Evaluation::piecePosition(const Board& b, int color) {
 	int pval = 0;
 	for (int i = 21; i < 99; i++) {
 		if (color * b.mailbox[i] > 0) {
 			switch (b.mailbox[i]) {
-			case WP:
+			case b.WP:
 				pval += pawnTable[b.to64Coord(i)];
 				break;
-			case WN:
+			case b.WN:
 				pval += knightTable[b.to64Coord(i)];
 				break;
-			case WB:
+			case b.WB:
 				pval += bishopTable[b.to64Coord(i)];
 				break;
-			case WR:
+			case b.WR:
 				pval += rookTable[b.to64Coord(i)];
 				break;
-			case WQ:
+			case b.WQ:
 				if (gamePhase == OPENING) {
 					pval += queenOpeningTable[b.to64Coord(i)];
 				}
@@ -280,7 +279,7 @@ int Evaluation::piecePosition(Board& b, int color) {
 					pval += queenNormalTable[b.to64Coord(i)];
 				}
 				break;
-			case WK:
+			case b.WK:
 				if (gamePhase <= MIDGAME) {
 					pval += kingNormalTable[b.to64Coord(i)];
 				}
@@ -288,19 +287,19 @@ int Evaluation::piecePosition(Board& b, int color) {
 					pval += kingEndTable[b.to64Coord(i)];
 				}
 				break;
-			case BP:
+			case b.BP:
 				pval += pawnTable[b.to64Coord(flipTableValue(i))];
 				break;
-			case BN:
+			case b.BN:
 				pval += knightTable[b.to64Coord(flipTableValue(i))];
 				break;
-			case BB:
+			case b.BB:
 				pval += bishopTable[b.to64Coord(flipTableValue(i))];
 				break;
-			case BR:
+			case b.BR:
 				pval += rookTable[b.to64Coord(flipTableValue(i))];
 				break;
-			case BQ:
+			case b.BQ:
 				if (gamePhase == OPENING) {
 					pval += queenOpeningTable[b.to64Coord(flipTableValue(i))];
 				}
@@ -308,7 +307,7 @@ int Evaluation::piecePosition(Board& b, int color) {
 					pval += queenNormalTable[b.to64Coord(flipTableValue(i))];
 				}
 				break;
-			case BK:
+			case b.BK:
 				if (gamePhase <= MIDGAME) {
 					pval += kingNormalTable[b.to64Coord(flipTableValue(i))];
 				}
@@ -326,10 +325,10 @@ int Evaluation::space(const Board&b, int color) {
 	int rank = 0;
 	int sval = 0;
 	for (int i = 21; i < 99; i++) {
-		if (b.mailbox[i] == color * WP && rank == 0) {
+		if (b.mailbox[i] == color * b.WP && rank == 0) {
 			file = i % 10;
 			rank = (i - file) / 10;
-			if (color == WHITE) {
+			if (color == b.WHITE) {
 				sval = (8 - rank) * SPACE_BONUS;
 			}
 			else {
@@ -345,19 +344,19 @@ int Evaluation::kingSafety(Board& b, int color) {
 	int rval = 0;
 	int pval = 0;
 	int cval = 0;
-	if (color == WHITE) {
+	if (color == b.WHITE) {
 		if (b.castled[0]) {
 			cval++;
 		}
 		rval = isOpenFile(b, b.kingSquareWhite) + isOpenFile(b, b.kingSquareWhite + 1) + isOpenFile(b, b.kingSquareWhite - 1);
 		if (gamePhase <= MIDGAME && b.castled[0]) {
-			if (b.mailbox[b.kingSquareWhite - 10] != WP) {
+			if (b.mailbox[b.kingSquareWhite - 10] != b.WP) {
 				pval++;
 			}
-			if (b.mailbox[b.kingSquareWhite - 11] != WP) {
+			if (b.mailbox[b.kingSquareWhite - 11] != b.WP) {
 				pval++;
 			}
-			if (b.mailbox[b.kingSquareWhite - 9] != WP) {
+			if (b.mailbox[b.kingSquareWhite - 9] != b.WP) {
 				pval++;
 			}
 		}
@@ -368,13 +367,13 @@ int Evaluation::kingSafety(Board& b, int color) {
 		}
 		rval = isOpenFile(b, b.kingSquareBlack) + isOpenFile(b, b.kingSquareBlack + 1) + isOpenFile(b, b.kingSquareBlack - 1);
 		if (gamePhase <= MIDGAME && b.castled[1]) {
-			if (b.mailbox[b.kingSquareBlack + 10] != BP) {
+			if (b.mailbox[b.kingSquareBlack + 10] !=  b.BP) {
 				pval++;
 			}
-			if (b.mailbox[b.kingSquareBlack + 11] != BP) {
+			if (b.mailbox[b.kingSquareBlack + 11] !=  b.BP) {
 				pval++;
 			}
-			if (b.mailbox[b.kingSquareBlack + 9] != BP) {
+			if (b.mailbox[b.kingSquareBlack + 9] !=  b.BP) {
 				pval++;
 			}
 		}
@@ -389,11 +388,11 @@ int Evaluation::pawnCenterControl(const Board& b, int color) {
 	int pawnInCenter = 0;
 	for (int i = 43; i < 77; i++) {
 		if (i % 10 >= 3 && i % 10 <= 6) {
-			if (b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+			if (b.mailbox[i - color * 9] == b.WP * color || b.mailbox[i - color * 11] == b.WP * color) {
 				pawnInExtendedCenter++;
 			}
 			if (i == 54 || i == 55 || i == 64 || i == 65) {
-				if (b.mailbox[i - color * 9] == WP * color || b.mailbox[i - color * 11] == WP * color) {
+				if (b.mailbox[i - color * 9] == b.WP * color || b.mailbox[i - color * 11] == b.WP * color) {
 					pawnInCenter++;
 				}
 			}
@@ -401,10 +400,10 @@ int Evaluation::pawnCenterControl(const Board& b, int color) {
 	}
 	return pawnInExtendedCenter * P_EXTENDED_CENTER_BONUS + pawnInCenter * P_CENTER_BONUS;
 }
-int Evaluation::pieceExtendedCenterControl(Board& b, int color) {
+int Evaluation::pieceExtendedCenterControl(const Board& b, int color) {
 	int controlledSquares = 0;
 	for (int i = 21; i < 99; i++) {
-		if (b.mailbox[i] == WN * color || b.mailbox[i] == WB * color) {
+		if (b.mailbox[i] == b.WN * color || b.mailbox[i] == b.WB * color) {
 			for (int j = 43; j < 77; j++) {
 				if (j % 10 >= 3 && j % 10 <= 6) {
 					if (b.checkAttack(i, j, b.mailbox)) {
@@ -425,7 +424,7 @@ int Evaluation::isOpenFile(const Board& b, int square) {
 	if (b.mailbox[square] != -9) {
 		for (int i = 2; i <= 9; i++) {
 			pcount = 0;
-			if (abs(b.mailbox[i * 10 + file] == WP)) {
+			if (abs(b.mailbox[i * 10 + file] == b.WP)) {
 				pcount++;
 			}
 		}

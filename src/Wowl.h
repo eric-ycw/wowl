@@ -1,10 +1,11 @@
 #ifndef WOWL_INCLUDED
 #define WOWL_INCLUDED
 
-#define SEARCH_DEPTH 5
+#define SEARCH_DEPTH 4
 #define TT_CLEAR_AGE 8
-#define ASPIRATION_WINDOW 35
+#define ASPIRATION_WINDOW 50
 #define WIN_SCORE 999999
+#define VAL_UNKWOWN 0
 
 #include "Evaluation.h"
 #include "Hash.h"
@@ -13,26 +14,26 @@ class Wowl {
 
 public:
 
-	int bestScore = -WIN_SCORE;
 	sf::Vector2i bestMove;
 	sf::Vector2i hashMove;
 
 	Hash hashTable;
 
 	/*EVALUATION*/
-	int SEE(Board, int, int);
+	int SEE(Board, Evaluation&, int, int) const;
 
 	/*MOVES*/
-	void orderMoves(Board, std::vector<sf::Vector2i>&, int, int, U64);
+	void orderMoves(Board&, Evaluation&, std::vector<sf::Vector2i>&, int, int, U64);
 	void resetKillerMoves();
 
 	/*SEARCH*/
 	void DLS(Board, int, int);
 	int negaSearch(Board, int, int, int, int, int);
-	int qSearch(Board, int, int, int);
+	int qSearch(Board, Evaluation&, int, int, int);
 
 	/*HASH TABLE*/
-	void storeMoveInfo(U64, int, int, int, int);
+	int probeHashTable(U64, int, int, int);
+	void recordHash(U64, int, int, int);
 	
 	long perft(Board, int);
 

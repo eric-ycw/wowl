@@ -3,48 +3,16 @@
 
 #include "Board.h"
 
-//Piece values
-#define P_BASE_VAL 100
-#define N_BASE_VAL 355
-#define B_BASE_VAL 365
-#define R_BASE_VAL 520
-#define Q_BASE_VAL 980
-#define K_BASE_VAL 40000
-
-//Pawn structure values
-#define DOUBLED_P_PENALTY -10
-#define ISOLATED_P_PENALTY -10
-#define PROTECTED_P_BONUS 2
-#define PASSED_P_BONUS 0
-
-//Position
-#define R_OPEN_FILE_BONUS 40
-#define K_OPEN_FILE_PENALTY -20
-#define K_P_SHIELD_PENALTY -20
-#define K_CASTLED_BONUS 60
-#define SPACE_BONUS 5
-
-//Center
-#define P_CENTER_BONUS 3
-#define P_EXTENDED_CENTER_BONUS 8
-#define PIECE_EXTENDED_CENTER_BONUS 8
-
-//Tempo
-#define SIDE_TO_MOVE_BONUS 10
-#define KING_MOVE_PENALTY -10
-#define TEMPO_PENALTY -20
-
-//Game phase
-#define OPENING 1
-#define MIDGAME 2
-#define ENDGAME 3
-
 class Evaluation {
 
 public:
 
-	//Constructor
 	Evaluation() : gamePhase(OPENING) {}
+
+	enum pieceValue {
+		P_BASE_VAL = 100, N_BASE_VAL = 355, B_BASE_VAL = 365,
+		R_BASE_VAL = 520, Q_BASE_VAL = 980, K_BASE_VAL = 40000
+	};
 
 	/*GAME PHASE*/
 	void setGamePhase(const Board&);
@@ -62,14 +30,14 @@ public:
 	int structureMaterial(const Board&, int);
 
 	/*POSITION*/
-	int flipTableValue(int);
-	int piecePosition(Board&, int);
+	int flipTableValue(int) const;
+	int piecePosition(const Board&, int);
 	int space(const Board&, int);
 	int kingSafety(Board&, int);
 
 	/*CENTER*/
 	int pawnCenterControl(const Board&, int);
-	int pieceExtendedCenterControl(Board&, int);
+	int pieceExtendedCenterControl(const Board&, int);
 
 	/*GETTERS*/
 	int isOpenFile(const Board&, int);
@@ -78,6 +46,26 @@ public:
 	int totalEvaluation(Board&, int);
 
 private:
+
+	enum pawnStructValue {
+		DOUBLED_P_PENALTY = -10, ISOLATED_P_PENALTY = -10, PROTECTED_P_BONUS = -2, PASSED_P_BONUS = 10
+	};
+
+	enum positionValue {
+		R_OPEN_FILE_BONUS = 40,
+		K_OPEN_FILE_PENALTY = -20, K_P_SHIELD_PENALTY = -20, K_CASTLED_BONUS = 60,
+		SPACE_BONUS = 5
+	};
+
+	enum centerValue { 
+		P_CENTER_BONUS = 3, 
+		P_EXTENDED_CENTER_BONUS = 8, 
+		PIECE_EXTENDED_CENTER_BONUS = 8 
+	};
+
+	enum { SIDE_TO_MOVE_BONUS = 10 };
+
+	enum Phase { OPENING = 1, MIDGAME = 2, ENDGAME = 3 };
 
 	int gamePhase;
 
@@ -111,7 +99,7 @@ private:
 		-20,  0,  5, 10, 10,  5,  0,-20,
 		-20, 15, 10, 15, 15, 10, 15,-20,
 		-20,  0, 15, 15, 15, 15,  0,-20,
-		-20, 10,  8, 10, 10,  8, 10,-20,
+		-20, 10,  8,  8,  8,  8, 10,-20,
 		-20, 15,  0,  5,  5,  0, 15,-20,
 		-20,-15,-20,-15,-15,-20,-15,-20,
 	};

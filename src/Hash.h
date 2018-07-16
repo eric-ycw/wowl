@@ -1,10 +1,6 @@
 #ifndef HASH_INCLUDED
 #define HASH_INCLUDED
 
-#define HASH_EXACT 0
-#define HASH_UPPER_BOUND 1
-#define HASH_LOWER_BOUND 2
-
 #include "Evaluation.h"
 #include <random>
 #include <unordered_map>
@@ -19,14 +15,14 @@ class Hash {
 
 public:
 
-	//Constructor
 	Hash() { initHashKeys(); }
+
+	enum hashFlags { HASH_EXACT = 0, HASH_BETA = 1, HASH_ALPHA = 2 };
 
 	U64 generateRand64();
 	void initHashKeys();
 	U64 generatePosKey(Board&);
 
-	//Key is U64, best move is int
 	std::unordered_map<U64, HashVal> tt;
 
 private:
