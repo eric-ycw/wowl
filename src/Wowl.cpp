@@ -92,10 +92,7 @@ void Wowl::resetKillerMoves() {
 int Wowl::probeHashTable(U64 key, int depth, int alpha, int beta) {
 	if (hashTable.tt.find(key) != hashTable.tt.end()) {
 		if (hashTable.tt.at(key).hashDepth >= depth) {
-			if (hashTable.tt.at(key).hashFlag == hashTable.HASH_EXACT) {
-				return hashTable.tt.at(key).hashScore;
-			}
-			else if (hashTable.tt.at(key).hashFlag == hashTable.HASH_ALPHA) {
+			if (hashTable.tt.at(key).hashFlag == hashTable.HASH_ALPHA) {
 				if (hashTable.tt.at(key).hashScore <= alpha) {
 					return alpha;
 				}
@@ -104,6 +101,8 @@ int Wowl::probeHashTable(U64 key, int depth, int alpha, int beta) {
 				if (hashTable.tt.at(key).hashScore >= beta) {
 					return beta;
 				}
+			} else if (hashTable.tt.at(key).hashFlag == hashTable.HASH_EXACT) {
+				return hashTable.tt.at(key).hashScore;
 			}
 		}
 		return VAL_UNKWOWN;
@@ -155,14 +154,14 @@ int Wowl::negaSearch(Board b, int depth, int color, int alpha, int beta) {
 	U64 key = hashTable.generatePosKey(b);
 	int tempHashFlag = hashTable.HASH_ALPHA;
 
-	if (probeHashTable(key, depth, alpha, beta) != VAL_UNKWOWN) { return probeHashTable(key, depth, alpha, beta); }
-
 	if (depth == 0) {
 		negaNodes++;
 		int qScore = qSearch(b, WowlEval, alpha, beta, color);
 		recordHash(key, depth, qScore, hashTable.HASH_EXACT);
 		return qScore;
 	}
+
+	if (probeHashTable(key, depth, alpha, beta) != VAL_UNKWOWN) { return probeHashTable(key, depth, alpha, beta); }
 
 	int score;
 
@@ -220,16 +219,10 @@ int Wowl::negaSearch(Board b, int depth, int color, int alpha, int beta) {
 			}*/
 		}
 		b.undo();
-		if (score >= beta) {
-			recordHash(key, depth, beta, hashTable.HASH_BETA);
-			killerMoves[1][depth] = killerMoves[0][depth];
-			killerMoves[0][depth] = i.x * 100 + i.y;
-			return beta;
-		}
 		if (score > alpha) {
 			alpha = score;
 			tempHashFlag = hashTable.HASH_EXACT;
-			
+
 			if (depth == SEARCH_DEPTH) {
 				bestMove.x = i.x;
 				bestMove.y = i.y;
@@ -238,6 +231,12 @@ int Wowl::negaSearch(Board b, int depth, int color, int alpha, int beta) {
 			}
 
 			hashTable.tt[key].hashBestMove = i.x * 100 + i.y;
+		}
+		if (score >= beta) {
+			recordHash(key, depth, beta, hashTable.HASH_BETA);
+			killerMoves[1][depth] = killerMoves[0][depth];
+			killerMoves[0][depth] = i.x * 100 + i.y;
+			return beta;
 		}
 	}
 

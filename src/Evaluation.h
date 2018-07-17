@@ -60,7 +60,7 @@ private:
 	};
 
 	enum centerValue { 
-		P_CENTER_BONUS = 3,
+		P_CENTER_BONUS = 4,
 		P_EXTENDED_CENTER_BONUS = 8,
 		PIECE_EXTENDED_CENTER_BONUS = 8
 	};
