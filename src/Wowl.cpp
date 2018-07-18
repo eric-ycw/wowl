@@ -185,7 +185,7 @@ int Wowl::negaSearch(Board b, int depth, int color, int alpha, int beta) {
 	}
 	if (legalcount == 0) {
 		if (b.inCheck(color, b.mailbox)) {
-			return -WIN_SCORE;  //Checkmate
+			return -WIN_SCORE + depth;  //Checkmate
 		}
 		else {
 			return DRAW_SCORE;  //Stalemate
@@ -193,7 +193,8 @@ int Wowl::negaSearch(Board b, int depth, int color, int alpha, int beta) {
 	}
 
 	orderMoves(b, WowlEval, b.legalMoveVec, depth, key);
-	bool firstNode = true;
+
+	bool foundPV = false;
 
 	for (const auto& i : b.legalMoveVec) {
 		b.move(i.x, i.y);
@@ -203,25 +204,22 @@ int Wowl::negaSearch(Board b, int depth, int color, int alpha, int beta) {
 		}
 		else {
 			negaNodes++;
-			score = -negaSearch(b, depth - 1, -color, -beta, -alpha);
-			/*if (firstNode) {
-				firstNode = false;
-				score = -negaSearch(b, depth - 1, -color, -beta, -alpha);
+			//PVS
+			if (foundPV) {
+				score = -negaSearch(b, depth - 1, -color, -alpha - 1, -alpha);
+				if (score > alpha && score < beta) {
+					score = -negaSearch(b, depth - 1, -color, -beta, -alpha);
+				}
 			}
 			else {
-				score = -negaSearch(b, depth - 1, -color, -alpha - 1, -alpha);
-				if (alpha < score && score < beta) {
-					int scoutScore = -negaSearch(b, depth - 1, -color, -beta, -score);
-					if (scoutScore > score) {
-						score = scoutScore;
-					}
-				}
-			}*/
+				score = -negaSearch(b, depth - 1, -color, -beta, -alpha);
+			}
 		}
 		b.undo();
 		if (score > alpha) {
 			alpha = score;
 			tempHashFlag = hashTable.HASH_EXACT;
+			foundPV = true;
 
 			if (depth == SEARCH_DEPTH) {
 				bestMove.x = i.x;
@@ -259,7 +257,6 @@ void Wowl::DLS(Board b, int depth, int color) {
 
 		estimate = negaSearch(b, idepth, color, id_alpha, id_beta);
 
-		std::cout << id_alpha << " " << id_beta << " at depth " << idepth << std::endl;
 		std::cout << estimate << " at depth " << idepth << std::endl;
 
 		//Break search if mate is found
