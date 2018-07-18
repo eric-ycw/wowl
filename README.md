@@ -12,6 +12,7 @@ Requires SFML to compile.
 * SEE
 * Killer moves
 * Null move pruning
+* PVS
 
 ## Evaluation
 * Material evaluation with piece-square tables
