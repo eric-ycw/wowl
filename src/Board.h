@@ -31,6 +31,7 @@ public:
 	int convertCoord(sf::Vector2f);
 	sf::Vector2i convertCoord(int);
 	int to64Coord(int) const;
+	std::string toNotation(int) const;
 
 	/*VECTORS*/
 	void reserveVectors();

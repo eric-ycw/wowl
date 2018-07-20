@@ -25,6 +25,16 @@ int Board::to64Coord(int square) const {
 	int rval = square - 21 - 2 * (tenth - 2);
 	return rval;
 }
+//Converts mailbox coord to notation
+std::string Board::toNotation(int square) const {
+	std::string s = "  ";
+	int coord = to64Coord(square);
+	int x = coord % 8;
+	int y = floor(coord / 8);
+	s[0] = char(x + 97);
+	s[1] = char(7 - y + 49);
+	return s;
+}
 
 /*VECTORS*/
 void Board::reserveVectors() {
@@ -785,10 +795,47 @@ void Board::setEnPassantSquare() {
 void Board::outputBoard() const {
 	std::cout << std::endl;
 	for (int i = 0; i < 120; i++) {
-		if (mailbox[i] >= 0) {
-			std::cout << " ";
+		switch (mailbox[i]) {
+		case 0:
+			std::cout << "* ";
+			break;
+		case WP:
+			std::cout << "P ";
+			break;
+		case WN:
+			std::cout << "N ";
+			break;
+		case WB:
+			std::cout << "B ";
+			break;
+		case WR:
+			std::cout << "R ";
+			break;
+		case WQ:
+			std::cout << "Q ";
+			break;
+		case WK:
+			std::cout << "K ";
+			break;
+		case BP:
+			std::cout << "p ";
+			break;
+		case BN:
+			std::cout << "n ";
+			break;
+		case BB:
+			std::cout << "b ";
+			break;
+		case BR:
+			std::cout << "r ";
+			break;
+		case BQ:
+			std::cout << "q ";
+			break;
+		case BK:
+			std::cout << "k ";
+			break;
 		}
-		std::cout << mailbox[i] << " ";
 		if ((i + 1) % 10 == 0) {
 			std::cout << std::endl;
 		}

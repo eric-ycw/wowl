@@ -224,8 +224,8 @@ int Wowl::negaSearch(Board b, int depth, int color, int alpha, int beta) {
 			if (depth == SEARCH_DEPTH) {
 				bestMove.x = i.x;
 				bestMove.y = i.y;
-				std::cout << "best move : " << bestMove.x << " " << bestMove.y << " at depth " << depth << " by " << color << std::endl;
-				std::cout << "best score : " << alpha << std::endl << std::endl;
+				std::cout << "Best move : " << b.toNotation(bestMove.x) << " " << b.toNotation(bestMove.y) << " at depth " << depth << std::endl;
+				std::cout << "Best score : " << alpha << std::endl << std::endl;
 			}
 
 			hashTable.tt[key].hashBestMove = i.x * 100 + i.y;
@@ -257,7 +257,9 @@ void Wowl::DLS(Board b, int depth, int color) {
 
 		estimate = negaSearch(b, idepth, color, id_alpha, id_beta);
 
-		std::cout << estimate << " at depth " << idepth << std::endl;
+		if (idepth != SEARCH_DEPTH) {
+			std::cout << estimate << " at depth " << idepth << std::endl;
+		}
 
 		//Break search if mate is found
 		if (estimate == WIN_SCORE || estimate == -WIN_SCORE) {
@@ -286,7 +288,7 @@ void Wowl::DLS(Board b, int depth, int color) {
 	}
 
 	std::cout << "Nodes explored in negaSearch : " << negaNodes << std::endl;
-	std::cout << "Nodes explored in qSearch : " << qSearchNodes << std::endl;
+	std::cout << "Nodes explored in qSearch : " << qSearchNodes << std::endl << std::endl;
 }
 
 long Wowl::perft(Board b, int depth) {
