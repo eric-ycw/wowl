@@ -47,34 +47,29 @@ void Board::reserveVectors() {
 /*LEGALITY*/
 //Check if move is pseudolegal
 bool Board::checkLegal(int a, int b) {
-	bool legal = true;
 	int oldSquareVal = mailbox[a];
 	int newSquareVal = mailbox[b];
 
 	//Turn + own piece
 	if (turn == WHITE) {
 		if (oldSquareVal < 0 || newSquareVal > 0) {
-			legal = false;
-			return legal;
+			return false;
 		}
 	}
 	else if (turn == BLACK) {
 		if (oldSquareVal > 0 || newSquareVal < 0) {
-			legal = false;
-			return legal;
+			return false;
 		}
 	}
 
 	//Out of bounds
 	if (newSquareVal == -9) {
-		legal = false;
-		return legal;
+		return false;
 	}
 
 	//Destination cannot be king
 	if (abs(newSquareVal) == 6) {
-		legal = false;
-		return legal;
+		return false;
 	}
 
 	/*MOVE PATTERNS*/
@@ -105,38 +100,34 @@ bool Board::checkLegal(int a, int b) {
 		return checkLegalKing(a, b, turn);
 		break;
 	}
-	return legal;
+	return true;
 }
 bool Board::checkLegalPawn(int a, int b, int color) const {
-	bool legal = false;
 	int target = mailbox[b];
 
 	//Move forward one square
 	if (a - color * 10 == b) {
 		if (target == 0) {
-			legal = true;
-			return legal;
+			return true;
 		}
 	}
 	//Diagonal capture
 	if (a - color * 10 - 1 == b || a - color * 10 + 1 == b) {
 		if (target * color < 0) {
-			legal = true;
-			return legal;
+			return true;
 		}
 	}
 
 	if (color == WHITE) {
 		//Pawns cannot move backwards
 		if (b > a) {
-			return legal;
+			return false;
 		}
 		//Check for second-rank pawns
 		if (a <= 88 && a >= 81) {
 			if (a - 20 == b) {
 				if (target == 0 && mailbox[b + 10] == 0) {
-					legal = true;
-					return legal;
+					return true;
 				}
 			}
 		}
@@ -147,79 +138,68 @@ bool Board::checkLegalPawn(int a, int b, int color) const {
 			if (mailbox[a - 1] == -1 && target == 0 && b == a - 10 - 1) {
 				//Check last move
 				if (moveVec.back().x == a - 20 - 1 && moveVec.back().y == a - 1) {
-					legal = true;
-					return legal;
+					return true;
 				}
 			}
 			if (mailbox[a + 1] == -1 && target == 0 && b == a - 10 + 1) {
 				if (moveVec.back().x == a - 20 + 1 && moveVec.back().y == a + 1) {
-					legal = true;
-					return legal;
+					return true;
 				}
 			}
 		}
 	}
 	else if (color == BLACK) {
 		if (b < a) {
-			return legal;
+			return false;
 		}
 		if (a <= 38 && a >= 31) {
 			if (a + 20 == b) {
 				if (target == 0 && mailbox[b - 10] == 0) {
-					legal = true;
-					return legal;
+					return true;
 				}
 			}
 		}
 		if (a <= 68 && a >= 61) {
 			if (mailbox[a - 1] == 1 && target == 0 && b == a + 10 - 1) {
 				if (moveVec.back().x == a + 20 - 1 && moveVec.back().y == a - 1) {
-					legal = true;
-					return legal;
+					return true;
 				}
 			}
 			if (mailbox[a + 1] == 1 && target == 0 && b == a + 10 + 1) {
 				if (moveVec.back().x == a + 20 + 1 && moveVec.back().y == a + 1) {
-					legal = true;
-					return legal;
+					return true;
 				}
 			}
 		}
 	}
 
-	return legal;
+	return false;
 }
 bool Board::checkLegalKing(int a, int b, int color) {
-	bool legal = true;
 	if (!(a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b || a + 2 == b || a - 2 == b)) {
-		legal = false;
-		return legal;
+		return false;
 	}
 	if (color == WHITE) {
 		//Short castling
 		if (a + 2 == b && std::get<0>(checkCastling()) == false) {
-			legal = false;
-			return legal;
+			return false;
 		}
 		//Long castling
 		if (a - 2 == b && std::get<1>(checkCastling()) == false) {
-			legal = false;
-			return legal;
+			return false;
 		}
 	}
 	else if (color == BLACK) {
 		//Short castling
 		if (a + 2 == b && std::get<2>(checkCastling()) == false) {
-			legal = false;
-			return legal;
+			return false;
 		}
 		//Long castling
 		if (a - 2 == b && std::get<3>(checkCastling()) == false) {
-			legal = false;
-			return legal;
+			return false;
 		}
 	}
-	return legal;
+	return true;
 }
 void Board::getLegalMoves() {
 	//Clear legal move vector
@@ -289,12 +269,9 @@ void Board::getQMoves() {
 
 /*ATTACKS*/
 bool Board::checkAttack(int a, int b, const int arr[]) const {
-	bool canattack = true;
-
 	int oldSquareVal = arr[a];
 	int newSquareVal = arr[b];
 
-	/*MOVE PATTERNS*/
 	int sval;
 	if (oldSquareVal < 0) {
 		sval = oldSquareVal * -1;
@@ -335,21 +312,18 @@ bool Board::checkAttack(int a, int b, const int arr[]) const {
 	}
 }
 bool Board::checkAttackPawn(int a, int b, const int arr[], int color) const {
-	bool canattack = false;
 	if ((a - color * 11 == b || a - color * 9 == b) && arr[b] * arr[a] <= 0) {
-		canattack = true;
+		return true;
 	}
-	return canattack;
+	return false;
 }
 bool Board::checkAttackKnight(int a, int b, const int arr[]) const {
-	bool canattack = false;
 	if ((a - 20 - 1 == b || a - 20 + 1 == b || a - 10 - 2 == b || a - 10 + 2 == b || a + 20 - 1 == b || a + 20 + 1 == b || a + 10 - 2 == b || a + 10 + 2 == b) && arr[b] * arr[a] <= 0) {
-		canattack = true;
+		return true;
 	}
-	return canattack;
+	return false;
 }
 bool Board::checkAttackBishop(int a, int b, const int arr[]) const {
-	bool canattack = false;
 	int checkpos = 0;
 	for (int type = 0; type < 4; type++) {
 		for (int dis = 1; dis < 8; dis++) {
@@ -365,22 +339,19 @@ bool Board::checkAttackBishop(int a, int b, const int arr[]) const {
 			}
 			if (arr[checkpos] * arr[a] != 0) {
 				if (checkpos == b) {
-					canattack = true;
-					return canattack;
+					return true;
 				}
 				goto BISHOPNEXT;
 			}
 			if (checkpos == b) {
-				canattack = true;
-				return canattack;
+				return true;
 			}
 		}
 	BISHOPNEXT:;
 	}
-	return canattack;
+	return false;
 }
 bool Board::checkAttackRook(int a, int b, const int arr[]) const {
-	bool canattack = false;
 	int checkpos = 0;
 	for (int type = 0; type < 4; type++) {
 		for (int dis = 1; dis < 8; dis++) {
@@ -396,40 +367,32 @@ bool Board::checkAttackRook(int a, int b, const int arr[]) const {
 			}
 			if (arr[checkpos] * arr[a] != 0) {
 				if (checkpos == b) {
-					canattack = true;
-					return canattack;
+					return true;
 				}
 				goto ROOKNEXT;
 			}
 			if (checkpos == b) {
-				canattack = true;
-				return canattack;
+				return true;
 			}
 		}
 	ROOKNEXT:;
 	}
-	return canattack;
-	
+	return false;
 }
 bool Board::checkAttackQueen(int a, int b, const int arr[]) const {
-	bool canattack = false;
 	if (checkAttackBishop(a, b, arr)) {
-		canattack = true;
-		return canattack;
+		return true;
 	}
 	if (checkAttackRook(a, b, arr)) {
-		canattack = true;
-		return canattack;
+		return true;
 	}
-	return canattack;
+	return false;
 }
 bool Board::checkAttackKing(int a, int b, const int arr[]) const {
-	bool canattack = false;
 	if (a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b) {
-		canattack = true;
-		return canattack;
+		return true;
 	}
-	return canattack;
+	return false;
 }
 std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 
@@ -840,7 +803,12 @@ void Board::outputBoard() const {
 			std::cout << std::endl;
 		}
 	}
-	std::cout << "Turn : " << turn << std::endl;
+	if (turn == 1) {
+		std::cout << "White to move" << std::endl << std::endl;
+	}
+	else {
+		std::cout << "Black to move" << std::endl << std::endl;
+	}
 }
 void Board::resetBoard() {
 	for (int i = 21; i < 99; i++) {

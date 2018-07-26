@@ -54,9 +54,10 @@ int Evaluation::blockedPawns(const Board& b) {
 	}
 	return bpcount;
 }
-int Evaluation::doubledPawns(const Board& b, int color) {
+int Evaluation::doubledAndIsolatedPawns(const Board& b, int color) {
 	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	int pcount = 0;
+	int dpcount = 0;
+	int ipcount = 0;
 	for (int i = 21; i < 99; i++) {
 		if (b.mailbox[i] == b.WP * color) {
 			filearray[i % 10 - 1]++;
@@ -64,37 +65,25 @@ int Evaluation::doubledPawns(const Board& b, int color) {
 	}
 	for (int i = 0; i < 8; i++) {
 		if (filearray[i] >= 2) {
-			pcount++;
+			dpcount++;
 		}
-	}
-	return pcount * DOUBLED_P_PENALTY;
-}
-int Evaluation::isolatedPawns(const Board& b, int color) {
-	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	int pcount = 0;
-	for (int i = 21; i < 99; i++) {
-		if (b.mailbox[i] == b.WP * color) {
-			filearray[i % 10 - 1]++;
-		}
-	}
-	for (int i = 0; i < 8; i++) {
 		if (i >= 1 && i <= 6) {
 			if (filearray[i] == b.WP * color && filearray[i - 1] == 0 && filearray[i + 1] == 0) {
-				pcount++;
+				ipcount++;
 			}
 		}
 		else if (i = 0) {
 			if (filearray[0] == b.WP * color && filearray[1] == 0) {
-				pcount++;
+				ipcount++;
 			}
 		}
 		else if (i = 7) {
 			if (filearray[7] == b.WP * color && filearray[6] == 0) {
-				pcount++;
+				ipcount++;
 			}
 		}
 	}
-	return pcount * ISOLATED_P_PENALTY;
+	return dpcount * DOUBLED_P_PENALTY + ipcount * ISOLATED_P_PENALTY;
 }
 int Evaluation::protectedPawns(const Board& b, int color) {
 	int pcount = 0;
@@ -400,7 +389,7 @@ int Evaluation::pawnCenterControl(const Board& b, int color) {
 	}
 	return pawnInExtendedCenter * P_EXTENDED_CENTER_BONUS + pawnInCenter * P_CENTER_BONUS;
 }
-int Evaluation::pieceExtendedCenterControl(const Board& b, int color) {
+int Evaluation::pieceCenterControl(const Board& b, int color) {
 	int controlledSquares = 0;
 	for (int i = 21; i < 99; i++) {
 		if (b.mailbox[i] == b.WN * color || b.mailbox[i] == b.WB * color) {
@@ -413,7 +402,7 @@ int Evaluation::pieceExtendedCenterControl(const Board& b, int color) {
 			}
 		}
 	}
-	return controlledSquares * PIECE_EXTENDED_CENTER_BONUS;
+	return controlledSquares * PIECE_CENTER_BONUS;
 }
 
 
@@ -445,9 +434,9 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	//Reevaluates game phase
 	setGamePhase(b);
 	int material = baseMaterial(b, color) + comboMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - comboMaterial(b, -color) - structureMaterial(b, -color);
-	int pawns = doubledPawns(b, color) + isolatedPawns(b, color) + protectedPawns(b, color) + passedPawns(b, color) - doubledPawns(b, -color) - isolatedPawns(b, -color) - protectedPawns(b, -color) - passedPawns(b, -color);
+	int pawns = doubledAndIsolatedPawns(b, color) + protectedPawns(b, color) + passedPawns(b, color) - doubledAndIsolatedPawns(b, -color) - protectedPawns(b, -color) - passedPawns(b, -color);
 	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
-	int center = pawnCenterControl(b, color) + pieceExtendedCenterControl(b, color) - pawnCenterControl(b, -color) - pieceExtendedCenterControl(b, -color);
+	int center = pawnCenterControl(b, color) + pieceCenterControl(b, color) - pawnCenterControl(b, -color) - pieceCenterControl(b, -color);
 	int sideToMove = (b.getTurn() == color) ? 1 : 0;
 	int total = material + position + center + pawns + sideToMove * SIDE_TO_MOVE_BONUS;
 	return total;

@@ -21,8 +21,7 @@ public:
 
 	/*PAWN STRUCTURE*/
 	int blockedPawns(const Board&);
-	int doubledPawns(const Board&, int);
-	int isolatedPawns(const Board&, int);
+	int doubledAndIsolatedPawns(const Board&, int);
 	int protectedPawns(const Board&, int);
 	int passedPawns(const Board&, int);
 
@@ -39,7 +38,7 @@ public:
 
 	/*CENTER*/
 	int pawnCenterControl(const Board&, int);
-	int pieceExtendedCenterControl(const Board&, int);
+	int pieceCenterControl(const Board&, int);
 
 	/*GETTERS*/
 	int isOpenFile(const Board&, int);
@@ -62,7 +61,7 @@ private:
 	enum centerValue { 
 		P_CENTER_BONUS = 4,
 		P_EXTENDED_CENTER_BONUS = 8,
-		PIECE_EXTENDED_CENTER_BONUS = 8
+		PIECE_CENTER_BONUS = 8
 	};
 
 	enum { SIDE_TO_MOVE_BONUS = 10 };

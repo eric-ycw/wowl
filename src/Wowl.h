@@ -3,18 +3,21 @@
 
 #include "Evaluation.h"
 #include "Hash.h"
+#include <time.h>
 
 class Wowl {
 
 public:
 
 	enum Search {
-		SEARCH_DEPTH = 5,
+		MAX_SEARCH_DEPTH = 50,
 		ASPIRATION_WINDOW = 35,
-		NULL_MOVE_REDUCTION = 2
+		NULL_MOVE_REDUCTION = 2,
+		NO_MOVE = -9
 	};
 
 	sf::Vector2i bestMove;
+	sf::Vector2i finalBestMove;
 	sf::Vector2i hashMove;
 
 	Hash hashTable;
@@ -27,8 +30,8 @@ public:
 	void resetKillerMoves();
 
 	/*SEARCH*/
-	void DLS(Board, int, int);
-	int negaSearch(Board, int, int, int, int);
+	void ID(Board, int, int, int);
+	int negaSearch(Board, int, int, int, int, int);
 	int qSearch(Board, Evaluation&, int, int, int);
 
 	/*HASH TABLE*/
@@ -50,7 +53,7 @@ private:
 	};
 
 	int estimate = 0;
-	int killerMoves[2][SEARCH_DEPTH + 1];
+	int killerMoves[2][MAX_SEARCH_DEPTH + 1];
 	int negaNodes;
 	int qSearchNodes;
 	int captures = 0;
