@@ -22,6 +22,8 @@ public:
 
 	Hash hashTable;
 
+	std::vector<U64> posKeyVec;
+
 	/*EVALUATION*/
 	int SEE(Board, Evaluation&, int, int) const;
 
@@ -30,13 +32,14 @@ public:
 	void resetKillerMoves();
 
 	/*SEARCH*/
-	void ID(Board, int, int, int);
+	void ID(Board&, int, int, int);
 	int negaSearch(Board, int, int, int, int, int);
 	int qSearch(Board, Evaluation&, int, int, int);
 
 	/*HASH TABLE*/
 	int probeHashTable(U64, int, int, int);
 	void recordHash(U64, int, int, int);
+	void ageHash();
 	
 	long perft(Board, int);
 
@@ -48,7 +51,7 @@ private:
 	};
 
 	enum HashConstants {
-		TT_CLEAR_AGE = 0, 
+		TT_CLEAR_AGE = 8, 
 		VAL_UNKWOWN = 0
 	};
 

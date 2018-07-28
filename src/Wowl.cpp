@@ -110,10 +110,30 @@ int Wowl::probeHashTable(U64 key, int depth, int alpha, int beta) {
 	return VAL_UNKWOWN;
 }
 void Wowl::recordHash(U64 key, int depth, int score, int flag) {
-	hashTable.tt[key].hashDepth = depth;
-	hashTable.tt[key].hashScore = score;
-	hashTable.tt[key].hashFlag = flag;
-	hashTable.tt[key].hashAge = 0;
+	if (hashTable.tt.find(key) != hashTable.tt.end()) {
+		if (hashTable.tt[key].hashDepth <= depth) {
+			hashTable.tt[key].hashDepth = depth;
+			hashTable.tt[key].hashScore = score;
+			hashTable.tt[key].hashFlag = flag;
+		}
+	}
+	else {
+		hashTable.tt[key].hashDepth = depth;
+		hashTable.tt[key].hashScore = score;
+		hashTable.tt[key].hashFlag = flag;
+		hashTable.tt[key].hashAge = 0;
+	}
+}
+void Wowl::ageHash() {
+	for (auto it = hashTable.tt.begin(); it != hashTable.tt.end();) {
+		if (it->second.hashAge < TT_CLEAR_AGE) {
+			(*it).second.hashAge++;
+			it++;
+		}
+		else {
+			it = hashTable.tt.erase(it);
+		}
+	}
 }
 
 int Wowl::qSearch(Board b, Evaluation& e, int alpha, int beta, int color) {
@@ -176,14 +196,14 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	}
 
 	b.getLegalMoves();
-	int legalcount = 0;
+	bool haveMove = false;
 	for (const auto& i : b.legalMoveVec) {
 		if (!b.checkMoveCheck(i.x, i.y)) {
-			legalcount++;
+			haveMove = true;
 			break;
 		}
 	}
-	if (legalcount == 0) {
+	if (!haveMove) {
 		if (depth == initial) {
 			bestMove.x = NO_MOVE;
 			bestMove.y = NO_MOVE;
@@ -208,7 +228,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		}
 		else {
 			negaNodes++;
-			//PVS
+			//PVS	
 			if (foundPV) {
 				score = -negaSearch(b, depth - 1, initial, -color, -alpha - 1, -alpha);
 				if (score > alpha && score < beta) {
@@ -243,7 +263,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 
 	return alpha;
 }
-void Wowl::ID(Board b, int depth, int color, int secs) {
+void Wowl::ID(Board& b, int depth, int color, int secs) {
 
 	negaNodes = 0;
 	qSearchNodes = 0;
@@ -288,9 +308,12 @@ void Wowl::ID(Board b, int depth, int color, int secs) {
 		research = false;
 
 		finalBestMove = bestMove;
-		std::cout << "Best move : " << b.toNotation(finalBestMove.x) << b.toNotation(finalBestMove.y) << " at depth " << idepth << std::endl;
+		std::cout << "Best move : " << b.toNotation(finalBestMove.x) << b.toNotation(finalBestMove.y) << " at depth " << idepth << std::endl << std::endl;
 	}
 
+	ageHash();
+
+	std::cout << "Transposition table size : " << hashTable.tt.size() << std::endl;
 	std::cout << "Nodes explored in negaSearch : " << negaNodes << std::endl;
 	std::cout << "Nodes explored in qSearch : " << qSearchNodes << std::endl << std::endl;
 }

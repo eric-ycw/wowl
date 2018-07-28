@@ -637,57 +637,6 @@ void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 		arr[newpos] = BQ;
 	}
 }
-//Special move behaviour without moveVec
-void Board::tempSpecialMoves(int oldpos, int newpos, int lastoldpos, int lastnewpos, int arr[]) {
-	//White en passant
-	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP) {
-		if (lastnewpos == newpos + 10 && arr[newpos + 10] == BP  && lastoldpos == newpos - 10) {
-			arr[newpos + 10] = 0;
-		}
-	}
-	//Black en passant
-	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP) {
-		if (lastnewpos == newpos - 10 && arr[newpos - 10] == WP && lastoldpos == newpos + 10) {
-			arr[newpos - 10] = 0;
-		}
-	}
-	//Short castling
-	else if (oldpos - newpos == -2 && abs(arr[newpos]) == WK && abs(arr[newpos + 1]) == WR) {
-		arr[newpos + 1] = 0;
-		//White
-		if (arr[newpos] > 0) {
-			arr[oldpos + 1] = WR;
-			castled[0] = true;
-		}
-		//Black
-		else {
-			arr[oldpos + 1] = BR;
-			castled[1] = true;
-		}
-	}
-	//Long castling
-	else if (oldpos - newpos == 2 && abs(arr[newpos]) == WK && abs(arr[newpos - 2]) == WR) {
-		arr[newpos - 2] = 0;
-		//White
-		if (arr[newpos] > 0) {
-			arr[oldpos - 1] = WR;
-			castled[0] = true;
-		}
-		//Black
-		else {
-			arr[oldpos - 1] = BR;
-			castled[1] = true;
-		}
-	}
-	//White promotion (to queen)
-	if (arr[newpos] == WP && newpos >= 21 && newpos <= 28) {
-		arr[newpos] = WQ;
-	}
-	else if (arr[newpos] == BP && newpos >= 91 && newpos <= 98) {
-		arr[newpos] = BQ;
-	}
-}
-//moveVec move
 void Board::move(int a, int b) {
 	mailbox[b] = mailbox[a];
 	mailbox[a] = 0;
@@ -704,17 +653,6 @@ void Board::move(int a, int b) {
 	else {
 		turn = BLACK;
 	}
-}
-//Temp array move
-void Board::move(int a, int b, int arr[]) {
-	arr[b] = arr[a];
-	arr[a] = 0;
-
-	//Special moves
-	if (!moveVec.empty()) {
-		tempSpecialMoves(a, b, moveVec.back().x, moveVec.back().y, arr);
-	}
-
 }
 void Board::undo() {
 	if (!moveVec.empty()) {
