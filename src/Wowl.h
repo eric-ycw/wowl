@@ -32,12 +32,14 @@ public:
 	void resetKillerMoves();
 
 	/*SEARCH*/
-	void ID(Board&, int, int, int);
-	int negaSearch(Board, int, int, int, int, int);
 	int qSearch(Board, Evaluation&, int, int, int);
+	int negaSearch(Board, int, int, int, int, int);
+	void ID(Board&, int, int, int);
+	int MTDf(Board, int, int, int);
 
 	/*HASH TABLE*/
-	int probeHashTable(U64, int, int, int);
+	sf::Vector2i hashMoveToVec(U64);
+	int probeHashTable(U64, int, int, int, int);
 	void recordHash(U64, int, int, int);
 	void ageHash();
 	

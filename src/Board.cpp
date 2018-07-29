@@ -741,12 +741,6 @@ void Board::outputBoard() const {
 			std::cout << std::endl;
 		}
 	}
-	if (turn == 1) {
-		std::cout << "White to move" << std::endl << std::endl;
-	}
-	else {
-		std::cout << "Black to move" << std::endl << std::endl;
-	}
 }
 void Board::resetBoard() {
 	for (int i = 21; i < 99; i++) {

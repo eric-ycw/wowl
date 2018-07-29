@@ -64,10 +64,14 @@ int Evaluation::doubledAndIsolatedPawns(const Board& b, int color) {
 		}
 	}
 	for (int i = 0; i < 8; i++) {
-		if (filearray[i] >= 2) {
+		if (filearray[i] == 2) {
 			dpcount++;
 		}
-		if (i >= 1 && i <= 6) {
+		else if (filearray[i] > 2) {
+			//Additional penalty for tripled pawns
+			dpcount += 2;
+		}
+ 		if (i >= 1 && i <= 6) {
 			if (filearray[i] == b.WP * color && filearray[i - 1] == 0 && filearray[i + 1] == 0) {
 				ipcount++;
 			}
@@ -85,67 +89,43 @@ int Evaluation::doubledAndIsolatedPawns(const Board& b, int color) {
 	}
 	return dpcount * DOUBLED_P_PENALTY + ipcount * ISOLATED_P_PENALTY;
 }
-int Evaluation::protectedPawns(const Board& b, int color) {
-	int pcount = 0;
-	for (int i = 21; i < 99; i++) {
+int Evaluation::connectedPawns(const Board&b, int color) {
+	int supported = 0;
+	int phalanx = 0;
+	for (int i = 31; i < 89; i++) {
 		if (b.mailbox[i] == b.WP * color) {
-			if (b.mailbox[i - color * 9] == b.WP * color || b.mailbox[i - color * 11] == b.WP * color) {
-			pcount++;
-			}
+			supported += b.mailbox[i + color * 10 + 1] == b.WP * color ? 1 : 0
+					   + b.mailbox[i + color * 10 - 1] == b.WP * color ? 1 : 0;
+			phalanx += b.mailbox[i + 1] == b.WP * color ? 1 : 0
+					 + b.mailbox[i - 1] == b.WP * color ? 1 : 0;
 		}
 	}
-	return pcount * PROTECTED_P_BONUS;
+	return supported * SUPPORTED_P_BONUS + phalanx * PHALANX_P_BONUS;
 }
 int Evaluation::passedPawns(const Board& b, int color) {
 	int pcount = 0;
 	int rank, file;
-	int sides = 0;
-	bool none = true;
+	bool passed;
 	for (int i = 21; i < 99; i++) {
-		none = true;
-		sides = 0;
 		if (b.mailbox[i] == b.WP * color) {
+			passed = true;
 			file = i % 10;
 			rank = (i - file) / 10;
-			//No pawn blocks ahead
-			if (color == b.WHITE) {
-				for (int j = rank; j >= 2; j--) {
-					if (b.mailbox[j] == b.WP * -color) {
-						sides -= 2;
-						none = false;
-					}
+			int sqr = i;
+			while (sqr >= 31 && sqr <= 88) {
+				if (b.mailbox[sqr] == b.WP * -color || b.mailbox[sqr - 1] == b.WP * -color || b.mailbox[sqr + 1] == b.WP * -color) {
+					passed = false;
 				}
+				sqr += -color * 10;
 			}
-			else {
-				for (int j = rank; j <= 9; j++) {
-					if (b.mailbox[j] == b.WP * -color) {
-						sides -= 2;
-						none = false;
-					}
+			if (passed) {
+				int reverse_dis = color == b.WHITE ? 9 - rank : rank - 2;
+				if (reverse_dis < 6) {
+					pcount += reverse_dis * 2 * PASSED_P_BONUS;
 				}
-			}
-			//Check adjacent files
-			for (int j = 20 + file - 1; j <= 90 + file - 1; j += 10) {
-				if (b.mailbox[j] == b.WP * -color) {
-					if ((j - j % 10) / 10 >= rank) {
-						sides++;
-					}
-					none = false;
+				else {
+					pcount += pow(reverse_dis, 2) * PASSED_P_BONUS;
 				}
-			}
-			for (int j = 20 + file + 1; j <= 90 + file + 1; j += 10) {
-				if (b.mailbox[j] == b.WP * -color) {
-					if ((j - j % 10) / 10 >= rank) {
-						sides++;
-					}
-					none = false;
-				}
-			}
-			if (none) {
-				sides += 2;
-			}
-			if (sides == 2) {
-				pcount += (color == b.WHITE) ? 9 - rank : rank - 2;
 			}
 		}
 	}
@@ -157,6 +137,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 int Evaluation::baseMaterial(const Board& b, int color) {
 	int mval = 0;
 	for (int i = 21; i < 99; i++) {
+		if (b.mailbox[i] == -9) { continue; }
 		if (color * b.mailbox[i] > 0) {
 			switch (abs(b.mailbox[i])) {
 			case b.WP:
@@ -179,40 +160,6 @@ int Evaluation::baseMaterial(const Board& b, int color) {
 	}
 	return mval;
 }
-int Evaluation::comboMaterial(const Board& b, int color) {
-	int mval = 0;
-	int ncount = 0;
-	int bcount = 0;
-	int rcount = 0;
-	for (int i = 21; i < 99; i++) {
-		if (color * b.mailbox[i] > 0) {
-			switch (abs(b.mailbox[i])) {
-			case b.WN:
-				ncount += 1;
-				break;
-			case b.WB:
-				bcount += 1;
-				break;
-			case b.WR:
-				rcount += 1;
-				break;
-			}
-		}
-	}
-	//Knight pair penalty
-	if (ncount >= 2) {
-		mval -= 10;
-	}
-	//Bishop pair bonus
-	if (bcount >= 2) {
-		mval += 50;
-	}
-	//Rook pair penalty
-	if (rcount >= 2) {
-		mval -= 10;
-	}
-	return mval;
-}
 int Evaluation::structureMaterial(const Board& b, int color) {
 	int mval = 0;
 	for (int i = 21; i < 99; i++) {
@@ -220,11 +167,11 @@ int Evaluation::structureMaterial(const Board& b, int color) {
 			switch (abs(b.mailbox[i])) {
 			case b.WN:
 				//Knights are better in closed positions
-				mval += blockedPawns(b) * 3;
+				mval += blockedPawns(b) * OPEN_CLOSED_POS_PIECE_VALUE;
 				break;
 			case b.WB:
 				//Bishops are worse in closed positions
-				mval -= blockedPawns(b) * 3;
+				mval -= blockedPawns(b) * OPEN_CLOSED_POS_PIECE_VALUE;
 				break;
 			case b.WR:
 				//Rooks are better on open and semi-open files
@@ -232,6 +179,24 @@ int Evaluation::structureMaterial(const Board& b, int color) {
 				break;
 			}
 		}
+	}
+	return mval;
+}
+int Evaluation::bishopPair(const Board& b, int color) {
+	int mval = 0;
+	int bcount = 0;
+	for (int i = 21; i < 99; i++) {
+		if (color * b.mailbox[i] > 0) {
+			switch (abs(b.mailbox[i])) {
+			case b.WB:
+				bcount += 1;
+				break;
+			}
+		}
+	}
+	//Bishop pair bonus
+	if (bcount >= 2) {
+		mval += 50;
 	}
 	return mval;
 }
@@ -311,22 +276,20 @@ int Evaluation::piecePosition(const Board& b, int color) {
 }
 int Evaluation::space(const Board&b, int color) {
 	int file;
-	int rank = 0;
+	int rank;
 	int sval = 0;
-	for (int i = 21; i < 99; i++) {
-		if (b.mailbox[i] == color * b.WP && rank == 0) {
-			file = i % 10;
-			rank = (i - file) / 10;
-			if (color == b.WHITE) {
-				sval = (8 - rank) * SPACE_BONUS;
-			}
-			else {
-				sval = (rank - 3) * SPACE_BONUS;
-			}
-			rank = 0;
+	for (int i = 43; i < 77; i++) {
+		if (i % 10 < 3 || i % 10 > 6) {
+			continue;
+		}
+		if (b.mailbox[i - color * 10 + 1] == -color * b.WP || b.mailbox[i - color * 10 - 1] == -color * b.WP) {
+			continue;
+		} 
+		else {
+			sval++;
 		}
 	}
-	return sval;
+	return sval * SPACE_BONUS;
 }
 int Evaluation::kingSafety(Board& b, int color) {
 	b.setKingSquare(b.mailbox);
@@ -431,10 +394,9 @@ int Evaluation::isOpenFile(const Board& b, int square) {
 int Evaluation::getGamePhase() { return gamePhase; }
 
 int Evaluation::totalEvaluation(Board& b, int color) {
-	//Reevaluates game phase
 	setGamePhase(b);
-	int material = baseMaterial(b, color) + comboMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - comboMaterial(b, -color) - structureMaterial(b, -color);
-	int pawns = doubledAndIsolatedPawns(b, color) + protectedPawns(b, color) + passedPawns(b, color) - doubledAndIsolatedPawns(b, -color) - protectedPawns(b, -color) - passedPawns(b, -color);
+	int material = baseMaterial(b, color) + structureMaterial(b, color) + bishopPair(b, color) - baseMaterial(b, -color) - structureMaterial(b, -color) - bishopPair(b, -color);
+	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + passedPawns(b, color) - doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - passedPawns(b, -color);
 	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
 	int center = pawnCenterControl(b, color) + pieceCenterControl(b, color) - pawnCenterControl(b, -color) - pieceCenterControl(b, -color);
 	int sideToMove = (b.getTurn() == color) ? 1 : 0;

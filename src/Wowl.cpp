@@ -52,33 +52,29 @@ int Wowl::SEE(Board b, Evaluation& e, int square, int color) const {
 
 void Wowl::orderMoves(Board& b, Evaluation& e, std::vector<sf::Vector2i>& lmV, int depth, U64 poskey) {
 	if (hashTable.tt.find(poskey) != hashTable.tt.end()) {
-		int val = hashTable.tt.at(poskey).hashBestMove;
-		hashMove.x = (val - val % 100) / 100;
-		hashMove.y = val % 100;
+		hashMove = hashMoveToVec(poskey);
 	}
+	int orderArray[3] = { -1, -1, -1 };
 	for (int i = 0; i < lmV.size(); i++) {
-		//Move stored in hash table
+		//Hash table move
 		if (lmV[i] == hashMove) {
-			lmV.insert(lmV.begin(), lmV[i]);
-			lmV.erase(lmV.begin() + i + 1);
-			continue;
-		}
-		//Good captures
-		if (SEE(b, e, lmV[i].y, b.getTurn()) > 0 && std::get<1>(b.getSmallestAttacker(lmV[i].y, b.getTurn())) == lmV[i].x) {
-			lmV.insert(lmV.begin(), lmV[i]);
-			lmV.erase(lmV.begin() + i + 1);
+			orderArray[2] = i;
 			continue;
 		}
 		//Killer moves
 		if (lmV[i].x == (killerMoves[0][depth] - killerMoves[0][depth] % 100) / 100 && lmV[i].y == killerMoves[0][depth] % 100) {
-			lmV.insert(lmV.begin(), lmV[i]);
-			lmV.erase(lmV.begin() + i + 1);
+			orderArray[1] = i;
 			continue;
 		}
 		if (lmV[i].x == (killerMoves[1][depth] - killerMoves[1][depth] % 100) / 100 && lmV[i].y == killerMoves[1][depth] % 100) {
-			lmV.insert(lmV.begin(), lmV[i]);
-			lmV.erase(lmV.begin() + i + 1);
+			orderArray[0] = i;
 			continue;
+		}
+	}
+	for (int i = 0; i < 3; i++) {
+		if (orderArray[i] >= 0) {
+			lmV.insert(lmV.begin(), lmV[orderArray[i]]);
+			lmV.erase(lmV.begin() + orderArray[i] + 1);
 		}
 	}
 }
@@ -89,7 +85,14 @@ void Wowl::resetKillerMoves() {
 	}
 }
 
-int Wowl::probeHashTable(U64 key, int depth, int alpha, int beta) {
+sf::Vector2i Wowl::hashMoveToVec(U64 key) {
+	sf::Vector2i move;
+	int val = hashTable.tt.at(key).hashBestMove;
+	move.x = (val - val % 100) / 100;
+	move.y = val % 100;
+	return move;
+}
+int Wowl::probeHashTable(U64 key, int depth, int initial, int alpha, int beta) {
 	if (hashTable.tt.find(key) != hashTable.tt.end()) {
 		if (hashTable.tt.at(key).hashDepth >= depth) {
 			if (hashTable.tt.at(key).hashFlag == hashTable.HASH_ALPHA) {
@@ -102,6 +105,7 @@ int Wowl::probeHashTable(U64 key, int depth, int alpha, int beta) {
 					return beta;
 				}
 			} else if (hashTable.tt.at(key).hashFlag == hashTable.HASH_EXACT) {
+				if (depth == initial) { bestMove = hashMoveToVec(key); }
 				return hashTable.tt.at(key).hashScore;
 			}
 		}
@@ -181,7 +185,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		return qScore;
 	}
 
-	if (probeHashTable(key, depth, alpha, beta) != VAL_UNKWOWN) { return probeHashTable(key, depth, alpha, beta); }
+	if (probeHashTable(key, depth, initial, alpha, beta) != VAL_UNKWOWN) { return probeHashTable(key, depth, initial, alpha, beta); }
 
 	int score;
 
@@ -260,7 +264,6 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	}
 
 	recordHash(key, depth, alpha, tempHashFlag);
-
 	return alpha;
 }
 void Wowl::ID(Board& b, int depth, int color, int secs) {
@@ -269,10 +272,13 @@ void Wowl::ID(Board& b, int depth, int color, int secs) {
 	qSearchNodes = 0;
 	b.setEnPassantSquare();
 	resetKillerMoves();
+	bestMove.x = NO_MOVE;
+	bestMove.y = NO_MOVE;
+	finalBestMove = bestMove;
 
 	int id_alpha = -WIN_SCORE;
 	int id_beta = WIN_SCORE;
-	bool research = false;
+	bool researched_once = false;
 
 	auto timeStart = clock();
 
@@ -282,15 +288,8 @@ void Wowl::ID(Board& b, int depth, int color, int secs) {
 
 		estimate = negaSearch(b, idepth, idepth, color, id_alpha, id_beta);
 
-		//Break search if mate is found
-		if (estimate == WIN_SCORE || estimate == -WIN_SCORE) {
-			id_alpha = -WIN_SCORE;
-			id_beta = WIN_SCORE;
-			break;
-		}
-
 		if ((estimate <= id_alpha) || (estimate >= id_beta)) {
-			if (research) {
+			if (researched_once) {
 				id_alpha = -WIN_SCORE;
 				id_beta = WIN_SCORE;
 			}
@@ -299,13 +298,13 @@ void Wowl::ID(Board& b, int depth, int color, int secs) {
 				id_beta = estimate + ASPIRATION_WINDOW * 2;
 			}
 			idepth--;
-			research = true;
+			researched_once = true;
 			continue;
 		}
 
 		id_alpha = estimate - ASPIRATION_WINDOW;
 		id_beta = estimate + ASPIRATION_WINDOW;
-		research = false;
+		researched_once = false;
 
 		finalBestMove = bestMove;
 		std::cout << "Best move : " << b.toNotation(finalBestMove.x) << b.toNotation(finalBestMove.y) << " at depth " << idepth << std::endl << std::endl;
@@ -317,7 +316,16 @@ void Wowl::ID(Board& b, int depth, int color, int secs) {
 	std::cout << "Nodes explored in negaSearch : " << negaNodes << std::endl;
 	std::cout << "Nodes explored in qSearch : " << qSearchNodes << std::endl << std::endl;
 }
-
+int Wowl::MTDf(Board b, int f, int depth, int color) {
+	int bound[2] = { -WIN_SCORE, WIN_SCORE };
+	int beta;
+	do {
+		beta = f + (f == bound[0]);
+		f = negaSearch(b, depth, depth, color, beta - 1, beta);
+		bound[f < beta] = f;
+	} while (bound[0] < bound[1]);
+	return f;
+}
 long Wowl::perft(Board b, int depth) {
 
 	int nodes = 0;

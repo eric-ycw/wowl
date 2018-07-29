@@ -22,13 +22,13 @@ public:
 	/*PAWN STRUCTURE*/
 	int blockedPawns(const Board&);
 	int doubledAndIsolatedPawns(const Board&, int);
-	int protectedPawns(const Board&, int);
+	int connectedPawns(const Board&, int);
 	int passedPawns(const Board&, int);
 
 	/*PIECE VALUES*/
 	int baseMaterial(const Board&, int);
-	int comboMaterial(const Board&, int);
 	int structureMaterial(const Board&, int);
+	int bishopPair(const Board&, int);
 
 	/*POSITION*/
 	int flipTableValue(int) const;
@@ -49,13 +49,16 @@ public:
 private:
 
 	enum pawnStructValue {
-		DOUBLED_P_PENALTY = -10, ISOLATED_P_PENALTY = -10, PROTECTED_P_BONUS = -2, PASSED_P_BONUS = 6
+		DOUBLED_P_PENALTY = -20, ISOLATED_P_PENALTY = -20,
+		SUPPORTED_P_BONUS = 6, PHALANX_P_BONUS = 4,
+		PASSED_P_BONUS = 4
 	};
 
 	enum positionValue {
+		OPEN_CLOSED_POS_PIECE_VALUE = 3,
 		R_OPEN_FILE_BONUS = 25,
 		K_OPEN_FILE_PENALTY = -20, K_P_SHIELD_PENALTY = -20, K_CASTLED_BONUS = 60,
-		SPACE_BONUS = 5
+		SPACE_BONUS = 4
 	};
 
 	enum centerValue { 
@@ -72,8 +75,8 @@ private:
 	const int pawnTable[64]
 	{
 		99, 99, 99, 99, 99, 99, 99, 99,
-		55, 55, 55, 55, 55, 55, 55, 55,
-		40, 40, 40, 40, 40, 40, 40, 40,
+		99, 99, 99, 99, 99, 99, 99, 99,
+		50, 50, 50, 50, 50, 50, 50, 50,
 		10, 10, 15, 30, 30, 15, 10, 10,
 		 0,  0, 15, 20, 20,  0,  0,  0,
 		 0,  0,  0,  0,  0,-10,  0,  0,
