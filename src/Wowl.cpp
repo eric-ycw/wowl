@@ -178,6 +178,31 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	U64 key = hashTable.generatePosKey(b);
 	int tempHashFlag = hashTable.HASH_ALPHA;
 
+	b.getLegalMoves();
+	bool haveMove = false;
+	for (const auto& i : b.legalMoveVec) {
+		if (!b.checkMoveCheck(i.x, i.y)) {
+			haveMove = true;
+			break;
+		}
+	}
+	if (!haveMove) {
+		if (depth == initial) {
+			bestMove.x = NO_MOVE;
+			bestMove.y = NO_MOVE;
+		}
+		if (b.inCheck(color, b.mailbox)) {
+			return -WIN_SCORE;  //Checkmate
+		}
+		else {
+			return DRAW_SCORE;  //Stalemate
+		}
+	}
+
+	if (b.inCheck(color, b.mailbox) && depth == 0) {
+		depth++;
+	}
+
 	if (depth == 0) {
 		negaNodes++;
 		int qScore = qSearch(b, WowlEval, alpha, beta, color);
@@ -196,27 +221,6 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		b.nullMove();
 		if (score >= beta) {
 			return beta;
-		}
-	}
-
-	b.getLegalMoves();
-	bool haveMove = false;
-	for (const auto& i : b.legalMoveVec) {
-		if (!b.checkMoveCheck(i.x, i.y)) {
-			haveMove = true;
-			break;
-		}
-	}
-	if (!haveMove) {
-		if (depth == initial) {
-			bestMove.x = NO_MOVE;
-			bestMove.y = NO_MOVE;
-		}
-		if (b.inCheck(color, b.mailbox)) {
-			return -WIN_SCORE + depth;  //Checkmate
-		}
-		else {
-			return DRAW_SCORE;  //Stalemate
 		}
 	}
 
@@ -288,6 +292,10 @@ void Wowl::ID(Board& b, int depth, int color, int secs) {
 
 		estimate = negaSearch(b, idepth, idepth, color, id_alpha, id_beta);
 
+		if (estimate == WIN_SCORE || estimate == -WIN_SCORE) {
+			break;
+		}
+
 		if ((estimate <= id_alpha) || (estimate >= id_beta)) {
 			if (researched_once) {
 				id_alpha = -WIN_SCORE;
@@ -315,6 +323,13 @@ void Wowl::ID(Board& b, int depth, int color, int secs) {
 	std::cout << "Transposition table size : " << hashTable.tt.size() << std::endl;
 	std::cout << "Nodes explored in negaSearch : " << negaNodes << std::endl;
 	std::cout << "Nodes explored in qSearch : " << qSearchNodes << std::endl << std::endl;
+	
+	if (estimate >= 0) {
+		std::cout << "Wowl thinks it is winning by " << estimate << " centipanws" << std::endl << std::endl;
+	}
+	else {
+		std::cout << "Wowl thinks it is losing by " << estimate * -1 << " centipanws" << std::endl << std::endl;
+	}
 }
 int Wowl::MTDf(Board b, int f, int depth, int color) {
 	int bound[2] = { -WIN_SCORE, WIN_SCORE };

@@ -201,6 +201,7 @@ bool Board::checkLegalKing(int a, int b, int color) {
 	}
 	return true;
 }
+//Get all pseudolegal moves
 void Board::getLegalMoves() {
 	//Clear legal move vector
 	if (!legalMoveVec.empty()) {
@@ -211,57 +212,42 @@ void Board::getLegalMoves() {
 		if (mailbox[m] == -9 || mailbox[0] == 0) {
 			continue;
 		}
-		else {
-			for (int n = 21; n < 99; n++) {
-				if (mailbox[n] == -9) {
-					continue;
+		for (int n = 21; n < 99; n++) {
+			if (mailbox[n] == -9) {
+				continue;
+			}
+			if (mailbox[m] * turn > 0 && mailbox[n] * turn <= 0) {
+				if (checkLegal(m, n)) {
+					legalMoveVec.emplace_back(sf::Vector2i(m, n));
 				}
-				else {
-					if (mailbox[m] * turn > 0 && mailbox[n] * turn <= 0) {
-						if (checkLegal(m, n)) {
-							legalMoveVec.emplace_back(sf::Vector2i(m, n));
-						}
 
-					}
-				}
 			}
 		}
 	}
 }
-//Get all captures and checks
+//Get all captures
 void Board::getQMoves() {
 	if (!qMoveVec.empty()) {
 		qMoveVec.clear();
 	}
-	//Get all captures and checks
 	for (int m = 21; m < 99; m++) {
 		if (mailbox[m] == -9 || mailbox[m] == 0) {
 			continue;
 		}
-		else {
-			for (int n = 21; n < 99; n++) {
-				if (mailbox[n] == -9 || mailbox[n] * mailbox[m] > 0) {
+		for (int n = 21; n < 99; n++) {
+			if (mailbox[n] == -9 || mailbox[n] * mailbox[m] > 0) {
+				continue;
+			}
+			if (checkLegal(m, n)) {
+				move(m, n);
+				if (inCheck(getTurn() * -1, mailbox)) {
+					undo();
 					continue;
 				}
-				else if (mailbox[n] == 0) {
-					//Checks
-					if (checkLegal(m, n)) {
-						move(m, n);
-						if (inCheck(getTurn() * -1, mailbox)) {
-							undo();
-							continue;
-						}
-						else if (inCheck(getTurn(), mailbox)) {
-							qMoveVec.emplace_back(sf::Vector2i(m, n));
-						}
-						undo();
-					}
-				} else {
-					//Captures
-					if (checkLegal(m, n)) {
-						qMoveVec.emplace_back(sf::Vector2i(m, n));
-					}
+				if (mailbox[n] != 0) {
+					qMoveVec.emplace_back(sf::Vector2i(m, n));
 				}
+				undo();
 			}
 		}
 	}
@@ -481,7 +467,7 @@ void Board::setKingSquare(int arr[]) {
 bool Board::inCheck(int color, int arr[]) {
 	setKingSquare(arr);	
 	for (int n = 21; n < 99; n++) {
-		if (arr[n] * color > 0 || arr[n] == -9) {
+		if (n % 10 == 0 || n % 10 == 9 || arr[n] * color > 0) {
 			continue;
 		}
 		if (color == WHITE) {
@@ -765,13 +751,7 @@ void Board::setPosition(std::vector<std::string> pV) {
 			specialMoves(moveVec[i].x, moveVec[i].y, i, mailbox);
 		}
 	}
-
-	if (pV.size() % 2 == 0) {
-		turn = WHITE;
-	}
-	else {
-		turn = BLACK;
-	}
+	turn = pV.size() % 2 == 0 ? WHITE : BLACK;
 }
 //Set board position (from internal move vector)
 void Board::setPosition() {
@@ -793,13 +773,7 @@ void Board::setPosition() {
 			specialMoves(oldc, newc, i, mailbox);
 		}
 	}
-
-	if (size % 2 == 0) {
-		turn = WHITE;
-	}
-	else {
-		turn = BLACK;
-	}
+	turn = size % 2 == 0 ? WHITE : BLACK;
 }
 
 /*GETTERS*/

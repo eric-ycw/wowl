@@ -102,6 +102,40 @@ int Evaluation::connectedPawns(const Board&b, int color) {
 	}
 	return supported * SUPPORTED_P_BONUS + phalanx * PHALANX_P_BONUS;
 }
+int Evaluation::backwardPawns(const Board& b, int color) {
+	int rankArray[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	int squareArray[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	int bpcount = 0;
+	int rank, file;
+	for (int i = 21; i < 99; i++) {
+		if (b.mailbox[i] == b.WP * color) {
+			file = i % 10;
+			rank = (i - file) / 10;
+			assert(file - 1 >= 0 && file - 1 <= 7);
+			if (rankArray[file - 1] == -1) {
+				rankArray[file - 1] = rank;
+				squareArray[file - 1] = i;
+			}
+			else {
+			//Record rear pawn for doubled/tripled pawns
+				if (rankArray[file - 1] * color < rank * color) {
+					rankArray[file - i] = rank;
+					squareArray[file - 1] = i;
+				}
+			}
+		}
+	}
+	for (int i = 0; i < 8; i++) {
+		if (rankArray[i] != -1) {
+			if (rankArray[std::max(0, i - 1)] * color < rankArray[i] * color && rankArray[std::min(7, i + 1)] * color < rankArray[i] * color) {
+				if (b.mailbox[squareArray[i] - color * 20 + 1] == b.WP * -color || b.mailbox[squareArray[i] - color * 20 - 1] == b.WP * -color) {
+					bpcount++;
+				}
+			}
+		}
+	}
+	return bpcount * BACKWARD_P_PENALTY;
+}
 int Evaluation::passedPawns(const Board& b, int color) {
 	int pcount = 0;
 	int rank, file;
@@ -395,11 +429,13 @@ int Evaluation::getGamePhase() { return gamePhase; }
 
 int Evaluation::totalEvaluation(Board& b, int color) {
 	setGamePhase(b);
-	int material = baseMaterial(b, color) + structureMaterial(b, color) + bishopPair(b, color) - baseMaterial(b, -color) - structureMaterial(b, -color) - bishopPair(b, -color);
-	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + passedPawns(b, color) - doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - passedPawns(b, -color);
+	int material = baseMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - structureMaterial(b, -color);
+	int combos = bishopPair(b, color) - bishopPair(b, -color);
+	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color) 
+			  - doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - backwardPawns(b, -color) - passedPawns(b, -color);
 	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
 	int center = pawnCenterControl(b, color) + pieceCenterControl(b, color) - pawnCenterControl(b, -color) - pieceCenterControl(b, -color);
 	int sideToMove = (b.getTurn() == color) ? 1 : 0;
-	int total = material + position + center + pawns + sideToMove * SIDE_TO_MOVE_BONUS;
+	int total = material + combos + position + center + pawns + sideToMove * SIDE_TO_MOVE_BONUS;
 	return total;
 }

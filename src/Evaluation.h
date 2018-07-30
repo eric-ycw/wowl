@@ -10,8 +10,8 @@ public:
 	Evaluation() : gamePhase(OPENING) {}
 
 	enum pieceValue {
-		P_BASE_VAL = 100, N_BASE_VAL = 355, B_BASE_VAL = 365,
-		R_BASE_VAL = 520, Q_BASE_VAL = 980, K_BASE_VAL = 40000
+		P_BASE_VAL = 100, N_BASE_VAL = 365, B_BASE_VAL = 380,
+		R_BASE_VAL = 560, Q_BASE_VAL = 1225, K_BASE_VAL = 40000
 	};
 
 	enum Phase { OPENING = 1, MIDGAME = 2, ENDGAME = 3 };
@@ -23,6 +23,7 @@ public:
 	int blockedPawns(const Board&);
 	int doubledAndIsolatedPawns(const Board&, int);
 	int connectedPawns(const Board&, int);
+	int backwardPawns(const Board&, int);
 	int passedPawns(const Board&, int);
 
 	/*PIECE VALUES*/
@@ -49,16 +50,17 @@ public:
 private:
 
 	enum pawnStructValue {
-		DOUBLED_P_PENALTY = -20, ISOLATED_P_PENALTY = -20,
-		SUPPORTED_P_BONUS = 6, PHALANX_P_BONUS = 4,
-		PASSED_P_BONUS = 4
+		DOUBLED_P_PENALTY = -25, ISOLATED_P_PENALTY = -10,
+		SUPPORTED_P_BONUS = 7, PHALANX_P_BONUS = 4,
+		BACKWARD_P_PENALTY = -15,
+		PASSED_P_BONUS = 3
 	};
 
 	enum positionValue {
 		OPEN_CLOSED_POS_PIECE_VALUE = 3,
 		R_OPEN_FILE_BONUS = 25,
 		K_OPEN_FILE_PENALTY = -20, K_P_SHIELD_PENALTY = -20, K_CASTLED_BONUS = 60,
-		SPACE_BONUS = 4
+		SPACE_BONUS = 5
 	};
 
 	enum centerValue { 
@@ -76,7 +78,7 @@ private:
 	{
 		99, 99, 99, 99, 99, 99, 99, 99,
 		99, 99, 99, 99, 99, 99, 99, 99,
-		50, 50, 50, 50, 50, 50, 50, 50,
+		30, 30, 40, 50, 50, 40, 30, 30,
 		10, 10, 15, 30, 30, 15, 10, 10,
 		 0,  0, 15, 20, 20,  0,  0,  0,
 		 0,  0,  0,  0,  0,-10,  0,  0,
@@ -88,9 +90,9 @@ private:
 		-50,-50,-30,-30,-30,-30,-50,-50,
 		-50,-15,  0,  0,  0,  0,-15,-50,
 		-50,  0, 10, 12, 12, 10,  0,-50,
-		-50,  0, 10, 15, 15, 10,  0,-50,
-		-50,  0, 10, 15, 15, 10,  0,-50,
-		-50,  5, 12,  8,  8, 12,  5,-50,
+		-40,  0, 12, 15, 15, 12,  0,-40,
+		-40,  0, 10, 15, 15, 10,  0,-40,
+		-50,  5, 10,  8,  8, 10,  5,-50,
 		-50,-15,  0,  5,  5,  0,-15,-50,
 		-50,-20,-10,-10,-10,-10,-25,-50,
 	};
@@ -132,11 +134,11 @@ private:
 		-20,-10,-10, -5, -5,-10,-10,-20,
 		-10,  0,  0,  0,  0,  0,  0,-10,
 		-10,  0,  5,  5,  5,  5,  0,-10,
-		-10,  0,  5,  5,  5,  5,  0, 10,
-		 -5,  0,  0,  0,  0,  0,  0, 10,
+		-10,  0,  5, 10, 10,  5,  0, -5,
+		 -5,  0,  5, 10, 10,  5,  0,-10,
 		-10,  0,  0,  0,  0,  0,  0,-10,
 		-10,  0,  0,  0,  0,  0,  0,-10,
-		-20,-10,-10,  0,  0,-10,-10,-20
+		-20,-10,-10,-10,-10,-10,-10,-20
 	};
 	const int kingNormalTable[64]
 	{
@@ -153,12 +155,12 @@ private:
 	{
 		-50,-40,-30,-20,-20,-30,-40,-50,
 		-30,-20,-10,  0,  0,-10,-20,-30,
+		-30,-10, 30, 30, 30, 30,-10,-30,
+		-30,-10, 30, 50, 50, 30,-10,-30,
+		-30,-10, 30, 50, 50, 30,-10,-30,
 		-30,-10, 20, 30, 30, 20,-10,-30,
-		-30,-10, 30, 40, 40, 30,-10,-30,
-		-30,-10, 30, 40, 40, 30,-10,-30,
-		-30,-10, 20, 30, 30, 20,-10,-30,
-		-30,-30,  5,  5,  5,  5,-30,-30,
-		-50,-30,-30,-30,-30,-30,-30,-50
+		-40,-30,  5,  5,  5,  5,-30,-40,
+		-50,-40,-40,-40,-40,-40,-40,-50
 	};
 };
 
