@@ -137,12 +137,12 @@ bool Board::checkLegalPawn(int a, int b, int color) const {
 			//Black pawn adjacency
 			if (mailbox[a - 1] == -1 && target == 0 && b == a - 10 - 1) {
 				//Check last move
-				if (moveVec.back().x == a - 20 - 1 && moveVec.back().y == a - 1) {
+				if (moveVec.back().from == a - 20 - 1 && moveVec.back().to == a - 1) {
 					return true;
 				}
 			}
 			if (mailbox[a + 1] == -1 && target == 0 && b == a - 10 + 1) {
-				if (moveVec.back().x == a - 20 + 1 && moveVec.back().y == a + 1) {
+				if (moveVec.back().from == a - 20 + 1 && moveVec.back().to == a + 1) {
 					return true;
 				}
 			}
@@ -161,12 +161,12 @@ bool Board::checkLegalPawn(int a, int b, int color) const {
 		}
 		if (a <= 68 && a >= 61) {
 			if (mailbox[a - 1] == 1 && target == 0 && b == a + 10 - 1) {
-				if (moveVec.back().x == a + 20 - 1 && moveVec.back().y == a - 1) {
+				if (moveVec.back().from == a + 20 - 1 && moveVec.back().to == a - 1) {
 					return true;
 				}
 			}
 			if (mailbox[a + 1] == 1 && target == 0 && b == a + 10 + 1) {
-				if (moveVec.back().x == a + 20 + 1 && moveVec.back().y == a + 1) {
+				if (moveVec.back().from == a + 20 + 1 && moveVec.back().to == a + 1) {
 					return true;
 				}
 			}
@@ -218,7 +218,7 @@ void Board::getLegalMoves() {
 			}
 			if (mailbox[m] * turn > 0 && mailbox[n] * turn <= 0) {
 				if (checkLegal(m, n)) {
-					legalMoveVec.emplace_back(sf::Vector2i(m, n));
+					legalMoveVec.emplace_back(Move(m, n));
 				}
 
 			}
@@ -383,7 +383,7 @@ bool Board::checkAttackKing(int a, int b, const int arr[]) const {
 std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 
 	std::tuple<int, int> attackerArray[5];
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 5; ++i) {
 		std::get<0>(attackerArray[i]) = 0;
 		std::get<1>(attackerArray[i]) = 0;
 	}
@@ -395,7 +395,7 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 		return attackerArray[0];
 	}
 
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		sqval = mailbox[i];
 		if (sqval == -9 || sqval * color <= 0) {
 			continue;
@@ -442,7 +442,7 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 		}
 	}
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 5; ++i) {
 		if (std::get<0>(attackerArray[i]) > 0) {
 			std::get<0>(attackerArray[i]) = i + 1;
 			return attackerArray[i];
@@ -519,8 +519,8 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 	if (mailbox[22] != 0 || mailbox[23] != 0 || mailbox[24] != 0) {
 		std::get<3>(castling) = false;
 	}
-	for (int c = 0; c < moveVec.size(); c++) {
-		int oldpos = moveVec[c].x;
+	for (int c = 0; c < moveVec.size(); ++c) {
+		int oldpos = moveVec[c].from;
 		//White king has moved
 		if (oldpos == 95) {
 			std::get<0>(castling) = false;
@@ -550,7 +550,7 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 	}
 	//Squares are attacked
 	for (int n = 21; n < 99; n++) {
-		if (mailbox[n] != -9) {
+		if (mailbox[n] != -9 || mailbox[n] == 0) {
 			if (mailbox[n] < 0) {
 				if (checkAttack(n, 96, mailbox) || checkAttack(n, 97, mailbox)) {
 					std::get<0>(castling) = false;
@@ -577,13 +577,13 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 	//White en passant
 	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && arr[newpos] == WP && !moveVec.empty()) {
-		if (moveVec[last - 1].y == newpos + 10 && arr[newpos + 10] == BP && moveVec[last - 1].x == newpos - 10) {
+		if (moveVec[last - 1].to == newpos + 10 && arr[newpos + 10] == BP && moveVec[last - 1].from == newpos - 10) {
 			arr[newpos + 10] = 0;
 		}
 	}
 	//Black en passant
 	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && arr[newpos] == BP && !moveVec.empty()) {
-		if (moveVec[last - 1].y == newpos - 10 && arr[newpos - 10] == WP && moveVec[last - 1].x == newpos + 10) {
+		if (moveVec[last - 1].to == newpos - 10 && arr[newpos - 10] == WP && moveVec[last - 1].from == newpos + 10) {
 			arr[newpos - 10] = 0;
 		}
 	}
@@ -627,7 +627,7 @@ void Board::move(int a, int b) {
 	mailbox[b] = mailbox[a];
 	mailbox[a] = 0;
 	//Update move vec
-	moveVec.emplace_back(sf::Vector2i(a, b));
+	moveVec.emplace_back(Move(a, b));
 
 	//Special moves
 	specialMoves(a, b, moveVec.size() - 1, mailbox);
@@ -655,8 +655,8 @@ void Board::setEnPassantSquare() {
 		return;
 	}
 
-	int oldsq = moveVec.back().x;
-	int newsq = moveVec.back().y;
+	int oldsq = moveVec.back().from;
+	int newsq = moveVec.back().to;
 	int color = mailbox[newsq];
 
 	if (mailbox[newsq] != WP || mailbox[newsq] != BP) {
@@ -681,7 +681,7 @@ void Board::setEnPassantSquare() {
 /*BOARD*/
 void Board::outputBoard() const {
 	std::cout << std::endl;
-	for (int i = 0; i < 120; i++) {
+	for (int i = 0; i < 120; ++i) {
 		switch (mailbox[i]) {
 		case 0:
 			std::cout << "* ";
@@ -729,7 +729,7 @@ void Board::outputBoard() const {
 	}
 }
 void Board::resetBoard() {
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		mailbox[i] = start[i];
 	}
 	castled[0] = false;
@@ -742,20 +742,20 @@ void Board::resetBoard() {
 void Board::setPosition(std::vector<std::string> pV) {
 	//Reset board
 	resetBoard();
-	for (int i = 0; i < pV.size(); i++) {
+	for (int i = 0; i < pV.size(); ++i) {
 		int oldpos = convertCoord(toCoord(pV[i][0], pV[i][1]));
 		int newpos = convertCoord(toCoord(pV[i][2], pV[i][3]));
 		move(oldpos, newpos);
 
 		if (i > 0) {
-			specialMoves(moveVec[i].x, moveVec[i].y, i, mailbox);
+			specialMoves(moveVec[i].from, moveVec[i].to, i, mailbox);
 		}
 	}
 	turn = pV.size() % 2 == 0 ? WHITE : BLACK;
 }
 //Set board position (from internal move vector)
 void Board::setPosition() {
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		mailbox[i] = start[i];
 	}
 	//Reset castled array
@@ -764,9 +764,9 @@ void Board::setPosition() {
 	int oldc, newc;
 	int size = moveVec.size();
 
-	for (int i = 0; i < size; i++) {
-		oldc = moveVec[i].x;
-		newc = moveVec[i].y;
+	for (int i = 0; i < size; ++i) {
+		oldc = moveVec[i].from;
+		newc = moveVec[i].to;
 		mailbox[newc] = mailbox[oldc];
 		mailbox[oldc] = 0;
 		if (i > 0) {

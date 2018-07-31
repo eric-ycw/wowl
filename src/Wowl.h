@@ -16,20 +16,16 @@ public:
 		NO_MOVE = -9
 	};
 
-	sf::Vector2i bestMove;
-	sf::Vector2i finalBestMove;
-	sf::Vector2i hashMove;
+	Move bestMove, finalBestMove, hashMove;
 
 	Hash hashTable;
-
-	std::vector<U64> posKeyVec;
 
 	/*EVALUATION*/
 	int SEE(Board, Evaluation&, int, int) const;
 
 	/*MOVES*/
-	void orderMoves(Board&, Evaluation&, std::vector<sf::Vector2i>&, int, U64);
-	void resetKillerMoves();
+	void orderMoves(Board&, Evaluation&, std::vector<Move>&, int, U64);
+	void resetMoveHeuristics();
 
 	/*SEARCH*/
 	int qSearch(Board, Evaluation&, int, int, int);
@@ -38,7 +34,6 @@ public:
 	int MTDf(Board, int, int, int);
 
 	/*HASH TABLE*/
-	sf::Vector2i hashMoveToVec(U64);
 	int probeHashTable(U64, int, int, int, int);
 	void recordHash(U64, int, int, int);
 	void ageHash();
@@ -58,9 +53,9 @@ private:
 	};
 
 	int estimate = 0;
-	int killerMoves[2][MAX_SEARCH_DEPTH + 1];
-	int negaNodes;
-	int qSearchNodes;
+	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
+	int historyMoves[2][120][120];
+	int negaNodes, qSearchNodes;
 	int captures = 0;
 };
 

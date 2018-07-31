@@ -5,19 +5,19 @@ void Evaluation::setGamePhase(const Board& b) {
 	if (gamePhase == OPENING) {
 		int score = 0;
 		//Sparse backrank --> more developed pieces
-		for (int i = 21; i < 29; i++) {
+		for (int i = 21; i < 29; ++i) {
 			if (b.mailbox[i] == 0) {
 				score += 2;
 			}
 		}
-		for (int i = 91; i < 99; i++) {
+		for (int i = 91; i < 99; ++i) {
 			if (b.mailbox[i] == 0) {
 				score += 2;
 			}
 		}
 
 		//Castled
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 2; ++i) {
 			if (b.castled[i]) {
 				score += 2;
 			}
@@ -29,7 +29,7 @@ void Evaluation::setGamePhase(const Board& b) {
 	}
 	else if (gamePhase == MIDGAME) {
 		int count = 0;
-		for (int i = 21; i < 99; i++) {
+		for (int i = 21; i < 99; ++i) {
 			if (b.mailbox[i] != 0 && abs(b.mailbox[i]) != b.WP && abs(b.mailbox[i]) != b.WK) {
 				count++;
 			}
@@ -44,7 +44,7 @@ void Evaluation::setGamePhase(const Board& b) {
 /*PAWN STRUCTURE*/
 int Evaluation::blockedPawns(const Board& b) {
 	int bpcount = 0;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (b.mailbox[i] == b.WP && b.mailbox[i - 10] ==  b.BP && b.mailbox[i - 11] >= 0 && b.mailbox[i - 9] >= 0) {
 			bpcount++;
 		}
@@ -58,12 +58,12 @@ int Evaluation::doubledAndIsolatedPawns(const Board& b, int color) {
 	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int dpcount = 0;
 	int ipcount = 0;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
 			filearray[i % 10 - 1]++;
 		}
 	}
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; ++i) {
 		if (filearray[i] == 2) {
 			dpcount++;
 		}
@@ -92,7 +92,7 @@ int Evaluation::doubledAndIsolatedPawns(const Board& b, int color) {
 int Evaluation::connectedPawns(const Board&b, int color) {
 	int supported = 0;
 	int phalanx = 0;
-	for (int i = 31; i < 89; i++) {
+	for (int i = 31; i < 89; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
 			supported += b.mailbox[i + color * 10 + 1] == b.WP * color ? 1 : 0
 					   + b.mailbox[i + color * 10 - 1] == b.WP * color ? 1 : 0;
@@ -107,7 +107,7 @@ int Evaluation::backwardPawns(const Board& b, int color) {
 	int squareArray[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	int bpcount = 0;
 	int rank, file;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
 			file = i % 10;
 			rank = (i - file) / 10;
@@ -125,7 +125,7 @@ int Evaluation::backwardPawns(const Board& b, int color) {
 			}
 		}
 	}
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; ++i) {
 		if (rankArray[i] != -1) {
 			if (rankArray[std::max(0, i - 1)] * color < rankArray[i] * color && rankArray[std::min(7, i + 1)] * color < rankArray[i] * color) {
 				if (b.mailbox[squareArray[i] - color * 20 + 1] == b.WP * -color || b.mailbox[squareArray[i] - color * 20 - 1] == b.WP * -color) {
@@ -140,7 +140,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 	int pcount = 0;
 	int rank, file;
 	bool passed;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
 			passed = true;
 			file = i % 10;
@@ -170,7 +170,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 /*PIECE VALUES*/
 int Evaluation::baseMaterial(const Board& b, int color) {
 	int mval = 0;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (b.mailbox[i] == -9) { continue; }
 		if (color * b.mailbox[i] > 0) {
 			switch (abs(b.mailbox[i])) {
@@ -196,7 +196,7 @@ int Evaluation::baseMaterial(const Board& b, int color) {
 }
 int Evaluation::structureMaterial(const Board& b, int color) {
 	int mval = 0;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (color * b.mailbox[i] > 0) {
 			switch (abs(b.mailbox[i])) {
 			case b.WN:
@@ -219,7 +219,7 @@ int Evaluation::structureMaterial(const Board& b, int color) {
 int Evaluation::bishopPair(const Board& b, int color) {
 	int mval = 0;
 	int bcount = 0;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (color * b.mailbox[i] > 0) {
 			switch (abs(b.mailbox[i])) {
 			case b.WB:
@@ -244,7 +244,7 @@ int Evaluation::flipTableValue(int square) const {
 }
 int Evaluation::piecePosition(const Board& b, int color) {
 	int pval = 0;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (color * b.mailbox[i] > 0) {
 			switch (b.mailbox[i]) {
 			case b.WP:
@@ -312,7 +312,7 @@ int Evaluation::space(const Board&b, int color) {
 	int file;
 	int rank;
 	int sval = 0;
-	for (int i = 43; i < 77; i++) {
+	for (int i = 43; i < 77; ++i) {
 		if (i % 10 < 3 || i % 10 > 6) {
 			continue;
 		}
@@ -372,7 +372,7 @@ int Evaluation::kingSafety(Board& b, int color) {
 int Evaluation::pawnCenterControl(const Board& b, int color) {
 	int pawnInExtendedCenter = 0;
 	int pawnInCenter = 0;
-	for (int i = 43; i < 77; i++) {
+	for (int i = 43; i < 77; ++i) {
 		if (i % 10 >= 3 && i % 10 <= 6) {
 			if (b.mailbox[i - color * 9] == b.WP * color || b.mailbox[i - color * 11] == b.WP * color) {
 				pawnInExtendedCenter++;
@@ -388,9 +388,9 @@ int Evaluation::pawnCenterControl(const Board& b, int color) {
 }
 int Evaluation::pieceCenterControl(const Board& b, int color) {
 	int controlledSquares = 0;
-	for (int i = 21; i < 99; i++) {
+	for (int i = 21; i < 99; ++i) {
 		if (b.mailbox[i] == b.WN * color || b.mailbox[i] == b.WB * color) {
-			for (int j = 43; j < 77; j++) {
+			for (int j = 43; j < 77; ++j) {
 				if (j % 10 >= 3 && j % 10 <= 6) {
 					if (b.checkAttack(i, j, b.mailbox)) {
 						controlledSquares++;
@@ -408,7 +408,7 @@ int Evaluation::isOpenFile(const Board& b, int square) {
 	int file = square % 10;
 	int pcount = 0;
 	if (b.mailbox[square] != -9) {
-		for (int i = 2; i <= 9; i++) {
+		for (int i = 2; i <= 9; ++i) {
 			pcount = 0;
 			if (abs(b.mailbox[i * 10 + file] == b.WP)) {
 				pcount++;

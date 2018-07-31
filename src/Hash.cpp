@@ -7,13 +7,13 @@ U64 Hash::generateRand64() {
 	return dist(gen);
 }
 void Hash::initHashKeys() {
-	for (int i = 0; i < 12; i++) {
-		for (int j = 0; j < 64; j++) {
+	for (int i = 0; i < 12; ++i) {
+		for (int j = 0; j < 64; ++j) {
 			pieceKeys[i][j] = generateRand64();
 		}
 	}
 	sideKey = generateRand64();
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; ++i) {
 		castlingKey[i] = generateRand64();
 	}
 }
@@ -23,7 +23,7 @@ U64 Hash::generatePosKey(Board& b) {
 	U64 finalKey = 0;
 
 	//Pieces
-	for (int sq = 21; sq < 99; sq++) {
+	for (int sq = 21; sq < 99; ++sq) {
 		if (b.mailbox[sq] == -9) {
 			continue;
 		}

@@ -9,6 +9,22 @@
 #include <assert.h>
 #include <SFML\System\Vector2.hpp>
 
+struct Move {
+	int from;
+	int to;
+
+	Move() {}
+	Move(int a, int b) : from(a), to(b) {}
+
+	bool operator==(const Move& m) const {
+		return (from == m.from && to == m.to);
+	}
+
+	bool operator!=(const Move& m) const {
+		return (from != m.from || to != m.to);
+	}
+};
+
 class Board 
 {
 	friend class Evaluation;
@@ -24,7 +40,7 @@ public:
 
 	enum Color { WHITE = 1, BLACK = -1 };
 
-	enum Size { BOARD_SIZE = 8};
+	enum Size { BOARD_SIZE = 8 };
 
 	/*CONVERTERS*/
 	sf::Vector2f toCoord(char, char);
@@ -141,8 +157,8 @@ private:
 		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9
 	};
 
-	std::vector<sf::Vector2i> moveVec;
-	std::vector<sf::Vector2i> legalMoveVec;
+	std::vector<Move> moveVec;
+	std::vector<Move> legalMoveVec;
 	std::vector<sf::Vector2i> attackMoveVec;
 	std::vector<sf::Vector2i> qMoveVec;
 
