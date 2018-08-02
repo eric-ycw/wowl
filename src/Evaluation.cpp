@@ -139,22 +139,13 @@ int Evaluation::backwardPawns(const Board& b, int color) {
 int Evaluation::passedPawns(const Board& b, int color) {
 	int pcount = 0;
 	int rank, file;
-	bool passed;
 	for (int i = 21; i < 99; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
-			passed = true;
 			file = i % 10;
 			rank = (i - file) / 10;
-			int sqr = i;
-			while (sqr >= 31 && sqr <= 88) {
-				if (b.mailbox[sqr] == b.WP * -color || b.mailbox[sqr - 1] == b.WP * -color || b.mailbox[sqr + 1] == b.WP * -color) {
-					passed = false;
-				}
-				sqr += -color * 10;
-			}
-			if (passed) {
+			if (isPassed(b, i, color)) {
 				int reverse_dis = color == b.WHITE ? 9 - rank : rank - 2;
-				if (reverse_dis < 6) {
+				if (reverse_dis < 5) {
 					pcount += reverse_dis * 2 * PASSED_P_BONUS;
 				}
 				else {
@@ -220,19 +211,39 @@ int Evaluation::bishopPair(const Board& b, int color) {
 	int mval = 0;
 	int bcount = 0;
 	for (int i = 21; i < 99; ++i) {
-		if (color * b.mailbox[i] > 0) {
-			switch (abs(b.mailbox[i])) {
-			case b.WB:
-				bcount += 1;
-				break;
+		if (b.mailbox[i] == b.WB * color) {
+			bcount += 1;
+		}
+	}
+	if (bcount >= 2) {
+		mval += BISHOP_PAIR_BONUS;
+	}
+	return mval;
+}
+int Evaluation::rookBehindPassed(const Board& b, int color) {
+	int rcount = 0;
+	for (int i = 21; i < 99; ++i) {
+		if (b.mailbox[i] == b.WR * color) {
+			int sqr = i;
+			while (sqr >= 31 && sqr <= 88) {
+				//Supporting friendly passed pawn or blocking enemy passed pawn
+				sqr += -color * 10;
+				if (b.mailbox[sqr] == b.WP * color || b.mailbox[sqr] == b.WP * -color) {
+					rcount += 1;
+					break;
+				}
+			}
+			while (sqr >= 31 && sqr <= 88) {
+				//Behind enemy passed pawn
+				sqr += color * 10;
+				if (b.mailbox[sqr] == b.WP * -color) {
+					rcount += 1;
+					break;
+				}
 			}
 		}
 	}
-	//Bishop pair bonus
-	if (bcount >= 2) {
-		mval += 50;
-	}
-	return mval;
+	return rcount * ROOK_BEHIND_PASSED_P_BONUS;
 }
 
 /*POSITION*/
@@ -425,17 +436,37 @@ int Evaluation::isOpenFile(const Board& b, int square) {
 		return 2;
 	}
 }
+int Evaluation::isPassed(const Board&b, int square, int color) {
+	bool passed;
+	int rank, file;
+	if (b.mailbox[square] == b.WP * color) {
+		passed = true;
+		file = square % 10;
+		rank = (square - file) / 10;
+		int sqr = square;
+		while (sqr >= 31 && sqr <= 88) {
+			sqr += -color * 10;
+			if (b.mailbox[sqr] == b.WP * -color || b.mailbox[sqr - 1] == b.WP * -color || b.mailbox[sqr + 1] == b.WP * -color) {
+				passed = false;
+			}
+		}
+		if (passed) {
+			return true;
+		}
+	}
+	return false;
+}
 int Evaluation::getGamePhase() { return gamePhase; }
 
 int Evaluation::totalEvaluation(Board& b, int color) {
 	setGamePhase(b);
 	int material = baseMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - structureMaterial(b, -color);
-	int combos = bishopPair(b, color) - bishopPair(b, -color);
+	int pieces = bishopPair(b, color) - bishopPair(b, -color) + rookBehindPassed(b, color) - rookBehindPassed(b, -color);
 	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color) 
 			  - doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - backwardPawns(b, -color) - passedPawns(b, -color);
 	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
 	int center = pawnCenterControl(b, color) + pieceCenterControl(b, color) - pawnCenterControl(b, -color) - pieceCenterControl(b, -color);
 	int sideToMove = (b.getTurn() == color) ? 1 : 0;
-	int total = material + combos + position + center + pawns + sideToMove * SIDE_TO_MOVE_BONUS;
+	int total = material + pieces + position + center + pawns + sideToMove * SIDE_TO_MOVE_BONUS;
 	return total;
 }

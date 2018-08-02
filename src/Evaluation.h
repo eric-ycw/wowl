@@ -30,6 +30,7 @@ public:
 	int baseMaterial(const Board&, int);
 	int structureMaterial(const Board&, int);
 	int bishopPair(const Board&, int);
+	int rookBehindPassed(const Board&, int);
 
 	/*POSITION*/
 	int flipTableValue(int) const;
@@ -43,6 +44,7 @@ public:
 
 	/*GETTERS*/
 	int isOpenFile(const Board&, int);
+	int isPassed(const Board&, int, int);
 	int getGamePhase();
 
 	int totalEvaluation(Board&, int);
@@ -54,6 +56,11 @@ private:
 		SUPPORTED_P_BONUS = 7, PHALANX_P_BONUS = 4,
 		BACKWARD_P_PENALTY = -15,
 		PASSED_P_BONUS = 3
+	};
+
+	enum piecesBonusValue {
+		BISHOP_PAIR_BONUS = 50,
+		ROOK_BEHIND_PASSED_P_BONUS = 50,
 	};
 
 	enum positionValue {
