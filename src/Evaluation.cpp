@@ -228,7 +228,7 @@ int Evaluation::rookBehindPassed(const Board& b, int color) {
 			while (sqr >= 31 && sqr <= 88) {
 				//Supporting friendly passed pawn or blocking enemy passed pawn
 				sqr += -color * 10;
-				if (b.mailbox[sqr] == b.WP * color || b.mailbox[sqr] == b.WP * -color) {
+				if (isPassed(b, sqr, color) || isPassed(b, sqr, -color)) {
 					rcount += 1;
 					break;
 				}
@@ -236,7 +236,7 @@ int Evaluation::rookBehindPassed(const Board& b, int color) {
 			while (sqr >= 31 && sqr <= 88) {
 				//Behind enemy passed pawn
 				sqr += color * 10;
-				if (b.mailbox[sqr] == b.WP * -color) {
+				if (isPassed(b, sqr, -color)) {
 					rcount += 1;
 					break;
 				}
