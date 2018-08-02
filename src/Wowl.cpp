@@ -50,6 +50,37 @@ int Wowl::SEE(Board b, Evaluation& e, int square, int color) const {
 	return val;
 }
 
+std::vector<Move> Wowl::IIDmoveOrdering(Board& b, Evaluation& e, std::vector<Move> lmV, int depth) {
+	std::vector<int> scoreVec(lmV.size());
+	for (int i = 0; i < lmV.size(); ++i) {
+		b.move(lmV[i].from, lmV[i].to);
+		if (b.inCheck(b.getTurn() * -1, b.mailbox)) {
+			scoreVec[i] = -WIN_SCORE;
+			b.undo();
+			continue;
+		}
+		scoreVec[i] = -e.totalEvaluation(b, b.getTurn());
+		b.undo();
+	}
+	int i = 1;
+	int j;
+	while (i < lmV.size()) {
+		j = i;
+		while (j > 0 && scoreVec[j - 1] < scoreVec[j]) {
+			int dummy_score = scoreVec[j];
+			scoreVec[j] = scoreVec[j - 1];
+			scoreVec[j - 1] = dummy_score;
+
+			Move dummy_move = lmV[j];
+			lmV[j] = lmV[j - 1];
+			lmV[j - 1] = dummy_move;
+
+			j -= 1;
+		}
+		i += 1;
+	}
+	return lmV;
+}
 void Wowl::orderMoves(Board& b, Evaluation& e, std::vector<Move>& lmV, int depth, U64 poskey) {
 	if (hashTable.tt.find(poskey) != hashTable.tt.end()) {
 		hashMove = hashTable.tt.at(poskey).hashBestMove;
@@ -57,6 +88,10 @@ void Wowl::orderMoves(Board& b, Evaluation& e, std::vector<Move>& lmV, int depth
 	int orderArray[4] = { -1 };
 	int history_max = 0;
 	bool ordered = false;
+
+	if (depth > 2) {
+		lmV = IIDmoveOrdering(b, e, b.legalMoveVec, depth);
+	}
 
 	for (int i = 0; i < lmV.size(); ++i) {
 		//Hash table move
@@ -190,6 +225,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	U64 key = hashTable.generatePosKey(b);
 	int tempHashFlag = hashTable.HASH_ALPHA;
 
+
 	b.getLegalMoves();
 	bool haveMove = false;
 	for (const auto& i : b.legalMoveVec) {
@@ -239,13 +275,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	}
 
 	orderMoves(b, WowlEval, b.legalMoveVec, depth, key);
-
-	if (depth == initial) {
-		for (const auto& i : b.legalMoveVec) {
-			std::cout << b.toNotation(i.from) << b.toNotation(i.to) << " at depth " << depth << std::endl;
-		}
-	}
-
+	
 	bool foundPV = false;
 	bool isCapture;
 

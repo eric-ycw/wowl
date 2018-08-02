@@ -24,6 +24,7 @@ public:
 	int SEE(Board, Evaluation&, int, int) const;
 
 	/*MOVES*/
+	std::vector<Move> IIDmoveOrdering(Board&, Evaluation&, std::vector<Move>, int);
 	void orderMoves(Board&, Evaluation&, std::vector<Move>&, int, U64);
 	void resetMoveHeuristics();
 
