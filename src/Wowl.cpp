@@ -265,7 +265,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	int score;
 
 	//Null move pruning
-	if (depth - 1 - NULL_MOVE_REDUCTION >= 0 && !b.inCheck(color, b.mailbox) && WowlEval.getGamePhase() != WowlEval.ENDGAME) {
+	if (depth - 1 - NULL_MOVE_REDUCTION >= 0 && !b.inCheck(color, b.mailbox) && !b.inCheck(-color, b.mailbox) && WowlEval.getGamePhase() != WowlEval.ENDGAME) {
 		b.nullMove();
 		score = -negaSearch(b, depth - 1 - NULL_MOVE_REDUCTION, initial, -color, -beta, -beta + 1);
 		b.nullMove();
@@ -278,8 +278,10 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	
 	bool foundPV = false;
 	bool isCapture;
+	int movesSearched = 0;
 
 	for (const auto& i : b.legalMoveVec) {
+		movesSearched++;
 		isCapture = (b.mailbox[i.to] != 0) ? true : false;
 		b.move(i.from, i.to);
 		if (b.inCheck(b.getTurn() * -1, b.mailbox)) {
@@ -288,15 +290,31 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		}
 		else {
 			negaNodes++;
-			if (initial > 1 && foundPV) {
-				score = -negaSearch(b, depth - 1, initial, -color, -alpha - 1, -alpha);
-				if (score > alpha && score < beta) {
-					score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
+			//Late move reductions
+			if (movesSearched >= LMR_STARTING_MOVE && depth >= LMR_STARTING_DEPTH 
+				&& !b.inCheck(b.getTurn(), b.mailbox) && !isCapture) {
+				if (depth >= LMR_STARTING_DEPTH + 1 && movesSearched >= LMR_STARTING_MOVE * 3) {
+					score = -negaSearch(b, depth - 3, initial, -color, -alpha - 1, -alpha);
 				}
-				foundPV = true;
+				else {
+					score = -negaSearch(b, depth - 2, initial, -color, -alpha - 1, -alpha);
+				}
 			}
 			else {
-				score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
+				score = alpha + 1;
+			}
+			if (score > alpha) {
+				//PVS
+				if (initial > 1 && foundPV) {
+					score = -negaSearch(b, depth - 1, initial, -color, -alpha - 1, -alpha);
+					if (score > alpha && score < beta) {
+						score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
+					}
+					foundPV = true;
+				}
+				else {
+					score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha);
+				}
 			}
 		}
 		b.undo();
