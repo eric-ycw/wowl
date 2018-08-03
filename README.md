@@ -6,16 +6,18 @@ Requires SFML to compile.
 * 10x12 mailbox
 
 ## Search
-* DLS with aspiration window
+* Iterative deepening with aspiration window
 * Transposition table
 * Quiescence search
 * SEE
 * Killer moves
 * Null move pruning
 * PVS
+* Late move reduction
 
 ## Evaluation
 * Material evaluation with piece-square tables
 * King safety
 * Space and center control
 * Pawn structure
+* Passed pawns
