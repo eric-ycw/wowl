@@ -26,13 +26,13 @@ public:
 	int SEE(Board, Evaluation&, int, int) const;
 
 	/*MOVES*/
-	std::vector<Move> IIDmoveOrdering(Board&, Evaluation&, std::vector<Move>, int);
-	void orderMoves(Board&, Evaluation&, std::vector<Move>&, int, U64);
+	std::vector<Move> IIDmoveOrdering(Board&, Evaluation&, std::vector<Move>, int, int, int);
+	void orderMoves(Board&, Evaluation&, std::vector<Move>&, int, U64, int, int);
 	void resetMoveHeuristics();
 
 	/*SEARCH*/
 	int qSearch(Board, Evaluation&, int, int, int);
-	int negaSearch(Board, int, int, int, int, int);
+	int negaSearch(Board, int, int, int, int, int, bool);
 	void ID(Board&, int, int, int);
 	int MTDf(Board, int, int, int);
 

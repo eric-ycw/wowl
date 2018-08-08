@@ -31,6 +31,7 @@ public:
 	int structureMaterial(const Board&, int);
 	int bishopPair(const Board&, int);
 	int rookBehindPassed(const Board&, int);
+	int trappedRook(const Board&, int);
 
 	/*POSITION*/
 	int flipTableValue(int) const;
@@ -52,21 +53,22 @@ public:
 private:
 
 	enum pawnStructValue {
-		DOUBLED_P_PENALTY = -25, ISOLATED_P_PENALTY = -10,
+		DOUBLED_P_PENALTY = -15, ISOLATED_P_PENALTY = -10,
 		SUPPORTED_P_BONUS = 7, PHALANX_P_BONUS = 4,
-		BACKWARD_P_PENALTY = -15,
+		BACKWARD_P_PENALTY = -12,
 		PASSED_P_BONUS = 3
 	};
 
 	enum piecesBonusValue {
 		BISHOP_PAIR_BONUS = 50,
-		ROOK_BEHIND_PASSED_P_BONUS = 50,
+		ROOK_BEHIND_PASSED_P_BONUS = 30,
+		TRAPPED_ROOK_PENALTY = -16
 	};
 
 	enum positionValue {
 		OPEN_CLOSED_POS_PIECE_VALUE = 3,
-		R_OPEN_FILE_BONUS = 25,
-		K_OPEN_FILE_PENALTY = -20, K_P_SHIELD_PENALTY = -20, K_CASTLED_BONUS = 60,
+		R_OPEN_FILE_BONUS = 20,
+		K_OPEN_FILE_PENALTY = -20, K_P_SHIELD_PENALTY = -15, K_CASTLED_BONUS = 50,
 		SPACE_BONUS = 5
 	};
 

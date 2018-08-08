@@ -40,7 +40,6 @@ std::string Board::toNotation(int square) const {
 void Board::reserveVectors() {
 	moveVec.reserve(150);
 	legalMoveVec.reserve(50);
-	attackMoveVec.reserve(50);
 	qMoveVec.reserve(30);
 }
 
@@ -225,7 +224,7 @@ void Board::getLegalMoves() {
 		}
 	}
 }
-//Get all captures
+//Get all captures (pseudolegal)
 void Board::getQMoves() {
 	if (!qMoveVec.empty()) {
 		qMoveVec.clear();
@@ -238,16 +237,8 @@ void Board::getQMoves() {
 			if (mailbox[n] == -9 || mailbox[n] * mailbox[m] > 0) {
 				continue;
 			}
-			if (checkLegal(m, n)) {
-				move(m, n);
-				if (inCheck(getTurn() * -1, mailbox)) {
-					undo();
-					continue;
-				}
-				if (mailbox[n] != 0) {
-					qMoveVec.emplace_back(sf::Vector2i(m, n));
-				}
-				undo();
+			if (checkLegal(m, n) && mailbox[n] != 0) {
+				qMoveVec.emplace_back(Move(m, n));
 			}
 		}
 	}

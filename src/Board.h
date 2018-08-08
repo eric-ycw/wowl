@@ -159,8 +159,7 @@ private:
 
 	std::vector<Move> moveVec;
 	std::vector<Move> legalMoveVec;
-	std::vector<sf::Vector2i> attackMoveVec;
-	std::vector<sf::Vector2i> qMoveVec;
+	std::vector<Move> qMoveVec;
 
 };
 

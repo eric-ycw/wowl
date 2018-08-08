@@ -245,6 +245,26 @@ int Evaluation::rookBehindPassed(const Board& b, int color) {
 	}
 	return rcount * ROOK_BEHIND_PASSED_P_BONUS;
 }
+int Evaluation::trappedRook(const Board&b, int color) {
+	int blocked = 0;
+	for (int i = 21; i < 99; ++i) {
+		if (b.mailbox[i] == b.WR * color) {
+			if (b.mailbox[i + 1] != 0) {
+				blocked++;
+			}
+			if (b.mailbox[i - 1] != 0) {
+				blocked++;
+			}
+			if (b.mailbox[i + 10] != 0) {
+				blocked++;
+			}
+			if (b.mailbox[i - 10] != 0) {
+				blocked++;
+			}
+		}
+	}
+	return blocked * TRAPPED_ROOK_PENALTY;
+}
 
 /*POSITION*/
 int Evaluation::flipTableValue(int square) const {
@@ -461,7 +481,7 @@ int Evaluation::getGamePhase() { return gamePhase; }
 int Evaluation::totalEvaluation(Board& b, int color) {
 	setGamePhase(b);
 	int material = baseMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - structureMaterial(b, -color);
-	int pieces = bishopPair(b, color) - bishopPair(b, -color) + rookBehindPassed(b, color) - rookBehindPassed(b, -color);
+	int pieces = bishopPair(b, color) - bishopPair(b, -color) + rookBehindPassed(b, color) - rookBehindPassed(b, -color) + trappedRook(b, color) - trappedRook(b, -color);
 	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color) 
 			  - doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - backwardPawns(b, -color) - passedPawns(b, -color);
 	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
