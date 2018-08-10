@@ -1,5 +1,6 @@
-# wowl-chess
+# Wowl
 Wowl is a basic chess engine written in C++.<br />
+A chess interface is included along with the engine.<br />
 Requires SFML to compile.
 
 ## Board representation
