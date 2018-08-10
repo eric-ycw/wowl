@@ -10,6 +10,7 @@ class Wowl {
 public:
 
 	enum Search {
+		MIN_SEARCH_DEPTH = 5,
 		MAX_SEARCH_DEPTH = 50,
 		ASPIRATION_WINDOW = 35,
 		NULL_MOVE_REDUCTION = 2,
@@ -19,11 +20,14 @@ public:
 	};
 
 	Move bestMove, finalBestMove, hashMove;
+	std::vector<U64> hashPosVec;
+	std::vector<U64> tempHashPosVec;
 
 	Hash hashTable;
 
 	/*EVALUATION*/
 	int SEE(Board, Evaluation&, int, int) const;
+	bool checkThreefold(U64) const;
 
 	/*MOVES*/
 	std::vector<Move> IIDmoveOrdering(Board&, Evaluation&, std::vector<Move>, int, int, int);

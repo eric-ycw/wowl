@@ -24,14 +24,18 @@ U64 Hash::generatePosKey(Board& b) {
 
 	//Pieces
 	for (int sq = 21; sq < 99; ++sq) {
-		if (b.mailbox[sq] == -9) {
+		piece = b.mailbox[sq];
+		if (piece == 0 || piece == -9) {
 			continue;
 		}
-		piece = b.mailbox[sq];
-		coord = b.to64Coord(sq);
-		if (piece != 0) {
-			finalKey ^= pieceKeys[piece][coord];
+		if (piece > 0) {
+			piece -= 1;
 		}
+		else {
+			piece = piece * -1 + 5;
+		}
+		coord = b.to64Coord(sq);
+		finalKey ^= pieceKeys[piece][coord];
 	}
 	
 	//Side to move

@@ -48,6 +48,13 @@ int Wowl::SEE(Board b, Evaluation& e, int square, int color) const {
 	}
 	return val;
 }
+bool Wowl::checkThreefold(U64 key) const {
+	int poscount = 0;
+	for (const auto& i : tempHashPosVec) {
+		if (key == i) { poscount++; }
+	}
+	return (poscount >= 3) ? true : false;
+}
 
 std::vector<Move> Wowl::IIDmoveOrdering(Board& b, Evaluation& e, std::vector<Move> lmV, int depth, int alpha, int beta) {
 	std::vector<int> scoreVec(lmV.size());
@@ -231,6 +238,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	U64 key = hashTable.generatePosKey(b);
 	int tempHashFlag = hashTable.HASH_ALPHA;
 
+	if (checkThreefold(key)) { return DRAW_SCORE; }
 
 	b.getLegalMoves();
 	bool haveMove = false;
@@ -296,6 +304,8 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 		}
 		else {
 			negaNodes++;
+			tempHashPosVec.emplace_back(key);
+
 			//Late move reductions
 			if (movesSearched >= LMR_STARTING_MOVE && depth >= LMR_STARTING_DEPTH 
 				&& !b.inCheck(b.getTurn(), b.mailbox) && !isCapture) {
@@ -324,6 +334,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 			}
 		}
 		b.undo();
+		tempHashPosVec.pop_back();
 		if (score > alpha) {
 			alpha = score;
 			foundPV = true;
@@ -372,18 +383,24 @@ void Wowl::ID(Board& b, int depth, int color, int secs) {
 
 	for (int idepth = 1; idepth <= MAX_SEARCH_DEPTH; ++idepth) {
 
-		if ((clock() - timeStart) / CLOCKS_PER_SEC >= secs) { break; }
-		negaNodes = 0;
-		qSearchNodes = 0;
+		if ((clock() - timeStart) / CLOCKS_PER_SEC >= secs && idepth >= MIN_SEARCH_DEPTH) { break; }
+
+		if (!researched_once) {
+			negaNodes = 0;
+			qSearchNodes = 0;
+		}
+		tempHashPosVec = hashPosVec;
 
 		estimate = negaSearch(b, idepth, idepth, color, id_alpha, id_beta, true);
 
+		//Break when mate is found
 		if (estimate == WIN_SCORE || estimate == -WIN_SCORE) {
 			finalBestMove = bestMove;
 			std::cout << "Best move : " << b.toNotation(finalBestMove.from) << b.toNotation(finalBestMove.to) << " at depth " << idepth << std::endl;
 			break;
 		}
 
+		//Research with a wider window, if that fails, drop the window and search again
 		if ((estimate <= id_alpha) || (estimate >= id_beta)) {
 			if (researched_once) {
 				id_alpha = -WIN_SCORE;

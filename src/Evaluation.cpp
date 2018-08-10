@@ -145,6 +145,8 @@ int Evaluation::passedPawns(const Board& b, int color) {
 			rank = (i - file) / 10;
 			if (isPassed(b, i, color)) {
 				int reverse_dis = color == b.WHITE ? 9 - rank : rank - 2;
+				//Reduce rank by one if blocked
+				if (b.mailbox[i - color * 10] != 0) { reverse_dis -= 1; }
 				if (reverse_dis < 5) {
 					pcount += reverse_dis * 2 * PASSED_P_BONUS;
 				}
