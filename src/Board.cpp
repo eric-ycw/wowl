@@ -40,7 +40,7 @@ std::string Board::toNotation(int square) const {
 void Board::reserveVectors() {
 	moveVec.reserve(150);
 	legalMoveVec.reserve(50);
-	qMoveVec.reserve(30);
+	captureVec.reserve(30);
 }
 
 /*LEGALITY*/
@@ -50,15 +50,8 @@ bool Board::checkLegal(int a, int b) {
 	int newSquareVal = mailbox[b];
 
 	//Turn + own piece
-	if (turn == WHITE) {
-		if (oldSquareVal < 0 || newSquareVal > 0) {
-			return false;
-		}
-	}
-	else if (turn == BLACK) {
-		if (oldSquareVal > 0 || newSquareVal < 0) {
-			return false;
-		}
+	if (oldSquareVal * turn <= 0 || newSquareVal * turn > 0) {
+		return false;
 	}
 
 	//Out of bounds
@@ -178,23 +171,24 @@ bool Board::checkLegalKing(int a, int b, int color) {
 	if (!(a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b || a + 2 == b || a - 2 == b)) {
 		return false;
 	}
+	auto castlingTuple = checkCastling();
 	if (color == WHITE) {
 		//Short castling
-		if (a + 2 == b && std::get<0>(checkCastling()) == false) {
+		if (a + 2 == b && std::get<0>(castlingTuple) == false) {
 			return false;
 		}
 		//Long castling
-		if (a - 2 == b && std::get<1>(checkCastling()) == false) {
+		if (a - 2 == b && std::get<1>(castlingTuple) == false) {
 			return false;
 		}
 	}
 	else if (color == BLACK) {
 		//Short castling
-		if (a + 2 == b && std::get<2>(checkCastling()) == false) {
+		if (a + 2 == b && std::get<2>(castlingTuple) == false) {
 			return false;
 		}
 		//Long castling
-		if (a - 2 == b && std::get<3>(checkCastling()) == false) {
+		if (a - 2 == b && std::get<3>(castlingTuple) == false) {
 			return false;
 		}
 	}
@@ -202,11 +196,12 @@ bool Board::checkLegalKing(int a, int b, int color) {
 }
 //Get all pseudolegal moves
 void Board::getLegalMoves() {
-	//Clear legal move vector
 	if (!legalMoveVec.empty()) {
 		legalMoveVec.clear();
 	}
-	//Get all legal moves
+	if (!captureVec.empty()) {
+		captureVec.clear();
+	}
 	for (int m = 21; m < 99; m++) {
 		if (mailbox[m] == -9 || mailbox[0] == 0) {
 			continue;
@@ -215,30 +210,11 @@ void Board::getLegalMoves() {
 			if (mailbox[n] == -9) {
 				continue;
 			}
-			if (mailbox[m] * turn > 0 && mailbox[n] * turn <= 0) {
-				if (checkLegal(m, n)) {
-					legalMoveVec.emplace_back(Move(m, n));
+			if (checkLegal(m, n)) {
+				legalMoveVec.emplace_back(Move(m, n));
+				if (mailbox[n] * mailbox[m] < 0) {
+					captureVec.emplace_back(Move(m, n));
 				}
-
-			}
-		}
-	}
-}
-//Get all captures (pseudolegal)
-void Board::getQMoves() {
-	if (!qMoveVec.empty()) {
-		qMoveVec.clear();
-	}
-	for (int m = 21; m < 99; m++) {
-		if (mailbox[m] == -9 || mailbox[m] == 0) {
-			continue;
-		}
-		for (int n = 21; n < 99; n++) {
-			if (mailbox[n] == -9 || mailbox[n] * mailbox[m] > 0) {
-				continue;
-			}
-			if (checkLegal(m, n) && mailbox[n] != 0) {
-				qMoveVec.emplace_back(Move(m, n));
 			}
 		}
 	}

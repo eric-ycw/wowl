@@ -12,7 +12,7 @@ public:
 	enum Search {
 		MIN_SEARCH_DEPTH = 5,
 		MAX_SEARCH_DEPTH = 50,
-		ASPIRATION_WINDOW = 35,
+		ASPIRATION_WINDOW = 32,
 		NULL_MOVE_REDUCTION = 2,
 		LMR_STARTING_MOVE = 5,
 		LMR_STARTING_DEPTH = 3,
@@ -27,7 +27,7 @@ public:
 
 	/*EVALUATION*/
 	int SEE(Board, Evaluation&, int, int) const;
-	bool checkThreefold(U64) const;
+	bool checkThreefold(const U64) const;
 
 	/*MOVES*/
 	std::vector<Move> IIDmoveOrdering(Board&, Evaluation&, std::vector<Move>, int, int, int);
@@ -41,8 +41,8 @@ public:
 	int MTDf(Board, int, int, int);
 
 	/*HASH TABLE*/
-	int probeHashTable(U64, int, int, int, int);
-	void recordHash(U64, int, int, int);
+	int probeHashTable(const U64, int, int, int, int);
+	void recordHash(const U64, int, int, int);
 	void ageHash();
 	
 	long perft(Board, int);
@@ -59,7 +59,7 @@ private:
 		VAL_UNKWOWN = 0
 	};
 
-	int estimate = 0;
+	int bestScore = 0;
 	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
 	int historyMoves[2][120][120];
 	int negaNodes, qSearchNodes;

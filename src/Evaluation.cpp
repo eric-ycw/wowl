@@ -363,38 +363,25 @@ int Evaluation::kingSafety(Board& b, int color) {
 	int rval = 0;
 	int pval = 0;
 	int cval = 0;
-	if (color == b.WHITE) {
-		if (b.castled[0]) {
-			cval++;
-		}
-		rval = isOpenFile(b, b.kingSquareWhite) + isOpenFile(b, b.kingSquareWhite + 1) + isOpenFile(b, b.kingSquareWhite - 1);
-		if (gamePhase <= MIDGAME && b.castled[0]) {
-			if (b.mailbox[b.kingSquareWhite - 10] != b.WP) {
-				pval++;
-			}
-			if (b.mailbox[b.kingSquareWhite - 11] != b.WP) {
-				pval++;
-			}
-			if (b.mailbox[b.kingSquareWhite - 9] != b.WP) {
-				pval++;
-			}
-		}
+	int kingsqr = (color == b.WHITE) ? b.kingSquareWhite : b.kingSquareBlack;
+	int castle_id = (color == b.WHITE) ? 0 : 1;
+
+	//Check if castled
+	if (b.castled[castle_id]) {
+		cval++;
 	}
-	else {
-		if (b.castled[1]) {
-			cval++;
+	//Open files
+	rval = isOpenFile(b, kingsqr) + isOpenFile(b, kingsqr + 1) + isOpenFile(b, kingsqr - 1);
+	//Pawn shield in front of king
+	if (gamePhase <= MIDGAME && b.castled[0]) {
+		if (b.mailbox[b.kingSquareWhite - 10 * color] != b.WP * color) {
+			pval++;
 		}
-		rval = isOpenFile(b, b.kingSquareBlack) + isOpenFile(b, b.kingSquareBlack + 1) + isOpenFile(b, b.kingSquareBlack - 1);
-		if (gamePhase <= MIDGAME && b.castled[1]) {
-			if (b.mailbox[b.kingSquareBlack + 10] !=  b.BP) {
-				pval++;
-			}
-			if (b.mailbox[b.kingSquareBlack + 11] !=  b.BP) {
-				pval++;
-			}
-			if (b.mailbox[b.kingSquareBlack + 9] !=  b.BP) {
-				pval++;
-			}
+		if (b.mailbox[b.kingSquareWhite - 11 * color] != b.WP * color) {
+			pval++;
+		}
+		if (b.mailbox[b.kingSquareWhite - 9 * color] != b.WP * color) {
+			pval++;
 		}
 	}
 
