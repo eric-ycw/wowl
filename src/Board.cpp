@@ -1,6 +1,5 @@
 #include "Board.h"
 
-/*CONVERTERS*/
 //Returns coordinates without SQUARE_SIZE factor
 sf::Vector2f Board::toCoord(char a, char b) {
 	int x = int(a) - 97;
@@ -36,14 +35,12 @@ std::string Board::toNotation(int square) const {
 	return s;
 }
 
-/*VECTORS*/
 void Board::reserveVectors() {
 	moveVec.reserve(150);
 	legalMoveVec.reserve(50);
 	captureVec.reserve(30);
 }
 
-/*LEGALITY*/
 //Check if move is pseudolegal
 bool Board::checkLegal(int a, int b) {
 	int oldSquareVal = mailbox[a];
@@ -168,31 +165,23 @@ bool Board::checkLegalPawn(int a, int b, int color) const {
 	return false;
 }
 bool Board::checkLegalKing(int a, int b, int color) {
-	if (!(a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b || a + 2 == b || a - 2 == b)) {
-		return false;
+	if (a + 10 == b || a - 10 == b || a + 10 + 1 == b || a - 10 + 1 == b || a + 10 - 1 == b || a - 10 - 1 == b || a + 1 == b || a - 1 == b) {
+		return true;
 	}
-	auto castlingTuple = checkCastling();
+	if (a + 2 == b || a - 2 == b) {
+		castlingRights = checkCastling();
+	}
 	if (color == WHITE) {
-		//Short castling
-		if (a + 2 == b && std::get<0>(castlingTuple) == false) {
-			return false;
-		}
-		//Long castling
-		if (a - 2 == b && std::get<1>(castlingTuple) == false) {
-			return false;
+		if ((a + 2 == b && std::get<0>(castlingRights)) || (a - 2 == b && std::get<1>(castlingRights))) {
+			return true;
 		}
 	}
 	else if (color == BLACK) {
-		//Short castling
-		if (a + 2 == b && std::get<2>(castlingTuple) == false) {
-			return false;
-		}
-		//Long castling
-		if (a - 2 == b && std::get<3>(castlingTuple) == false) {
-			return false;
+		if ((a + 2 == b && std::get<2>(castlingRights)) || (a - 2 == b && std::get<3>(castlingRights))) {
+			return true;
 		}
 	}
-	return true;
+	return false;
 }
 //Get all pseudolegal moves
 void Board::getLegalMoves() {
@@ -203,24 +192,49 @@ void Board::getLegalMoves() {
 		captureVec.clear();
 	}
 	for (int m = 21; m < 99; m++) {
-		if (mailbox[m] == -9 || mailbox[0] == 0) {
-			continue;
-		}
-		for (int n = 21; n < 99; n++) {
-			if (mailbox[n] == -9) {
-				continue;
+		int piece = mailbox[m];
+		int abs_piece = piece * turn;
+		int tmp;
+		if (piece == -9 || piece == 0 || abs_piece < 0) { continue; }
+		if (abs_piece == WP || abs_piece == WN || abs_piece == WK) {
+			if (abs_piece == WP) {
+				tmp = 0;
 			}
-			if (checkLegal(m, n)) {
-				legalMoveVec.emplace_back(Move(m, n));
-				if (mailbox[n] * mailbox[m] < 0) {
-					captureVec.emplace_back(Move(m, n));
+			else if (abs_piece == WN) {
+				tmp = 1;
+			}
+			else if (abs_piece == WK) {
+				tmp = 2;
+			}
+			for (int n : pieceMoves[tmp]) {
+				if (tmp == 0) { n *= turn; }
+				if (n == 0 || mailbox[m + n] == -9) {
+					continue;
+				}
+				if (checkLegal(m, m + n)) {
+					legalMoveVec.emplace_back(Move(m, m + n));
+					if (mailbox[m + n] * piece < 0) {
+						captureVec.emplace_back(Move(m, m + n));
+					}
+				}
+			}
+		}
+		else {
+			for (int n = 21; n < 99; n++) {
+				if (mailbox[n] == -9) {
+					continue;
+				}
+				if (checkLegal(m, n)) {
+					legalMoveVec.emplace_back(Move(m, n));
+					if (mailbox[n] * piece < 0) {
+						captureVec.emplace_back(Move(m, n));
+					}
 				}
 			}
 		}
 	}
 }
 
-/*ATTACKS*/
 bool Board::checkAttack(int a, int b, const int arr[]) const {
 	int oldSquareVal = arr[a];
 	int newSquareVal = arr[b];
@@ -277,6 +291,7 @@ bool Board::checkAttackKnight(int a, int b, const int arr[]) const {
 	return false;
 }
 bool Board::checkAttackBishop(int a, int b, const int arr[]) const {
+	if ((a - b) % 9 != 0 && (a - b) % 11 != 0) { return false; }
 	int checkpos = 0;
 	for (int type = 0; type < 4; type++) {
 		for (int dis = 1; dis < 8; dis++) {
@@ -305,6 +320,7 @@ bool Board::checkAttackBishop(int a, int b, const int arr[]) const {
 	return false;
 }
 bool Board::checkAttackRook(int a, int b, const int arr[]) const {
+	if ((a - b) % 10 != 0 && (a - b < - 7 || a - b > 7)) { return false; }
 	int checkpos = 0;
 	for (int type = 0; type < 4; type++) {
 		for (int dis = 1; dis < 8; dis++) {
@@ -420,7 +436,6 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 	return attackerArray[0];
 }
 
-/*KING*/
 void Board::setKingSquare(int arr[]) {
 	for (int k = 98; k > 20; k--) {
 		if (arr[k] == WHITE * 6) {
@@ -460,7 +475,6 @@ bool Board::checkMoveCheck(int a, int b) {
 	return false;
 }
 
-/*CASTLING*/
 //Check castling rights
 std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 	std::tuple<bool, bool, bool, bool> castling(true, true, true, true);
@@ -539,7 +553,6 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 	return castling;
 }
 
-/*MOVES*/
 //Defines special behavior for en passant, castling and promotion
 void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 	//White en passant
@@ -645,7 +658,6 @@ void Board::setEnPassantSquare() {
 	epSquare = newsq + color * 10;
 }
 
-/*BOARD*/
 void Board::outputBoard() const {
 	std::cout << std::endl;
 	for (int i = 0; i < 120; ++i) {
@@ -704,7 +716,6 @@ void Board::resetBoard() {
 	moveVec.clear();
 }
 
-/*SETTERS*/
 //Set board position (from position vector)
 void Board::setPosition(std::vector<std::string> pV) {
 	//Reset board
@@ -740,9 +751,8 @@ void Board::setPosition() {
 			specialMoves(oldc, newc, i, mailbox);
 		}
 	}
-	turn = size % 2 == 0 ? WHITE : BLACK;
+	turn = (size % 2 == 0) ? WHITE : BLACK;
 }
 
-/*GETTERS*/
 int Board::getTurn() const { return turn; }
 int Board::getSquarePiece(int a) const { return mailbox[a]; }

@@ -12,7 +12,7 @@ public:
 	enum Search {
 		MIN_SEARCH_DEPTH = 5,
 		MAX_SEARCH_DEPTH = 50,
-		ASPIRATION_WINDOW = 32,
+		ASPIRATION_WINDOW = 36,
 		NULL_MOVE_REDUCTION = 2,
 		LMR_STARTING_MOVE = 5,
 		LMR_STARTING_DEPTH = 3,
@@ -30,7 +30,7 @@ public:
 	bool checkThreefold(const U64) const;
 
 	/*MOVES*/
-	std::vector<Move> IIDmoveOrdering(Board&, Evaluation&, std::vector<Move>, int, int, int);
+	void staticEvalOrdering(Board&, Evaluation&, std::vector<Move>&, int, int, int);
 	void orderMoves(Board&, Evaluation&, std::vector<Move>&, int, U64, int, int);
 	void resetMoveHeuristics();
 
@@ -63,6 +63,7 @@ private:
 	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
 	int historyMoves[2][120][120];
 	int negaNodes, qSearchNodes;
+	double fh, fhf;
 	int captures = 0;
 };
 
