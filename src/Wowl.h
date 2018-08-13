@@ -30,7 +30,8 @@ public:
 	bool checkThreefold(const U64) const;
 
 	void staticEvalOrdering(Board&, Evaluation&, std::vector<Move>&, int, int, int);
-	void orderMoves(Board&, Evaluation&, std::vector<Move>&, int, U64, int, int);
+	std::vector<int> scoreMoves(Board&, const std::vector<Move>&, const int, const U64);
+	void pickNextMove(std::vector<Move>&, const std::vector<int>&, int);
 	void orderCaptures(Board&, std::vector<Move>&);
 	void resetMoveHeuristics();
 	
@@ -53,11 +54,12 @@ private:
 	};
 
 	enum HashConstants {
-		TT_CLEAR_AGE = 8, 
+		TT_CLEAR_AGE = 12, 
 		VAL_UNKWOWN = 0
 	};
 
 	int MVVLVAScores[6][6];
+	const int futilityMargin[2] = { 300, 560 };
 
 	int bestScore = 0;
 	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
