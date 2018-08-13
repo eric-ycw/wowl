@@ -300,7 +300,7 @@ int Wowl::negaSearch(Board b, int depth, int initial, int color, int alpha, int 
 	int score;
 
 	//Null move pruning
-	if (depth - 1 - NULL_MOVE_REDUCTION >= 0 && !isInCheck && !enemyInCheck && WowlEval.getPhase(b) < 0.25) {
+	if (depth - 1 - NULL_MOVE_REDUCTION >= 0 && !isInCheck && !enemyInCheck && WowlEval.getPhase(b) > 0.25) {
 		b.nullMove();
 		score = -negaSearch(b, depth - 1 - NULL_MOVE_REDUCTION, initial, -color, -beta, -beta + 1, false);
 		b.nullMove();

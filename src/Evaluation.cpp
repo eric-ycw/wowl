@@ -278,7 +278,7 @@ int Evaluation::PST(const Board& b, int color) {
 				val += queenTable[b.to64Coord(coord)];
 				break;
 			case b.WK:
-				val += static_cast<int>((kingNormalTable[b.to64Coord(coord)] * phase + kingEndTable[b.to64Coord(coord)] * (1 - phase)));
+				val += static_cast<int>((kingTable[b.to64Coord(coord)] * phase + kingEndTable[b.to64Coord(coord)] * (1 - phase)));
 				break;
 			}
 		}
