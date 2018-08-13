@@ -1,50 +1,20 @@
 #include "Evaluation.h"
 
-/*GAME PHASE*/
-void Evaluation::setGamePhase(const Board& b) {
-	if (gamePhase == OPENING) {
-		int score = 0;
-		//Sparse backrank --> more developed pieces
-		for (int i = 21; i < 29; ++i) {
-			if (b.mailbox[i] == 0) {
-				score += 2;
-			}
-		}
-		for (int i = 91; i < 99; ++i) {
-			if (b.mailbox[i] == 0) {
-				score += 2;
-			}
-		}
-
-		//Castled
-		for (int i = 0; i < 2; ++i) {
-			if (b.castled[i]) {
-				score += 2;
-			}
-		}
-
-		if (score >= 18) {
-			gamePhase = MIDGAME;
-		}
+double Evaluation::getPhase(const Board& b) {
+	int pieceValues[6] = { 0, N_BASE_VAL, B_BASE_VAL, R_BASE_VAL, Q_BASE_VAL, 0 };
+	int baseMaterial = (N_BASE_VAL + B_BASE_VAL + R_BASE_VAL) * 4 + Q_BASE_VAL * 2;
+	int nonPMaterial = 0;
+	for (int i = 21; i < 99; ++i) {
+		int piece = b.mailbox[i];
+		if (piece == -9 || piece == 0) { continue; }
+		nonPMaterial += pieceValues[abs(piece) - 1];
 	}
-	else if (gamePhase == MIDGAME) {
-		int count = 0;
-		for (int i = 21; i < 99; ++i) {
-			if (b.mailbox[i] != 0 && abs(b.mailbox[i]) != b.WP && abs(b.mailbox[i]) != b.WK) {
-				count++;
-			}
-		}
-		//Less than eight major/minor pieces
-		if (count < 8) {
-			gamePhase = ENDGAME;
-		}
-	}
+	return double(nonPMaterial) / baseMaterial;
 }
 
-/*PAWN STRUCTURE*/
 int Evaluation::blockedPawns(const Board& b) {
 	int bpcount = 0;
-	for (int i = 21; i < 99; ++i) {
+	for (int i = 31; i < 89; ++i) {
 		if (b.mailbox[i] == b.WP && b.mailbox[i - 10] ==  b.BP && b.mailbox[i - 11] >= 0 && b.mailbox[i - 9] >= 0) {
 			bpcount++;
 		}
@@ -58,7 +28,7 @@ int Evaluation::doubledAndIsolatedPawns(const Board& b, int color) {
 	int filearray[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int dpcount = 0;
 	int ipcount = 0;
-	for (int i = 21; i < 99; ++i) {
+	for (int i = 31; i < 89; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
 			filearray[i % 10 - 1]++;
 		}
@@ -107,7 +77,7 @@ int Evaluation::backwardPawns(const Board& b, int color) {
 	int squareArray[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 	int bpcount = 0;
 	int rank, file;
-	for (int i = 21; i < 99; ++i) {
+	for (int i = 31; i < 89; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
 			file = i % 10;
 			rank = (i - file) / 10;
@@ -139,7 +109,7 @@ int Evaluation::backwardPawns(const Board& b, int color) {
 int Evaluation::passedPawns(const Board& b, int color) {
 	int pcount = 0;
 	int rank, file;
-	for (int i = 21; i < 99; ++i) {
+	for (int i = 31; i < 89; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
 			file = i % 10;
 			rank = (i - file) / 10;
@@ -160,7 +130,6 @@ int Evaluation::passedPawns(const Board& b, int color) {
 }
 
 
-/*PIECE VALUES*/
 int Evaluation::baseMaterial(const Board& b, int color) {
 	int mval = 0;
 	for (int i = 21; i < 99; ++i) {
@@ -275,78 +244,46 @@ int Evaluation::trappedRook(const Board&b, int color) {
 	}
 }
 
-/*POSITION*/
 int Evaluation::flipTableValue(int square) const {
 	int unit = square % 10;
 	int tenth = (square - unit) / 10;
 	int rval = (11 - tenth) * 10 + unit;
 	return rval;
 }
-int Evaluation::piecePosition(const Board& b, int color) {
-	int pval = 0;
+int Evaluation::PST(const Board& b, int color) {
+	int val = 0;
+	int coord;
 	for (int i = 21; i < 99; ++i) {
 		if (color * b.mailbox[i] > 0) {
-			switch (b.mailbox[i]) {
+			if (color == b.WHITE) {
+				coord = i;
+			}
+			else {
+				coord = flipTableValue(i);
+			}
+			switch (abs(b.mailbox[i])) {
 			case b.WP:
-				pval += pawnTable[b.to64Coord(i)];
+				val += static_cast<int>(pawnTable[b.to64Coord(coord)] * phase);
 				break;
 			case b.WN:
-				pval += knightTable[b.to64Coord(i)];
+				val += knightTable[b.to64Coord(coord)];
 				break;
 			case b.WB:
-				pval += bishopTable[b.to64Coord(i)];
+				val += bishopTable[b.to64Coord(coord)];
 				break;
 			case b.WR:
-				pval += rookTable[b.to64Coord(i)];
+				val += static_cast<int>(rookTable[b.to64Coord(coord)] * phase);
 				break;
 			case b.WQ:
-				if (gamePhase == OPENING) {
-					pval += queenOpeningTable[b.to64Coord(i)];
-				}
-				else if (gamePhase >= MIDGAME) {
-					pval += queenNormalTable[b.to64Coord(i)];
-				}
+				val += queenTable[b.to64Coord(coord)];
 				break;
 			case b.WK:
-				if (gamePhase <= MIDGAME) {
-					pval += kingNormalTable[b.to64Coord(i)];
-				}
-				else if (gamePhase == ENDGAME) {
-					pval += kingEndTable[b.to64Coord(i)];
-				}
-				break;
-			case b.BP:
-				pval += pawnTable[b.to64Coord(flipTableValue(i))];
-				break;
-			case b.BN:
-				pval += knightTable[b.to64Coord(flipTableValue(i))];
-				break;
-			case b.BB:
-				pval += bishopTable[b.to64Coord(flipTableValue(i))];
-				break;
-			case b.BR:
-				pval += rookTable[b.to64Coord(flipTableValue(i))];
-				break;
-			case b.BQ:
-				if (gamePhase == OPENING) {
-					pval += queenOpeningTable[b.to64Coord(flipTableValue(i))];
-				}
-				else if (gamePhase >= MIDGAME) {
-					pval += queenNormalTable[b.to64Coord(flipTableValue(i))];
-				}
-				break;
-			case b.BK:
-				if (gamePhase <= MIDGAME) {
-					pval += kingNormalTable[b.to64Coord(flipTableValue(i))];
-				}
-				else if (gamePhase == ENDGAME) {
-					pval += kingEndTable[b.to64Coord(flipTableValue(i))];
-				}
+				val += static_cast<int>((kingNormalTable[b.to64Coord(coord)] * phase + kingEndTable[b.to64Coord(coord)] * (1 - phase)));
 				break;
 			}
 		}
 	}
-	return pval;
+	return val;
 }
 int Evaluation::space(const Board&b, int color) {
 	int file;
@@ -380,7 +317,7 @@ int Evaluation::kingSafety(Board& b, int color) {
 	//Open files
 	rval = isOpenFile(b, kingsqr) + isOpenFile(b, kingsqr + 1) + isOpenFile(b, kingsqr - 1);
 	//Pawn shield in front of king
-	if (gamePhase <= MIDGAME && b.castled[0]) {
+	if (b.castled[castle_id]) {
 		if (b.mailbox[b.kingSquareWhite - 10 * color] != b.WP * color) {
 			pval++;
 		}
@@ -392,10 +329,9 @@ int Evaluation::kingSafety(Board& b, int color) {
 		}
 	}
 
-	return rval * K_OPEN_FILE_PENALTY + pval * K_P_SHIELD_PENALTY + cval * K_CASTLED_BONUS;
+	return static_cast<int>((rval * K_OPEN_FILE_PENALTY + pval * K_P_SHIELD_PENALTY  + cval * K_CASTLED_BONUS) * phase);
 }
 
-/*CENTER*/
 int Evaluation::pawnCenterControl(const Board& b, int color) {
 	int pawnInExtendedCenter = 0;
 	int pawnInCenter = 0;
@@ -430,7 +366,6 @@ int Evaluation::pieceCenterControl(const Board& b, int color) {
 }
 
 
-/*GETTERS*/
 int Evaluation::isOpenFile(const Board& b, int square) {
 	int file = square % 10;
 	int pcount = 0;
@@ -472,26 +407,27 @@ int Evaluation::isPassed(const Board&b, int square, int color) {
 	}
 	return false;
 }
-int Evaluation::getGamePhase() { return gamePhase; }
 
 int Evaluation::totalEvaluation(Board& b, int color) {
-	setGamePhase(b);
+	phase = getPhase(b);
 	int material = baseMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - structureMaterial(b, -color);
 	int pieces = bishopPair(b, color) + rookBehindPassed(b, color) + trappedRook(b, color) - bishopPair(b, -color) - rookBehindPassed(b, -color) - trappedRook(b, -color);
 	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color) 
 			  - doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - backwardPawns(b, -color) - passedPawns(b, -color);
-	int position = piecePosition(b, color) + space(b, color) + kingSafety(b, color) - piecePosition(b, -color) - space(b, -color) - kingSafety(b, -color);
+	int position = PST(b, color) + space(b, color) + kingSafety(b, color) - PST(b, -color) - space(b, -color) - kingSafety(b, -color);
 	int center = pawnCenterControl(b, color) - pawnCenterControl(b, -color); // + pieceCenterControl(b, color) - pieceCenterControl(b, -color);
 	int sideToMove = (b.getTurn() == color) ? 1 : 0;
 	int total = material + pieces + position + center + pawns + sideToMove * SIDE_TO_MOVE_BONUS;
 	return total;
 }
 void Evaluation::outputEvalInfo(Board& b, int color) {
-	setGamePhase(b);
+	phase = getPhase(b);
 	std::cout << "<<Material>> " << baseMaterial(b, color) + structureMaterial(b, color) << " | " << baseMaterial(b, -color) + structureMaterial(b, -color) << std::endl;
 	std::cout << "<<Pieces>> " << bishopPair(b, color) + rookBehindPassed(b, color) + trappedRook(b, color) << " | " << bishopPair(b, -color) + rookBehindPassed(b, -color) + trappedRook(b, -color) << std::endl;
 	std::cout << "<<Pawns>> " << doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color) 
 			  << " - " << doubledAndIsolatedPawns(b, -color) + connectedPawns(b, -color) + backwardPawns(b, -color) + passedPawns(b, -color) << std::endl;
-	std::cout << "<<Position>> " << piecePosition(b, color) + space(b, color) + kingSafety(b, color) << " | " << piecePosition(b, -color) + space(b, -color) + kingSafety(b, -color) << std::endl;
-	std::cout << "<<Center>> " << pawnCenterControl(b, color) << " | " << pawnCenterControl(b, -color) << std::endl << std::endl;
+	std::cout << "<<Position>> " << PST(b, color) + space(b, color) + kingSafety(b, color) << " | " << PST(b, -color) + space(b, -color) + kingSafety(b, -color) << std::endl;
+	std::cout << "<<Center>> " << pawnCenterControl(b, color) << " | " << pawnCenterControl(b, -color) << std::endl;
+	std::cout.precision(3);
+	std::cout << "<<Phase>> " << phase << std::endl << std::endl;
 }
