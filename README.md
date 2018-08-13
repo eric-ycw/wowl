@@ -10,8 +10,10 @@ Requires SFML to compile.
 * Iterative deepening with aspiration window
 * Transposition table
 * Quiescence search
+* MVV-LVA
 * SEE
 * Killer moves
+* History heuristic
 * Null move pruning
 * PVS
 * Late move reduction

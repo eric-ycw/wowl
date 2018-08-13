@@ -188,9 +188,6 @@ void Board::getLegalMoves() {
 	if (!legalMoveVec.empty()) {
 		legalMoveVec.clear();
 	}
-	if (!captureVec.empty()) {
-		captureVec.clear();
-	}
 	for (int m = 21; m < 99; m++) {
 		int piece = mailbox[m];
 		int abs_piece = piece * turn;
@@ -213,9 +210,6 @@ void Board::getLegalMoves() {
 				}
 				if (checkLegal(m, m + n)) {
 					legalMoveVec.emplace_back(Move(m, m + n));
-					if (mailbox[m + n] * piece < 0) {
-						captureVec.emplace_back(Move(m, m + n));
-					}
 				}
 			}
 		}
@@ -226,9 +220,48 @@ void Board::getLegalMoves() {
 				}
 				if (checkLegal(m, n)) {
 					legalMoveVec.emplace_back(Move(m, n));
-					if (mailbox[n] * piece < 0) {
-						captureVec.emplace_back(Move(m, n));
-					}
+				}
+			}
+		}
+	}
+}
+void Board::getCaptures() {
+	if (!captureVec.empty()) {
+		captureVec.clear();
+	}
+	for (int m = 21; m < 99; m++) {
+		int piece = mailbox[m];
+		int abs_piece = piece * turn;
+		int tmp;
+		if (piece == -9 || piece == 0 || abs_piece < 0) { continue; }
+		if (abs_piece == WP || abs_piece == WN || abs_piece == WK) {
+			if (abs_piece == WP) {
+				tmp = 0;
+			}
+			else if (abs_piece == WN) {
+				tmp = 1;
+			}
+			else if (abs_piece == WK) {
+				tmp = 2;
+			}
+			for (int n : pieceMoves[tmp]) {
+				if (tmp == 0) { n *= turn; }
+				if (n == 0 || mailbox[m + n] == -9 || mailbox[m + n] * piece >= 0) {
+					continue;
+				}
+				if (abs_piece == WP && (n == -10 || n == -20)) { continue; }  //Pawn forward moves can't be captures
+				if (checkLegal(m, m + n)) {
+					captureVec.emplace_back(Move(m, m + n));
+				}
+			}
+		}
+		else {
+			for (int n = 21; n < 99; n++) {
+				if (mailbox[n] == -9 || mailbox[n] * piece >= 0) {
+					continue;
+				}
+				if (checkLegal(m, n)) {
+					captureVec.emplace_back(Move(m, n));
 				}
 			}
 		}
@@ -536,7 +569,7 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 				if (checkAttack(n, 96, mailbox) || checkAttack(n, 97, mailbox)) {
 					std::get<0>(castling) = false;
 				}
-				if (checkAttack(n, 92, mailbox) || checkAttack(n, 93, mailbox) || checkAttack(n, 94, mailbox)) {
+				if (checkAttack(n, 93, mailbox) || checkAttack(n, 94, mailbox)) {
 					std::get<1>(castling) = false;
 				}
 			}
@@ -544,7 +577,7 @@ std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 				if (checkAttack(n, 26, mailbox) || checkAttack(n, 27, mailbox)) {
 					std::get<2>(castling) = false;
 				}
-				if (checkAttack(n, 22, mailbox) || checkAttack(n, 23, mailbox) || checkAttack(n, 24, mailbox)) {
+				if (checkAttack(n, 23, mailbox) || checkAttack(n, 24, mailbox)) {
 					std::get<3>(castling) = false;
 				}
 			}

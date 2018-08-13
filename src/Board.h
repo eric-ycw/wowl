@@ -62,6 +62,7 @@ public:
 	bool checkLegalPawn(int, int, int) const;
 	bool checkLegalKing(int, int, int);
 	void getLegalMoves();
+	void getCaptures();
 
 	bool checkAttack(int, int, const int[]) const;
 	bool checkAttackPawn(int, int, const int[], int) const;
@@ -85,7 +86,6 @@ public:
 
 	void resetBoard();
 	void outputBoard() const;
-	std::vector<Move> legalMoveVec;
 
 private:
 
@@ -94,7 +94,7 @@ private:
 	int epSquare;
 	int kingSquareWhite, kingSquareBlack;
 	int pieceMoves[3][10] = {
-		{-10, -11, -9, -20, 0, 0, 0, 0, 0, 0},     //Pawn
+		{-10, -20, -11, -9, 0, 0, 0, 0, 0, 0},     //Pawn
 		{-21, -19, -12, -8, 21, 19, 12, 8, 0, 0},  //Knight
 		{1, -1, 10, -10, 11, 9, -11, -9, 2, -2}     //King
 	};
@@ -140,8 +140,9 @@ private:
 	{ 91, 92, 93, 94, 95, 96, 97, 98 }
 	};
 
-	std::vector<Move> moveVec;
+	std::vector<Move> legalMoveVec;
 	std::vector<Move> captureVec;
+	std::vector<Move> moveVec;
 };
 
 #endif

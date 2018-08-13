@@ -14,7 +14,7 @@ public:
 		MAX_SEARCH_DEPTH = 50,
 		ASPIRATION_WINDOW = 36,
 		NULL_MOVE_REDUCTION = 2,
-		LMR_STARTING_MOVE = 5,
+		LMR_STARTING_MOVE = 3,
 		LMR_STARTING_DEPTH = 3,
 		NO_MOVE = -9
 	};
@@ -25,22 +25,20 @@ public:
 
 	Hash hashTable;
 
-	/*EVALUATION*/
+	void initMVVLVA(const Board& b, const Evaluation& e);
 	int SEE(Board, Evaluation&, int, int) const;
 	bool checkThreefold(const U64) const;
 
-	/*MOVES*/
 	void staticEvalOrdering(Board&, Evaluation&, std::vector<Move>&, int, int, int);
 	void orderMoves(Board&, Evaluation&, std::vector<Move>&, int, U64, int, int);
+	void orderCaptures(Board&, std::vector<Move>&);
 	void resetMoveHeuristics();
-
-	/*SEARCH*/
+	
 	int qSearch(Board, Evaluation&, int, int, int);
 	int negaSearch(Board, int, int, int, int, int, bool);
-	void ID(Board&, int, int, int);
+	void ID(Board&, const Evaluation&, int, int, int);
 	int MTDf(Board, int, int, int);
 
-	/*HASH TABLE*/
 	int probeHashTable(const U64, int, int, int, int);
 	void recordHash(const U64, int, int, int);
 	void ageHash();
@@ -59,9 +57,11 @@ private:
 		VAL_UNKWOWN = 0
 	};
 
+	int MVVLVAScores[6][6];
+
 	int bestScore = 0;
 	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
-	int historyMoves[2][120][120];
+	int historyMoves[2][6][120];
 	int negaNodes, qSearchNodes;
 	double fh, fhf;
 	int captures = 0;
