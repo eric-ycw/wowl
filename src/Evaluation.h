@@ -23,23 +23,33 @@ public:
 
 	int baseMaterial(const Board&, int);
 	int structureMaterial(const Board&, int);
+
+	int knightOutpost(const Board&, int);
 	int bishopPair(const Board&, int);
 	int rookBehindPassed(const Board&, int);
 	int trappedRook(const Board&, int);
 
 	int flipTableValue(int) const;
 	int PST(const Board&, int);
-	int space(const Board&, int);
-	int kingSafety(Board&, int);
+
+	int mobilityKnight(const Board&, int, int);
+	int mobilityBishop(const Board&, int, int);
+	int mobilityRook(const Board&, int, int);
+	int totalMobility(const Board&, int);
+
+	int spaceArea(const Board&, int);
+
+	int kingShelter(Board&, int);
+	int kingDangerProximity(Board&, int);
 
 	int pawnCenterControl(const Board&, int);
 	int pieceCenterControl(const Board&, int);
 
+	bool attackedByEnemyPawn(const Board&, int, int);
 	int isOpenFile(const Board&, int);
 	int isPassed(const Board&, int, int);
 
 	int totalEvaluation(Board&, int);
-	void outputEvalInfo(Board&, int);
 
 private:
 
@@ -51,25 +61,38 @@ private:
 	};
 
 	enum piecesBonusValue {
+		KNIGHT_OUTPOST_BONUS = 24,
 		BISHOP_PAIR_BONUS = 50,
 		ROOK_BEHIND_PASSED_P_BONUS = 30,
 		TRAPPED_ROOK_PENALTY = -16
+	};
+
+	enum mobilityValue {
+		MOBILITY_THRESHOLD = 3,
+
+		KNIGHT_MOBILITY_BONUS = 6,
+		BISHOP_MOBILITY_BONUS = 4,
+		ROOK_MOBILITY_BONUS = 1,
+		QUEEN_MOBILITY_BONUS = 0,
+
+		KNIGHT_END_MOBILITY_BONUS = 4,
+		BISHOP_END_MOBILITY_BONUS = 4,
+		ROOK_END_MOBILITY_BONUS = 3,
+		QUEEN_END_MOBILITY_BONUS = 2
+	};
+
+	enum kingAttackerValue {
+		KNIGHT_KING_ATTACK = 30,
+		BISHOP_KING_ATTACK = 15,
+		ROOK_KING_ATTACK = 30,
+		QUEEN_KING_ATTACK = 30
 	};
 
 	enum positionValue {
 		OPEN_CLOSED_POS_PIECE_VALUE = 3,
 		R_OPEN_FILE_BONUS = 20,
 		K_OPEN_FILE_PENALTY = -20, K_P_SHIELD_PENALTY = -15, K_CASTLED_BONUS = 50,
-		SPACE_BONUS = 8
 	};
-
-	enum centerValue { 
-		P_CENTER_BONUS = 4,
-		P_EXTENDED_CENTER_BONUS = 8,
-		PIECE_CENTER_BONUS = 6
-	};
-
-	enum { SIDE_TO_MOVE_BONUS = 10 };
 
 	const int pawnTable[64]
 	{
@@ -77,9 +100,9 @@ private:
 		40, 50, 50, 50, 50, 50, 50, 40,
 		25, 30, 35, 45, 45, 35, 30, 25,
 		10, 10, 15, 25, 25, 15, 10, 10,
-		 0,  0, 12, 20, 20, 12,  0,  0,
+		 0,  0, 15, 20, 20, 15,  0,  0,
 		 0,  0, 10, 12, 12, 10,  0,  0,
-		-5,  5,  5,  0,  0,  5,  5, -5,
+		 0,  5,  5,  0,  0,  5,  5,  0,
 		 0,  0,  0,  0,  0,  0,  0,  0
 	};
 	const int knightTable[64]

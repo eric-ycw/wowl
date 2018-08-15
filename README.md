@@ -1,7 +1,5 @@
 # Wowl
 Wowl is a basic chess engine written in C++.<br />
-A chess interface is included along with the engine.<br />
-Requires SFML to compile.
 
 ## Board representation
 * 10x12 mailbox
@@ -10,17 +8,19 @@ Requires SFML to compile.
 * Iterative deepening with aspiration window
 * Transposition table
 * Quiescence search
+* Delta pruning
 * MVV-LVA
 * SEE
 * Killer moves
 * History heuristic
 * Null move pruning
-* PVS
+* Futility pruning
 * Late move reduction
 
 ## Evaluation
 * Material evaluation with piece-square tables
 * King safety
 * Space and center control
+* Mobility
 * Pawn structure
 * Passed pawns

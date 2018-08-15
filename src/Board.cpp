@@ -1,21 +1,10 @@
 #include "Board.h"
 
-//Returns coordinates without SQUARE_SIZE factor
-sf::Vector2f Board::toCoord(char a, char b) {
+int Board::toCoord(char a, char b) {
 	int x = int(a) - 97;
 	int y = 7 - int(b) + 49;
-	return sf::Vector2f(x, y);
-}
-//Converts coord vector to mailbox coord
-int Board::convertCoord(sf::Vector2f vec) {
-	int pos = mailbox64[int(vec.y)][int(vec.x)];
+	int pos = mailbox64[y][x];
 	return pos;
-}
-//Converts mailbox coord to coord vector (without SQUARE_SIZE factor)
-sf::Vector2i Board::convertCoord(int pos) {
-	int coord_x = pos % 10 - 1;
-	int coord_y = (pos - coord_x) / 10 - 2;
-	return sf::Vector2i(int(coord_x), int(coord_y));
 }
 //Converts mailbox coord to 64 coord
 int Board::to64Coord(int square) const {
@@ -24,7 +13,6 @@ int Board::to64Coord(int square) const {
 	int rval = square - 21 - 2 * (tenth - 2);
 	return rval;
 }
-//Converts mailbox coord to notation
 std::string Board::toNotation(int square) const {
 	std::string s = "  ";
 	int coord = to64Coord(square);
@@ -43,6 +31,8 @@ void Board::reserveVectors() {
 
 //Check if move is pseudolegal
 bool Board::checkLegal(int a, int b) {
+	if (a < 0 || b < 0 || a > 119 || b > 119) { return false; }
+
 	int oldSquareVal = mailbox[a];
 	int newSquareVal = mailbox[b];
 
@@ -269,6 +259,8 @@ void Board::getCaptures() {
 }
 
 bool Board::checkAttack(int a, int b, const int arr[]) const {
+	if (a < 0 || b < 0 || a > 119 || b > 119) { return false; }
+
 	int oldSquareVal = arr[a];
 	int newSquareVal = arr[b];
 
@@ -469,29 +461,29 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 	return attackerArray[0];
 }
 
-void Board::setKingSquare(int arr[]) {
+void Board::setKingSquare() {
 	for (int k = 98; k > 20; k--) {
-		if (arr[k] == WHITE * 6) {
+		if (mailbox[k] == WHITE * 6) {
 			kingSquareWhite = k;
 		}
-		if (arr[k] == BLACK * 6) {
+		if (mailbox[k] == BLACK * 6) {
 			kingSquareBlack = k;
 		}
 	}
 }
-bool Board::inCheck(int color, int arr[]) {
-	setKingSquare(arr);	
+bool Board::inCheck(int color) {
+	setKingSquare();	
 	for (int n = 21; n < 99; n++) {
-		if (n % 10 == 0 || n % 10 == 9 || arr[n] * color > 0) {
+		if (n % 10 == 0 || n % 10 == 9 || mailbox[n] * color > 0) {
 			continue;
 		}
 		if (color == WHITE) {
-			if (checkAttack(n, kingSquareWhite, arr)) {
+			if (checkAttack(n, kingSquareWhite, mailbox)) {
 				return true;
 			}
 		}
 		else {
-			if (checkAttack(n, kingSquareBlack, arr)) {
+			if (checkAttack(n, kingSquareBlack, mailbox)) {
 				return true;
 			}
 		}
@@ -500,7 +492,7 @@ bool Board::inCheck(int color, int arr[]) {
 }
 bool Board::checkMoveCheck(int a, int b) {
 	move(a, b);
-	if (inCheck(turn * -1, mailbox)) {
+	if (inCheck(turn * -1)) {
 		undo();
 		return true;
 	}
@@ -512,11 +504,11 @@ bool Board::checkMoveCheck(int a, int b) {
 std::tuple<bool, bool, bool, bool> Board::checkCastling() {
 	std::tuple<bool, bool, bool, bool> castling(true, true, true, true);
 	//King is under check
-	if (inCheck(WHITE, mailbox)) {
+	if (inCheck(WHITE)) {
 		std::get<0>(castling) = false;
 		std::get<1>(castling) = false;
 	}
-	if (inCheck(BLACK, mailbox)) {
+	if (inCheck(BLACK)) {
 		std::get<2>(castling) = false;
 		std::get<3>(castling) = false;
 	}
@@ -637,30 +629,33 @@ void Board::specialMoves(int oldpos, int newpos, int last, int arr[]) {
 	}
 }
 void Board::move(int a, int b) {
+	std::copy(std::begin(mailbox), std::end(mailbox), std::begin(prev_mailbox));
+	prev_castled[0] = castled[0];
+	prev_castled[1] = castled[1];
 	mailbox[b] = mailbox[a];
 	mailbox[a] = 0;
-	//Update move vec
 	moveVec.emplace_back(Move(a, b));
-
-	//Special moves
 	specialMoves(a, b, moveVec.size() - 1, mailbox);
 
-	//Check for turn
-	if (moveVec.size() % 2 == 0) {
-		turn = WHITE;
-	}
-	else {
-		turn = BLACK;
-	}
+	turn = (moveVec.size() % 2 == 0) ? WHITE : BLACK;
 }
 void Board::undo() {
+	std::copy(std::begin(prev_mailbox), std::end(prev_mailbox), std::begin(mailbox));
+	castled[0] = prev_castled[0];
+	castled[1] = prev_castled[1];
+
 	if (!moveVec.empty()) {
 		moveVec.pop_back();
 	}
-	setPosition();
+	turn = (moveVec.size() % 2 == 0) ? WHITE : BLACK;
 }
 void Board::nullMove() {
-	turn *= -1;
+	std::copy(std::begin(mailbox), std::end(mailbox), std::begin(prev_mailbox));
+	prev_castled[0] = castled[0];
+	prev_castled[1] = castled[1];
+
+	moveVec.emplace_back(Move(0, 0));
+	turn = (moveVec.size() % 2 == 0) ? WHITE : BLACK;
 }
 void Board::setEnPassantSquare() {
 	if (moveVec.empty()) {
@@ -749,22 +744,7 @@ void Board::resetBoard() {
 	moveVec.clear();
 }
 
-//Set board position (from position vector)
-void Board::setPosition(std::vector<std::string> pV) {
-	//Reset board
-	resetBoard();
-	for (int i = 0; i < pV.size(); ++i) {
-		int oldpos = convertCoord(toCoord(pV[i][0], pV[i][1]));
-		int newpos = convertCoord(toCoord(pV[i][2], pV[i][3]));
-		move(oldpos, newpos);
-
-		if (i > 0) {
-			specialMoves(moveVec[i].from, moveVec[i].to, i, mailbox);
-		}
-	}
-	turn = pV.size() % 2 == 0 ? WHITE : BLACK;
-}
-//Set board position (from internal move vector)
+//Set board position from move vector
 void Board::setPosition() {
 	for (int i = 21; i < 99; ++i) {
 		mailbox[i] = start[i];

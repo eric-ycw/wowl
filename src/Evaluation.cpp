@@ -121,7 +121,7 @@ int Evaluation::passedPawns(const Board& b, int color) {
 					pcount += reverse_dis * 2 * PASSED_P_BONUS;
 				}
 				else {
-					pcount += pow(reverse_dis, 2) * PASSED_P_BONUS;
+					pcount += pow(reverse_dis, 2.5) * PASSED_P_BONUS;
 				}
 			}
 		}
@@ -177,6 +177,34 @@ int Evaluation::structureMaterial(const Board& b, int color) {
 		}
 	}
 	return mval;
+}
+
+int Evaluation::knightOutpost(const Board& b, int color) {
+	int support = 0;
+	int val = 0;
+	for (int i = 21; i < 99; ++i) {
+		if (b.mailbox[i] == b.WN * color) {
+			if (b.mailbox[i + 11 * color] == b.WP * color) {
+				support++;
+			}
+			if (b.mailbox[i + 9 * color] == b.WP * color) {
+				support++;
+			}
+			if (support > 0) {
+				bool secure[2] = { true, true };
+				for (int j = i - 1 - 10 * color; b.mailbox[j] != -9; j -= 10 * color) {
+					if (b.mailbox[j] == b.WP * -color) { secure[0] = false; }
+				}
+				for (int j = i + 1 - 10 * color; b.mailbox[j] != -9; j -= 10 * color) {
+					if (b.mailbox[j] == b.WP * -color) { secure[1] = false; }
+				}
+				if (secure[0] && secure[1]) {
+					val += support * KNIGHT_OUTPOST_BONUS;
+				}
+			}
+		}
+	}
+	return val;
 }
 int Evaluation::bishopPair(const Board& b, int color) {
 	int mval = 0;
@@ -285,10 +313,87 @@ int Evaluation::PST(const Board& b, int color) {
 	}
 	return val;
 }
-int Evaluation::space(const Board&b, int color) {
+
+int Evaluation::mobilityKnight(const Board&b, int square, int color) {
+	int mobility = 0;
+	int knightSquares[8] = { -21, -19, -12, -8, 21, 19, 12, 8 };
+	for (int i = 0; i < 8; i++) {
+		int sqr = square + knightSquares[i];
+		if (!attackedByEnemyPawn(b, sqr, color) && b.mailbox[sqr] == 0) {
+			mobility++;
+		}
+	}
+	return mobility - MOBILITY_THRESHOLD;
+}
+int Evaluation::mobilityBishop(const Board&b, int square, int color) {
+	int mobility = 0;
+	int bishopMoves[4] = { 11, 9, -11, -9 };
+	for (int dir = 0; dir < 4; ++dir) {
+		for (int i = 0; i < 8; ++i) {
+			int sqr = square + (i + 1) * bishopMoves[dir];
+			if (b.mailbox[sqr] == 0) {
+				if (!attackedByEnemyPawn(b, sqr, color)) {
+					mobility++;
+				}
+			}
+			else {
+				break;
+			}
+		}
+	}
+	return mobility - MOBILITY_THRESHOLD;
+}
+int Evaluation::mobilityRook(const Board&b, int square, int color) {
+	int mobility = 0;
+	int rookMoves[4] = { 1, -1, 10, -10 };
+	for (int dir = 0; dir < 4; ++dir) {
+		for (int i = 0; i < 8; ++i) {
+			int sqr = square + (i + 1) * rookMoves[dir];
+			if (b.mailbox[sqr] == 0) {
+				if (!attackedByEnemyPawn(b, sqr, color)) {
+					mobility++;
+				}
+			}
+			else {
+				break;
+			}
+		}
+	}
+	return mobility - MOBILITY_THRESHOLD;
+}
+int Evaluation::totalMobility(const Board&b, int color) {
+	int total = 0;
+	for (int i = 21; i < 99; ++i) {
+		int piece = b.mailbox[i];
+		if (piece * color == b.WN) {
+			total += mobilityKnight(b, i, color) * (KNIGHT_MOBILITY_BONUS * phase + KNIGHT_END_MOBILITY_BONUS * (1 - phase));
+		}
+		else if (piece * color == b.WB) {
+			total += mobilityBishop(b, i, color) * (BISHOP_MOBILITY_BONUS * phase + BISHOP_END_MOBILITY_BONUS * (1 - phase));
+		}
+		else if (piece * color == b.WR) {
+			total += mobilityRook(b, i, color) * (ROOK_MOBILITY_BONUS * phase + ROOK_END_MOBILITY_BONUS * (1 - phase));
+		}
+		else if (piece * color == b.WQ) {
+			total += (mobilityBishop(b, i, color) + mobilityRook(b, i, color)) * (QUEEN_MOBILITY_BONUS * phase + QUEEN_END_MOBILITY_BONUS * (1 - phase));
+		}
+	}
+	return total;
+}
+
+int Evaluation::spaceArea(const Board&b, int color) {
 	int file;
 	int rank;
 	int sval = 0;
+	int pieces = 0;
+
+	for (int i = 21; i < 99; ++i) {
+		int piece = b.mailbox[i];
+		if (piece == -9) { continue; }
+		if (piece * color > 0) {
+			pieces++;
+	}
+}
 	for (int i = 43; i < 77; ++i) {
 		if (i % 10 < 3 || i % 10 > 6) {
 			continue;
@@ -300,10 +405,11 @@ int Evaluation::space(const Board&b, int color) {
 			sval++;
 		}
 	}
-	return sval * SPACE_BONUS;
+	return static_cast<int>(sval * pieces * 1.25);
 }
-int Evaluation::kingSafety(Board& b, int color) {
-	b.setKingSquare(b.mailbox);
+
+int Evaluation::kingShelter(Board& b, int color) {
+	b.setKingSquare();
 	int rval = 0;
 	int pval = 0;
 	int cval = 0;
@@ -331,41 +437,47 @@ int Evaluation::kingSafety(Board& b, int color) {
 
 	return static_cast<int>((rval * K_OPEN_FILE_PENALTY + pval * K_P_SHIELD_PENALTY  + cval * K_CASTLED_BONUS) * phase);
 }
-
-int Evaluation::pawnCenterControl(const Board& b, int color) {
-	int pawnInExtendedCenter = 0;
-	int pawnInCenter = 0;
-	for (int i = 43; i < 77; ++i) {
-		if (i % 10 >= 3 && i % 10 <= 6) {
-			if (b.mailbox[i - color * 9] == b.WP * color || b.mailbox[i - color * 11] == b.WP * color) {
-				pawnInExtendedCenter++;
-			}
-			if (i == 54 || i == 55 || i == 64 || i == 65) {
-				if (b.mailbox[i - color * 9] == b.WP * color || b.mailbox[i - color * 11] == b.WP * color) {
-					pawnInCenter++;
-				}
-			}
+int Evaluation::kingDangerProximity(Board& b, int color) {
+	b.setKingSquare();
+	int kingsqr = (color == b.WHITE) ? b.kingSquareWhite : b.kingSquareBlack;
+	int dangerval = 0;
+	int attackers = 0;;
+	int kingRing[24] = { 
+		1, -1, 10, -10, 11, 9, -11, 9, 
+		2, -2, 20, -20, 22, 18, -22, 18, 
+		12, 8, -12, -8, 21, -21, 19, -19 
+	};
+	for (int i = 0; i < 8; ++i) {
+		int sqr = kingsqr + kingRing[i];
+		if (sqr < 0 || sqr > 119) { continue; }
+		int piece = b.mailbox[sqr];
+		if (piece == b.WN * -color) {
+			dangerval += KNIGHT_KING_ATTACK;
+			attackers++;
+		}
+		else if (piece == b.WB * -color) {
+			dangerval += BISHOP_KING_ATTACK;
+			attackers++;
+		}
+		else if (piece == b.WR * -color) {
+			dangerval += ROOK_KING_ATTACK;
+			attackers++;
+		}
+		else if (piece == b.WQ * -color) {
+			dangerval += QUEEN_KING_ATTACK;
+			attackers++;
 		}
 	}
-	return pawnInExtendedCenter * P_EXTENDED_CENTER_BONUS + pawnInCenter * P_CENTER_BONUS;
+	if (attackers > 1) { dangerval *= 1.5; }
+	return static_cast<int>(dangerval * phase + dangerval / 2 * (1 - phase));
 }
-int Evaluation::pieceCenterControl(const Board& b, int color) {
-	int controlledSquares = 0;
-	for (int i = 21; i < 99; ++i) {
-		if (b.mailbox[i] == b.WN * color || b.mailbox[i] == b.WB * color) {
-			for (int j = 43; j < 77; ++j) {
-				if (j % 10 >= 3 && j % 10 <= 6) {
-					if (b.checkAttack(i, j, b.mailbox)) {
-						controlledSquares++;
-					}
-				}
-			}
-		}
+
+bool Evaluation::attackedByEnemyPawn(const Board& b, int square, int color) {
+	if ((b.mailbox[square - 11 * color] == b.WP * -color) || (b.mailbox[square - 9 * color] == b.WP * -color)) {
+		return true;
 	}
-	return controlledSquares * PIECE_CENTER_BONUS;
+	return false;
 }
-
-
 int Evaluation::isOpenFile(const Board& b, int square) {
 	int file = square % 10;
 	int pcount = 0;
@@ -411,23 +523,14 @@ int Evaluation::isPassed(const Board&b, int square, int color) {
 int Evaluation::totalEvaluation(Board& b, int color) {
 	phase = getPhase(b);
 	int material = baseMaterial(b, color) + structureMaterial(b, color) - baseMaterial(b, -color) - structureMaterial(b, -color);
-	int pieces = bishopPair(b, color) + rookBehindPassed(b, color) + trappedRook(b, color) - bishopPair(b, -color) - rookBehindPassed(b, -color) - trappedRook(b, -color);
+	int pieces = knightOutpost(b, color) + bishopPair(b, color) + rookBehindPassed(b, color) + trappedRook(b, color) 
+				- knightOutpost(b, -color) - bishopPair(b, -color) - rookBehindPassed(b, -color) - trappedRook(b, -color);
 	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color) 
 			  - doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - backwardPawns(b, -color) - passedPawns(b, -color);
-	int position = PST(b, color) + space(b, color) + kingSafety(b, color) - PST(b, -color) - space(b, -color) - kingSafety(b, -color);
-	int center = pawnCenterControl(b, color) - pawnCenterControl(b, -color); // + pieceCenterControl(b, color) - pieceCenterControl(b, -color);
-	int sideToMove = (b.getTurn() == color) ? 1 : 0;
-	int total = material + pieces + position + center + pawns + sideToMove * SIDE_TO_MOVE_BONUS;
+	int pst = PST(b, color) - PST(b, -color);
+	int mobility = totalMobility(b, color) - totalMobility(b, -color);
+	int space = spaceArea(b, color) - spaceArea(b, -color);
+	int king = kingShelter(b, color) + kingDangerProximity(b, color) - kingShelter(b, -color) - kingDangerProximity(b, -color);
+	int total = material + pieces + pawns + pst + mobility + space + king;
 	return total;
-}
-void Evaluation::outputEvalInfo(Board& b, int color) {
-	phase = getPhase(b);
-	std::cout << "<<Material>> " << baseMaterial(b, color) + structureMaterial(b, color) << " | " << baseMaterial(b, -color) + structureMaterial(b, -color) << std::endl;
-	std::cout << "<<Pieces>> " << bishopPair(b, color) + rookBehindPassed(b, color) + trappedRook(b, color) << " | " << bishopPair(b, -color) + rookBehindPassed(b, -color) + trappedRook(b, -color) << std::endl;
-	std::cout << "<<Pawns>> " << doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color) 
-			  << " - " << doubledAndIsolatedPawns(b, -color) + connectedPawns(b, -color) + backwardPawns(b, -color) + passedPawns(b, -color) << std::endl;
-	std::cout << "<<Position>> " << PST(b, color) + space(b, color) + kingSafety(b, color) << " | " << PST(b, -color) + space(b, -color) + kingSafety(b, -color) << std::endl;
-	std::cout << "<<Center>> " << pawnCenterControl(b, color) << " | " << pawnCenterControl(b, -color) << std::endl;
-	std::cout.precision(3);
-	std::cout << "<<Phase>> " << phase << std::endl << std::endl;
 }

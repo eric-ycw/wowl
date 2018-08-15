@@ -13,8 +13,9 @@ public:
 		MIN_SEARCH_DEPTH = 5,
 		MAX_SEARCH_DEPTH = 50,
 		ASPIRATION_WINDOW = 36,
+		DELTA_MARGIN = 200,
 		NULL_MOVE_REDUCTION = 2,
-		LMR_STARTING_MOVE = 3,
+		LMR_STARTING_MOVE = 4,
 		LMR_STARTING_DEPTH = 3,
 		NO_MOVE = -9
 	};
@@ -26,24 +27,27 @@ public:
 	Hash hashTable;
 
 	void initMVVLVA(const Board& b, const Evaluation& e);
-	int SEE(Board, Evaluation&, int, int) const;
+	int SEE(Board&, const Evaluation&, int, int) const;
 	bool checkThreefold(const U64) const;
 
 	void staticEvalOrdering(Board&, Evaluation&, std::vector<Move>&, int, int, int);
-	std::vector<int> scoreMoves(Board&, const std::vector<Move>&, const int, const U64);
-	void pickNextMove(std::vector<Move>&, const std::vector<int>&, int);
+	std::vector<int> scoreMoves(Board&, Evaluation& e, const std::vector<Move>&, const int, const U64);
+	std::vector<int> scoreCaptures(Board&, Evaluation&, const std::vector<Move>&, const int);
+	void pickNextMove(std::vector<Move>&, std::vector<int>&, int);
 	void orderCaptures(Board&, std::vector<Move>&);
 	void resetMoveHeuristics();
 	
 	int qSearch(Board, Evaluation&, int, int, int);
-	int negaSearch(Board, int, int, int, int, int, bool);
+	int negaSearch(Board, int, int, int, int, int, bool, bool);
 	void ID(Board&, const Evaluation&, int, int, int);
 	int MTDf(Board, int, int, int);
 
 	int probeHashTable(const U64, int, int, int, int);
 	void recordHash(const U64, int, int, int);
 	void ageHash();
-	
+
+	void outputSearchInfo(const Board&, const int, const int);
+
 	long perft(Board, int);
 
 private:
@@ -54,18 +58,19 @@ private:
 	};
 
 	enum HashConstants {
-		TT_CLEAR_AGE = 12, 
+		TT_CLEAR_AGE = 12,
 		VAL_UNKWOWN = 0
 	};
 
 	int MVVLVAScores[6][6];
-	const int futilityMargin[2] = { 300, 560 };
+	const int futilityMargin[3] = { 225, 350, 550 };
 
 	int bestScore = 0;
 	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
 	int historyMoves[2][6][120];
 	int negaNodes, qSearchNodes;
-	double fh, fhf;
+	double fh, fhf[4];
+	double qfh, qfhf[4];
 	int captures = 0;
 };
 

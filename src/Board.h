@@ -25,7 +25,7 @@ struct Move {
 	}
 };
 
-class Board 
+class Board
 {
 	friend class Evaluation;
 	friend class Wowl;
@@ -35,8 +35,10 @@ public:
 
 	Board() { reserveVectors(); }
 
-	enum Piece { WP = 1, WN = 2, WB = 3, WR = 4, WQ = 5, WK = 6, 
-				 BP = -1, BN = -2, BB = -3, BR = -4, BQ = -5, BK = -6 };
+	enum Piece {
+		WP = 1, WN = 2, WB = 3, WR = 4, WQ = 5, WK = 6,
+		BP = -1, BN = -2, BB = -3, BR = -4, BQ = -5, BK = -6
+	};
 
 	enum Color { WHITE = 1, BLACK = -1 };
 
@@ -44,9 +46,7 @@ public:
 
 	std::tuple<bool, bool, bool, bool> castlingRights;
 
-	sf::Vector2f toCoord(char, char);
-	int convertCoord(sf::Vector2f);
-	sf::Vector2i convertCoord(int);
+	int toCoord(char, char);
 	int to64Coord(int) const;
 	std::string toNotation(int) const;
 
@@ -73,8 +73,8 @@ public:
 	bool checkAttackKing(int, int, const int[]) const;
 	std::tuple<int, int> getSmallestAttacker(int, int);
 
-	void setKingSquare(int[]);
-	bool inCheck(int, int[]);
+	void setKingSquare();
+	bool inCheck(int);
 	bool checkMoveCheck(int, int);
 	std::tuple<bool, bool, bool, bool> checkCastling();
 
@@ -89,17 +89,33 @@ public:
 
 private:
 
-	int turn;
+	int turn = WHITE;
 	bool castled[2] = { false, false };
+	bool prev_castled[2] = { false, false };
 	int epSquare;
 	int kingSquareWhite, kingSquareBlack;
-	int pieceMoves[3][10] = {
+	const int pieceMoves[3][10] = {
 		{-10, -20, -11, -9, 0, 0, 0, 0, 0, 0},     //Pawn
 		{-21, -19, -12, -8, 21, 19, 12, 8, 0, 0},  //Knight
-		{1, -1, 10, -10, 11, 9, -11, -9, 2, -2}     //King
+		{1, -1, 10, -10, 11, 9, -11, -9, 2, -2}    //King
 	};
 
 	int mailbox[120] = {
+		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
+		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
+		-9, BR, BN, BB, BQ, BK, BB, BN, BR, -9,
+		-9, BP, BP, BP, BP, BP, BP, BP, BP, -9,
+		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
+		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
+		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
+		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
+		-9, WP, WP, WP, WP, WP, WP, WP, WP, -9,
+		-9, WR, WN, WB, WQ, WK, WB, WN, WR, -9,
+		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
+		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9
+	};
+
+	int prev_mailbox[120] = {
 		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
 		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
 		-9, BR, BN, BB, BQ, BK, BB, BN, BR, -9,
