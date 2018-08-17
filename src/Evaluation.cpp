@@ -1,12 +1,11 @@
 #include "Evaluation.h"
 
 double Evaluation::getPhase(const Board& b) {
-	int pieceValues[6] = { 0, N_BASE_VAL, B_BASE_VAL, R_BASE_VAL, Q_BASE_VAL, 0 };
-	int baseMaterial = (N_BASE_VAL + B_BASE_VAL + R_BASE_VAL) * 4 + Q_BASE_VAL * 2;
+	int baseMaterial = (pieceValues[b.WN - 1] + pieceValues[b.WB - 1] + pieceValues[b.WR - 1]) * 4 + pieceValues[b.WQ - 1] * 2;
 	int nonPMaterial = 0;
 	for (int i = 21; i < 99; ++i) {
 		int piece = b.mailbox[i];
-		if (piece == -9 || piece == 0) { continue; }
+		if (piece == -9 || piece == 0 || piece == b.WP || piece == b.BP || piece == b.WK || piece == b.BK ) { continue; }
 		nonPMaterial += pieceValues[abs(piece) - 1];
 	}
 	return double(nonPMaterial) / baseMaterial;
@@ -129,29 +128,12 @@ int Evaluation::passedPawns(const Board& b, int color) {
 	return pcount * PASSED_P_BONUS;
 }
 
-
 int Evaluation::baseMaterial(const Board& b, int color) {
 	int mval = 0;
 	for (int i = 21; i < 99; ++i) {
 		if (b.mailbox[i] == -9) { continue; }
 		if (color * b.mailbox[i] > 0) {
-			switch (abs(b.mailbox[i])) {
-			case b.WP:
-				mval += P_BASE_VAL;
-				break;
-			case b.WN:
-				mval += N_BASE_VAL;
-				break;
-			case b.WB:
-				mval += B_BASE_VAL;
-				break;
-			case b.WR:
-				mval += R_BASE_VAL;
-				break;
-			case b.WQ:
-				mval += Q_BASE_VAL;
-				break;
-			}
+			mval += pieceValues[abs(b.mailbox[i]) - 1];
 		}
 	}
 	return mval;
@@ -164,10 +146,16 @@ int Evaluation::structureMaterial(const Board& b, int color) {
 			case b.WN:
 				//Knights are better in closed positions
 				mval += blockedPawns(b) * OPEN_CLOSED_POS_PIECE_VALUE;
+				if (b.mailbox[i - 10 * color] == b.WP * color) {
+					mval += MINOR_BEHIND_PAWN_BONUS;
+				}
 				break;
 			case b.WB:
 				//Bishops are worse in closed positions
 				mval -= blockedPawns(b) * OPEN_CLOSED_POS_PIECE_VALUE;
+				if (b.mailbox[i - 10 * color] == b.WP * color) {
+					mval += MINOR_BEHIND_PAWN_BONUS;
+				}
 				break;
 			case b.WR:
 				//Rooks are better on open and semi-open files
@@ -283,6 +271,7 @@ int Evaluation::PST(const Board& b, int color) {
 	int coord;
 	for (int i = 21; i < 99; ++i) {
 		if (color * b.mailbox[i] > 0) {
+			coord = (color == b.WHITE) ? i : flipTableValue(i);
 			if (color == b.WHITE) {
 				coord = i;
 			}
@@ -291,7 +280,7 @@ int Evaluation::PST(const Board& b, int color) {
 			}
 			switch (abs(b.mailbox[i])) {
 			case b.WP:
-				val += static_cast<int>(pawnTable[b.to64Coord(coord)] * phase);
+				val += pawnTable[b.to64Coord(coord)] * phase;
 				break;
 			case b.WN:
 				val += knightTable[b.to64Coord(coord)];
@@ -300,7 +289,7 @@ int Evaluation::PST(const Board& b, int color) {
 				val += bishopTable[b.to64Coord(coord)];
 				break;
 			case b.WR:
-				val += static_cast<int>(rookTable[b.to64Coord(coord)] * phase);
+				val += rookTable[b.to64Coord(coord)];
 				break;
 			case b.WQ:
 				val += queenTable[b.to64Coord(coord)];
@@ -323,7 +312,7 @@ int Evaluation::mobilityKnight(const Board&b, int square, int color) {
 			mobility++;
 		}
 	}
-	return mobility - MOBILITY_THRESHOLD;
+	return mobility;
 }
 int Evaluation::mobilityBishop(const Board&b, int square, int color) {
 	int mobility = 0;
@@ -341,7 +330,7 @@ int Evaluation::mobilityBishop(const Board&b, int square, int color) {
 			}
 		}
 	}
-	return mobility - MOBILITY_THRESHOLD;
+	return mobility;
 }
 int Evaluation::mobilityRook(const Board&b, int square, int color) {
 	int mobility = 0;
@@ -359,29 +348,30 @@ int Evaluation::mobilityRook(const Board&b, int square, int color) {
 			}
 		}
 	}
-	return mobility - MOBILITY_THRESHOLD;
+	return mobility;
 }
 int Evaluation::totalMobility(const Board&b, int color) {
 	int total = 0;
 	for (int i = 21; i < 99; ++i) {
 		int piece = b.mailbox[i];
 		if (piece * color == b.WN) {
-			total += mobilityKnight(b, i, color) * (KNIGHT_MOBILITY_BONUS * phase + KNIGHT_END_MOBILITY_BONUS * (1 - phase));
+			total += knightMobilityTable[mobilityKnight(b, i, color)];
 		}
 		else if (piece * color == b.WB) {
-			total += mobilityBishop(b, i, color) * (BISHOP_MOBILITY_BONUS * phase + BISHOP_END_MOBILITY_BONUS * (1 - phase));
+			total += bishopMobilityTable[mobilityBishop(b, i, color)];
 		}
 		else if (piece * color == b.WR) {
-			total += mobilityRook(b, i, color) * (ROOK_MOBILITY_BONUS * phase + ROOK_END_MOBILITY_BONUS * (1 - phase));
+			total += rookMobilityTable[mobilityRook(b, i, color)];
 		}
 		else if (piece * color == b.WQ) {
-			total += (mobilityBishop(b, i, color) + mobilityRook(b, i, color)) * (QUEEN_MOBILITY_BONUS * phase + QUEEN_END_MOBILITY_BONUS * (1 - phase));
+			total += queenMobilityTable[mobilityRook(b, i, color) + mobilityBishop(b, i, color)];
 		}
 	}
 	return total;
 }
 
 int Evaluation::spaceArea(const Board&b, int color) {
+	phase = getPhase(b);
 	int file;
 	int rank;
 	int sval = 0;
@@ -401,11 +391,16 @@ int Evaluation::spaceArea(const Board&b, int color) {
 		if (b.mailbox[i - color * 10 + 1] == -color * b.WP || b.mailbox[i - color * 10 - 1] == -color * b.WP) {
 			continue;
 		} 
-		else {
-			sval++;
+		sval++;
+		//Increase space value if square is behind own pawn by 1-3 squares
+		for (int j = 0; j < 2; ++j) {
+			if (b.mailbox[i - color * 10 * j] == color * b.WP) {
+				sval++;
+				break;
+			}
 		}
 	}
-	return static_cast<int>(sval * pieces * 1.25);
+	return static_cast<int>(sval * pieces * 1.5);
 }
 
 int Evaluation::kingShelter(Board& b, int color) {
@@ -416,12 +411,23 @@ int Evaluation::kingShelter(Board& b, int color) {
 	int kingsqr = (color == b.WHITE) ? b.kingSquareWhite : b.kingSquareBlack;
 	int castle_id = (color == b.WHITE) ? 0 : 1;
 
-	//Check if castled
-	if (b.castled[castle_id]) {
-		cval++;
+	//Check for forfeit of castling rights
+	if (!b.castled[castle_id]) {
+		int rank = (color == b.WHITE) ? 9 : 2;
+		for (int c = 0; c < b.moveVec.size(); ++c) {
+			int oldpos = b.moveVec[c].from;
+			if (oldpos == rank * 10 + 5) {
+				cval += 2;
+				break;
+			}
+			if (oldpos == rank * 10 + 8 || oldpos == rank * 10 + 1) {
+				cval += 1;
+			}
+		}
+		if (cval > 2) cval = 2;
 	}
 	//Open files
-	rval = isOpenFile(b, kingsqr) + isOpenFile(b, kingsqr + 1) + isOpenFile(b, kingsqr - 1);
+	rval = isOpenFile(b, kingsqr) + isOpenFile(b, kingsqr + 1) * 0.75 + isOpenFile(b, kingsqr - 1) * 0.75;
 	//Pawn shield in front of king
 	if (b.castled[castle_id]) {
 		if (b.mailbox[b.kingSquareWhite - 10 * color] != b.WP * color) {
@@ -435,41 +441,87 @@ int Evaluation::kingShelter(Board& b, int color) {
 		}
 	}
 
-	return static_cast<int>((rval * K_OPEN_FILE_PENALTY + pval * K_P_SHIELD_PENALTY  + cval * K_CASTLED_BONUS) * phase);
+	return static_cast<int>((rval * K_OPEN_FILE_PENALTY + pval * K_P_SHIELD_PENALTY  + cval * CASTLING_RIGHTS_LOSS_PENALTY) * phase);
 }
-int Evaluation::kingDangerProximity(Board& b, int color) {
-	b.setKingSquare();
-	int kingsqr = (color == b.WHITE) ? b.kingSquareWhite : b.kingSquareBlack;
-	int dangerval = 0;
-	int attackers = 0;;
-	int kingRing[24] = { 
-		1, -1, 10, -10, 11, 9, -11, 9, 
-		2, -2, 20, -20, 22, 18, -22, 18, 
-		12, 8, -12, -8, 21, -21, 19, -19 
-	};
-	for (int i = 0; i < 8; ++i) {
-		int sqr = kingsqr + kingRing[i];
-		if (sqr < 0 || sqr > 119) { continue; }
-		int piece = b.mailbox[sqr];
-		if (piece == b.WN * -color) {
-			dangerval += KNIGHT_KING_ATTACK;
-			attackers++;
-		}
-		else if (piece == b.WB * -color) {
-			dangerval += BISHOP_KING_ATTACK;
-			attackers++;
-		}
-		else if (piece == b.WR * -color) {
-			dangerval += ROOK_KING_ATTACK;
-			attackers++;
-		}
-		else if (piece == b.WQ * -color) {
-			dangerval += QUEEN_KING_ATTACK;
-			attackers++;
+int Evaluation::bishopKingAttack(Board& b, int square, int color) {
+	int attack = 0;
+	int bishopMoves[4] = { 11, 9, -11, -9 };
+	for (int dir = 0; dir < 4; ++dir) {
+		for (int i = 0; i < 8; ++i) {
+			int sqr = square + (i + 1) * bishopMoves[dir];
+			if (b.mailbox[sqr] == 0) {
+				if (inKingRing(b, sqr, color)) { attack++; }
+			}
+			else {
+				break;
+			}
 		}
 	}
-	if (attackers > 1) { dangerval *= 1.5; }
-	return static_cast<int>(dangerval * phase + dangerval / 2 * (1 - phase));
+	return attack;
+}
+int Evaluation::rookKingAttack(Board& b, int square, int color) {
+	int attack = 0;
+	int rookMoves[4] = { 1, -1, 10, -10 };
+	for (int dir = 0; dir < 4; ++dir) {
+		for (int i = 0; i < 8; ++i) {
+			int sqr = square + (i + 1) * rookMoves[dir];
+			if (b.mailbox[sqr] == 0) {
+				if (inKingRing(b, sqr, color)) { attack++; }
+			}
+			else {
+				break;
+			}
+		}
+	}
+	return attack;
+}
+int Evaluation::kingDangerProximity(Board& b, int color) {
+	phase = getPhase(b);
+	b.setKingSquare();
+	int kingsqr = (color == b.WHITE) ? b.kingSquareWhite : b.kingSquareBlack;
+	int knightSquares[8] = { -21, -19, -12, -8, 21, 19, 12, 8 };
+	int attack = 0;
+
+	for (int i = 21; i < 99; ++i) {
+		int piece = b.mailbox[i];
+		if (piece == -9 || piece == 0) { continue; }
+		switch (piece * color) {
+		case b.BN:
+			for (int j = 0; j < 8; j++) {
+				int sqr = i + knightSquares[j];
+				if (inKingRing(b, sqr, color)) { 
+					attack += KNIGHT_KING_ATTACK;
+				}
+			}
+			break;
+
+		case b.BB:
+			attack += bishopKingAttack(b, i, color) * BISHOP_KING_ATTACK;
+			break;
+		case b.BR:
+			attack += rookKingAttack(b, i, color) * ROOK_KING_ATTACK;
+			break;
+		case b.BQ:
+			attack += bishopKingAttack(b, i, color) + rookKingAttack(b, i, color) * QUEEN_KING_ATTACK;
+			break;
+
+		}
+	}
+	return static_cast<int>(attack * -phase);
+}
+bool Evaluation::inKingRing(Board& b, int square, int color) {
+	int kingsqr = (color == b.WHITE) ? b.kingSquareWhite : b.kingSquareBlack;
+	int kingRing[24] = {
+		1, -1, 10, -10, 11, 9, -11, 9,
+		2, -2, 20, -20, 22, 18, -22, 18,
+		12, 8, -12, -8, 21, -21, 19, -19
+	};
+	if (kingsqr - square > 22 || kingsqr - square < -22) { return false; }
+	for (int i = 0; i < 24; ++i) {
+		int sqr = kingsqr + kingRing[i];
+		if (square == sqr) { return true; }
+	}
+	return false;
 }
 
 bool Evaluation::attackedByEnemyPawn(const Board& b, int square, int color) {

@@ -5,12 +5,9 @@
 
 class Evaluation {
 
-public:
+	friend class Wowl;
 
-	enum pieceValue {
-		P_BASE_VAL = 100, N_BASE_VAL = 365, B_BASE_VAL = 380,
-		R_BASE_VAL = 560, Q_BASE_VAL = 1225, K_BASE_VAL = 40000
-	};
+public:
 
 	double phase;
 
@@ -40,10 +37,10 @@ public:
 	int spaceArea(const Board&, int);
 
 	int kingShelter(Board&, int);
+	int bishopKingAttack(Board&, int, int);
+	int rookKingAttack(Board&, int, int);
 	int kingDangerProximity(Board&, int);
-
-	int pawnCenterControl(const Board&, int);
-	int pieceCenterControl(const Board&, int);
+	bool inKingRing(Board&, int, int);
 
 	bool attackedByEnemyPawn(const Board&, int, int);
 	int isOpenFile(const Board&, int);
@@ -54,44 +51,55 @@ public:
 private:
 
 	enum pawnStructValue {
-		DOUBLED_P_PENALTY = -15, ISOLATED_P_PENALTY = -10,
-		SUPPORTED_P_BONUS = 6, PHALANX_P_BONUS = 4,
-		BACKWARD_P_PENALTY = -12,
+		DOUBLED_P_PENALTY = -16, ISOLATED_P_PENALTY = -12,
+		SUPPORTED_P_BONUS = 6, PHALANX_P_BONUS = 6,
+		BACKWARD_P_PENALTY = -14,
 		PASSED_P_BONUS = 3
 	};
 
 	enum piecesBonusValue {
+		MINOR_BEHIND_PAWN_BONUS = 12,
 		KNIGHT_OUTPOST_BONUS = 24,
-		BISHOP_PAIR_BONUS = 50,
+		BISHOP_PAIR_BONUS = 35,
 		ROOK_BEHIND_PASSED_P_BONUS = 30,
 		TRAPPED_ROOK_PENALTY = -16
 	};
 
-	enum mobilityValue {
-		MOBILITY_THRESHOLD = 3,
-
-		KNIGHT_MOBILITY_BONUS = 6,
-		BISHOP_MOBILITY_BONUS = 4,
-		ROOK_MOBILITY_BONUS = 1,
-		QUEEN_MOBILITY_BONUS = 0,
-
-		KNIGHT_END_MOBILITY_BONUS = 4,
-		BISHOP_END_MOBILITY_BONUS = 4,
-		ROOK_END_MOBILITY_BONUS = 3,
-		QUEEN_END_MOBILITY_BONUS = 2
-	};
-
 	enum kingAttackerValue {
-		KNIGHT_KING_ATTACK = 30,
-		BISHOP_KING_ATTACK = 15,
-		ROOK_KING_ATTACK = 30,
-		QUEEN_KING_ATTACK = 30
+		KNIGHT_KING_ATTACK = 35,
+		BISHOP_KING_ATTACK = 20,
+		ROOK_KING_ATTACK = 25,
+		QUEEN_KING_ATTACK = 15
 	};
 
 	enum positionValue {
 		OPEN_CLOSED_POS_PIECE_VALUE = 3,
 		R_OPEN_FILE_BONUS = 20,
-		K_OPEN_FILE_PENALTY = -20, K_P_SHIELD_PENALTY = -15, K_CASTLED_BONUS = 50,
+		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -15, CASTLING_RIGHTS_LOSS_PENALTY = -30
+	};
+
+	const int pieceValues[6]
+	{
+		120, 480, 512, 768, 1520, 40000
+	};
+	const int knightMobilityTable[9]
+	{
+		-45, -30, -10, 0, 5, 10, 12, 15, 18
+	};
+
+	const int bishopMobilityTable[14]
+	{
+		-30, -15, -5, 0, 5, 10, 15, 20, 24, 28, 30, 34, 38, 42
+	};
+
+	const int rookMobilityTable[15]
+	{
+		-35, -25, -15, -5, 5, 10, 15, 20, 30, 40, 50, 55, 60, 64, 64
+	};
+
+	const int queenMobilityTable[28]
+	{
+		-30, -15, -10, -5, 0, 5, 10, 15, 18, 21, 24, 27, 33, 39, 42, 45, 50, 55, 60, 64, 68, 72, 75, 78, 80, 80, 82, 82
 	};
 
 	const int pawnTable[64]
@@ -124,7 +132,7 @@ private:
 		-10, 20, 15,  5,  5, 15, 20,-10,
 		 -5, 20, 15,  8,  8, 15, 20, -5,
 		 -5, 20, 15,  8,  8, 15, 20, -5,
-		-15, 15, 10,  0,  0, 10, 15,-15,
+		-15, 20, 10,  0,  0, 10, 20,-15,
 		-25,-10,-20,-25,-25,-20,-10,-25,
 	};
 	const int rookTable[64]

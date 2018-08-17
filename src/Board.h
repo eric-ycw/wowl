@@ -64,13 +64,13 @@ public:
 	void getLegalMoves();
 	void getCaptures();
 
-	bool checkAttack(int, int, const int[]) const;
-	bool checkAttackPawn(int, int, const int[], int) const;
-	bool checkAttackKnight(int, int, const int[]) const;
-	bool checkAttackBishop(int, int, const int[]) const;
-	bool checkAttackRook(int, int, const int[]) const;
-	bool checkAttackQueen(int, int, const int[]) const;
-	bool checkAttackKing(int, int, const int[]) const;
+	bool checkAttack(int, int) const;
+	bool checkAttackPawn(int, int, int) const;
+	bool checkAttackKnight(int, int) const;
+	bool checkAttackBishop(int, int) const;
+	bool checkAttackRook(int, int) const;
+	bool checkAttackQueen(int, int) const;
+	bool checkAttackKing(int, int) const;
 	std::tuple<int, int> getSmallestAttacker(int, int);
 
 	void setKingSquare();
@@ -81,7 +81,7 @@ public:
 	void move(int, int);
 	void undo();
 	void nullMove();
-	void specialMoves(int, int, int, int[]);
+	void specialMoves(int, int, int);
 	void setEnPassantSquare();
 
 	void resetBoard();
