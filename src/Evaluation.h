@@ -18,21 +18,19 @@ public:
 	int backwardPawns(const Board&, int);
 	int passedPawns(const Board&, int);
 
-	int baseMaterial(const Board&, int);
-	int structureMaterial(const Board&, int);
+	int baseMaterial(const Board&, int, int);
+	int structureMaterial(const Board&, int, int);
 
-	int knightOutpost(const Board&, int);
-	int bishopPair(const Board&, int);
-	int rookBehindPassed(const Board&, int);
-	int trappedRook(const Board&, int);
+	int knightOutpost(const Board&, int, int);
+	int rookBehindPassed(const Board&, int, int);
+	int trappedRook(const Board&, int, int);
 
 	int flipTableValue(int) const;
-	int PST(const Board&, int);
+	int PST(const Board&, int, int);
 
 	int mobilityKnight(const Board&, int, int);
 	int mobilityBishop(const Board&, int, int);
 	int mobilityRook(const Board&, int, int);
-	int totalMobility(const Board&, int);
 
 	int spaceArea(const Board&, int);
 
@@ -45,6 +43,8 @@ public:
 	bool attackedByEnemyPawn(const Board&, int, int);
 	int isOpenFile(const Board&, int);
 	int isPassed(const Board&, int, int);
+
+	int basicEval(const Board&, int);
 
 	int totalEvaluation(Board&, int);
 
@@ -170,14 +170,14 @@ private:
 	};
 	const int kingEndTable[64]
 	{
-		  0, 20, 30, 30, 30, 30, 20,  0,
-		 20, 40, 50, 50, 50, 50, 40, 20,
-		 40, 60, 65, 65, 65, 65, 60, 40,
-		 45, 60, 60, 70, 70, 60, 60, 45,
-		 45, 60, 60, 65, 65, 60,-60, 45,
-		 40, 50, 60, 60, 60, 60, 50, 40,
-		 20, 40, 50, 50, 50, 50, 40, 20,
-		  0, 20, 30, 45, 45, 30, 20,  0
+		 0, 20, 30, 30, 30, 30, 20,  0,
+		20, 40, 50, 50, 50, 50, 40, 20,
+		40, 60, 65, 65, 65, 65, 60, 40,
+		45, 60, 60, 70, 70, 60, 60, 45,
+		45, 60, 60, 65, 65, 60,-60, 45,
+		40, 50, 60, 60, 60, 60, 50, 40,
+		20, 40, 50, 50, 50, 50, 40, 20,
+		 0, 20, 30, 45, 45, 30, 20,  0
 	};
 };
 

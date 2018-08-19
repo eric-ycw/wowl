@@ -25,7 +25,7 @@ U64 Hash::generatePosKey(Board& b) {
 	//Pieces
 	for (int sq = 21; sq < 99; ++sq) {
 		piece = b.mailbox[sq];
-		if (piece == 0 || piece == -9) {
+		if (piece == 0 || piece == b.OOB) {
 			continue;
 		}
 		if (piece > 0) {
@@ -50,17 +50,17 @@ U64 Hash::generatePosKey(Board& b) {
 	}
 
 	//Castling
-	std::tuple<bool, bool, bool, bool> castlingRights = b.checkCastling();
-	if (std::get<0>(castlingRights)) {
+	b.checkCastling();
+	if (b.castling[0] != 0) {
 		finalKey ^= castlingKey[0];
 	}
-	if (std::get<1>(castlingRights)) {
+	if (b.castling[1] != 0) {
 		finalKey ^= castlingKey[1];
 	}
-	if (std::get<2>(castlingRights)) {
+	if (b.castling[2] != 0) {
 		finalKey ^= castlingKey[2];
 	}
-	if (std::get<3>(castlingRights)) {
+	if (b.castling[3] != 0) {
 		finalKey ^= castlingKey[3];
 	}
 

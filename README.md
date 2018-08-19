@@ -1,5 +1,5 @@
 # Wowl
-Wowl is a basic chess engine written in C++.<br />
+Wowl is a UCI chess engine written in C++.<br />
 
 ## Board representation
 * 10x12 mailbox

@@ -9,38 +9,38 @@ class Wowl {
 
 public:
 
+	const Move NO_MOVE = Move(-9, -9);
+
 	enum Search {
-		MIN_SEARCH_DEPTH = 6,
 		MAX_SEARCH_DEPTH = 50,
 		ASPIRATION_WINDOW = 50,
 		DELTA_MARGIN = 240,
 		NULL_MOVE_REDUCTION = 2,
 		LMR_STARTING_MOVE = 4,
 		LMR_STARTING_DEPTH = 3,
-		NO_MOVE = -9
 	};
 
-	Move bestMove, finalBestMove, hashMove;
+	Move bestMove, hashMove;
+	Move prevIDMoves[MAX_SEARCH_DEPTH];
 	std::vector<U64> hashPosVec;
 	std::vector<U64> tempHashPosVec;
 
 	Hash hashTable;
 
 	void initMVVLVA(const Board& b, const Evaluation& e);
-	int SEE(Board, const Evaluation&, int, int) const;
+	int SEE(Board&, const Evaluation&, int, int) const;
 	bool checkThreefold(const U64) const;
 
-	int pstScore(const Board&, const Evaluation&, const Move& m);
-	std::vector<int> scoreMoves(Board, Evaluation& e, const std::vector<Move>&, const int, const U64);
-	std::vector<int> scoreCaptures(Board&, Evaluation&, const std::vector<Move>&, const int);
+	int pstScore(const Board&, Evaluation&, const Move&, const int);
+	std::vector<int> scoreMoves(Board&, Evaluation& e, const std::vector<Move>&, const int, const int, const U64, const bool is_root);
 	void pickNextMove(std::vector<Move>&, std::vector<int>&, int);
 	void orderCaptures(Board&, std::vector<Move>&);
 	void resetMoveHeuristics();
 	
+	bool timeOver(clock_t, double);
 	int qSearch(Board, Evaluation&, int, int, int);
-	int negaSearch(Board, int, int, int, int, int, bool);
-	void ID(Board&, const Evaluation&, int, int, int);
-	int MTDf(Board, int, int, int);
+	int negaSearch(Board, int, int, int, int, int, bool, clock_t, double);
+	void ID(Board&, const Evaluation&, int, int, double);
 
 	int probeHashTable(const U64, int, int, int, int);
 	void recordHash(const U64, int, int, int);
@@ -67,7 +67,6 @@ private:
 	const int futilityMargin[5] = { 0, 175, 350, 525, 700 };
 
 	int bestScore = 0;
-	std::vector<Move> rootMoves;
 	Move PVLine[MAX_SEARCH_DEPTH];
 	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
 	int historyMoves[2][6][120];

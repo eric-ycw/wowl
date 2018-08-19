@@ -1,5 +1,107 @@
 #include "Board.h"
 
+void Board::parseFEN(std::string fen) {
+	if (fen.empty()) { return; }
+
+	//Completely empty the board
+	resetBoard(true);
+
+	int start = 21;
+	int piece = 0;
+
+	//The FEN string starts on the eight rank but startinng the counter at zero is more convenient
+	int rank = 0;  
+	int file = 0;
+	int strip_pos = 0;
+
+	for (int i = 0; i < fen.length(); ++i) {
+		int empty = 1;
+		if (rank == 8) { 
+			strip_pos = i;
+			break; 
+		}
+
+		switch (fen[i]) {
+			case 'P': piece = WP; break;
+			case 'N': piece = WN; break;
+			case 'B': piece = WB; break;
+			case 'R': piece = WR; break;
+			case 'Q': piece = WQ; break;
+			case 'K': piece = WK; break;
+			case 'p': piece = BP; break;
+			case 'n': piece = BN; break;
+			case 'b': piece = BB; break;
+			case 'r': piece = BR; break;
+			case 'q': piece = BQ; break;
+			case 'k': piece = BK; break;
+
+			case '1': [[fallthrough]];
+			case '2': [[fallthrough]];
+			case '3': [[fallthrough]];
+			case '4': [[fallthrough]];
+			case '5': [[fallthrough]];
+			case '6': [[fallthrough]];
+			case '7': [[fallthrough]];
+			case '8': 
+				piece = OOB;
+				empty = fen[i] - '0';
+				break;
+
+			case ' ': [[fallthrough]];
+			case '/':
+				rank++;
+				file = 0;
+				continue;
+
+			default:
+				std::cout << "Invalid FEN" << std::endl;
+				break;
+		}
+
+		for (int i = 0; i < empty; ++i) {
+			if (piece != OOB) {
+				int mailbox_coord = mailbox64[rank][file];
+				assert(mailbox_coord >= 21 && mailbox_coord <= 98);
+				mailbox[mailbox_coord] = piece;
+			}
+			file++;
+		}
+	}
+
+	assert(strip_pos > 0);
+	assert(fen[strip_pos] == 'w' || fen[strip_pos] == 'b');
+	fen.erase(0, strip_pos);
+	turn = (fen[0] == 'w') ? WHITE : BLACK;
+	//0123456
+	//w - - 
+	strip_pos = 2;
+	for (int i = 2; i < 8; ++i) {
+		strip_pos++;
+		if (fen[i] == ' ') { break; }
+		switch (fen[i]) {
+			case 'K': castling[0] = 1; break;
+			case 'Q': castling[1] = 1; break;
+			case 'k': castling[2] = 1; break;
+			case 'q': castling[3] = 1; break;
+			default: break;
+		}
+	}
+
+	assert(strip_pos > 2);
+	fen.erase(0, strip_pos);
+	if (fen[0] != '-') {
+		file = fen[0] - 'a';
+		rank = fen[1] = '8' - fen[1];
+		assert(file >= 0 && file < 8);
+		assert(rank >= 0 && rank < 8);
+		epSquare = mailbox64[rank][file];
+	}
+	else {
+		epSquare = -1;
+	}
+	outputBoard();
+}
+
 int Board::toCoord(char a, char b) {
 	int x = int(a) - 97;
 	int y = 7 - int(b) + 49;
@@ -42,7 +144,7 @@ bool Board::checkLegal(int a, int b) {
 	}
 
 	//Out of bounds
-	if (newSquareVal == -9) {
+	if (newSquareVal == OOB) {
 		return false;
 	}
 
@@ -60,6 +162,7 @@ bool Board::checkLegal(int a, int b) {
 	}
 	switch (sval) {
 	case WP:
+		setEnPassantSquare();
 		return checkLegalPawn(a, b, oldSquareVal);
 		break;
 	case WN:
@@ -81,8 +184,13 @@ bool Board::checkLegal(int a, int b) {
 	return true;
 }
 bool Board::checkLegalPawn(int a, int b, int color) const {
-	int target = mailbox[b];
 
+	//Pawns cannot move backwards
+	if (b * color > a) {
+		return false;
+	}
+
+	int target = mailbox[b];
 	//Move forward one square
 	if (a - color * 10 == b) {
 		if (target == 0) {
@@ -97,10 +205,6 @@ bool Board::checkLegalPawn(int a, int b, int color) const {
 	}
 
 	if (color == WHITE) {
-		//Pawns cannot move backwards
-		if (b > a) {
-			return false;
-		}
 		//Check for second-rank pawns
 		if (a <= 88 && a >= 81) {
 			if (a - 20 == b) {
@@ -110,26 +214,13 @@ bool Board::checkLegalPawn(int a, int b, int color) const {
 			}
 		}
 		//En passant
-		//Check if on fifth rank
-		if (a <= 58 && a >= 51) {
-			//Black pawn adjacency
-			if (mailbox[a - 1] == -1 && target == 0 && b == a - 10 - 1) {
-				//Check last move
-				if (moveVec.back().from == a - 20 - 1 && moveVec.back().to == a - 1) {
-					return true;
-				}
-			}
-			if (mailbox[a + 1] == -1 && target == 0 && b == a - 10 + 1) {
-				if (moveVec.back().from == a - 20 + 1 && moveVec.back().to == a + 1) {
-					return true;
-				}
+		if (a <= 58 && a >= 51 && target == 0) {
+			if ((mailbox[a - 1] == BP && b == a - 10 - 1) || (mailbox[a + 1] == BP && b == a - 10 + 1) && b == epSquare) {
+				return true;
 			}
 		}
 	}
 	else if (color == BLACK) {
-		if (b < a) {
-			return false;
-		}
 		if (a <= 38 && a >= 31) {
 			if (a + 20 == b) {
 				if (target == 0 && mailbox[b - 10] == 0) {
@@ -137,16 +228,9 @@ bool Board::checkLegalPawn(int a, int b, int color) const {
 				}
 			}
 		}
-		if (a <= 68 && a >= 61) {
-			if (mailbox[a - 1] == 1 && target == 0 && b == a + 10 - 1) {
-				if (moveVec.back().from == a + 20 - 1 && moveVec.back().to == a - 1) {
-					return true;
-				}
-			}
-			if (mailbox[a + 1] == 1 && target == 0 && b == a + 10 + 1) {
-				if (moveVec.back().from == a + 20 + 1 && moveVec.back().to == a + 1) {
-					return true;
-				}
+		if (a <= 68 && a >= 61 && target == 0) {
+			if ((mailbox[a - 1] == WP && b == a + 10 - 1) || (mailbox[a + 1] == WP && b == a + 10 + 1) && b == epSquare) {
+				return true;
 			}
 		}
 	}
@@ -158,15 +242,15 @@ bool Board::checkLegalKing(int a, int b, int color) {
 		return true;
 	}
 	if (a + 2 == b || a - 2 == b) {
-		castlingRights = checkCastling();
+		checkCastling();
 	}
 	if (color == WHITE) {
-		if ((a + 2 == b && std::get<0>(castlingRights)) || (a - 2 == b && std::get<1>(castlingRights))) {
+		if ((a + 2 == b && castling[0] == 1) || (a - 2 == b && castling[1] == 1)) {
 			return true;
 		}
 	}
 	else if (color == BLACK) {
-		if ((a + 2 == b && std::get<2>(castlingRights)) || (a - 2 == b && std::get<3>(castlingRights))) {
+		if ((a + 2 == b && castling[2] == 1) || (a - 2 == b && castling[3] == 1)) {
 			return true;
 		}
 	}
@@ -179,7 +263,7 @@ void Board::getLegalMoves() {
 		int piece = mailbox[m];
 		int abs_piece = piece * turn;
 		int tmp;
-		if (piece == -9 || piece == 0 || abs_piece < 0) { continue; }
+		if (piece == OOB || piece == 0 || abs_piece < 0) { continue; }
 		if (abs_piece == WP || abs_piece == WN || abs_piece == WK) {
 			if (abs_piece == WP) {
 				tmp = 0;
@@ -192,7 +276,7 @@ void Board::getLegalMoves() {
 			}
 			for (int n : pieceMoves[tmp]) {
 				if (tmp == 0) { n *= turn; }
-				if (n == 0 || mailbox[m + n] == -9) {
+				if (n == 0 || mailbox[m + n] == OOB) {
 					continue;
 				}
 				if (checkLegal(m, m + n)) {
@@ -202,7 +286,7 @@ void Board::getLegalMoves() {
 		}
 		else {
 			for (int n = 21; n < 99; n++) {
-				if (mailbox[n] == -9) {
+				if (mailbox[n] == OOB) {
 					continue;
 				}
 				if (abs_piece == WB) {
@@ -229,7 +313,7 @@ void Board::getCaptures() {
 		int piece = mailbox[m];
 		int abs_piece = piece * turn;
 		int tmp;
-		if (piece == -9 || piece == 0 || abs_piece < 0) { continue; }
+		if (piece == OOB || piece == 0 || abs_piece < 0) { continue; }
 		if (abs_piece == WP || abs_piece == WN || abs_piece == WK) {
 			if (abs_piece == WP) {
 				tmp = 0;
@@ -242,7 +326,7 @@ void Board::getCaptures() {
 			}
 			for (int n : pieceMoves[tmp]) {
 				if (tmp == 0) { n *= turn; }
-				if (n == 0 || mailbox[m + n] == -9 || mailbox[m + n] * piece >= 0) {
+				if (n == 0 || mailbox[m + n] == OOB || mailbox[m + n] * piece >= 0) {
 					continue;
 				}
 				if (abs_piece == WP && (n == -10 || n == -20)) { continue; }  //Pawn forward moves can't be captures
@@ -253,7 +337,7 @@ void Board::getCaptures() {
 		}
 		else {
 			for (int n = 21; n < 99; n++) {
-				if (mailbox[n] == -9 || mailbox[n] * piece >= 0) {
+				if (mailbox[n] == OOB || mailbox[n] * piece >= 0) {
 					continue;
 				}
 				if (abs_piece == WB) {
@@ -397,7 +481,7 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 
 	for (int i = 21; i < 99; ++i) {
 		sqval = mailbox[i];
-		if (sqval == -9 || sqval * color <= 0) {
+		if (sqval == OOB || sqval * color <= 0) {
 			continue;
 		}
 		if (sqval < 0) {
@@ -477,106 +561,114 @@ bool Board::inCheck(int color) {
 	return false;
 }
 bool Board::checkMoveCheck(int a, int b) {
+	int mailbox_copy[120];
+	int castling_copy[4];
+	memcpy(mailbox_copy, mailbox, sizeof(mailbox));
+	memcpy(castling_copy, castling, sizeof(castling));
 	move(a, b);
 	if (inCheck(turn * -1)) {
-		undo();
+		undo(mailbox_copy, castling_copy);
 		return true;
 	}
-	undo();
+	undo(mailbox_copy, castling_copy);
 	return false;
 }
 
 //Check castling rights
-std::tuple<bool, bool, bool, bool> Board::checkCastling() {
-	std::tuple<bool, bool, bool, bool> castling(true, true, true, true);
+void Board::checkCastling() {
+	//No one can castle
+	if (!castling[0] && !castling[1] && !castling[2] && !castling[3]) { return; }
+
+	//Temporarily reset castling permissions if castling rights were not forfeited
+	for (int i = 0; i < 4; i++) {
+		if (castling[i] == -1) {
+			castling[i] = 1;
+		}
+	}
+
 	//Blocked by pieces
-	if (mailbox[96] != 0 || mailbox[97] != 0) {
-		std::get<0>(castling) = false;
+	if (castling[0] == 1 && (mailbox[96] != 0 || mailbox[97] != 0)) {
+		castling[0] = -1;
 	}
-	if (mailbox[92] != 0 || mailbox[93] != 0 || mailbox[94] != 0) {
-		std::get<1>(castling) = false;
+	if (castling[1] == 1 && (mailbox[92] != 0 || mailbox[93] != 0 || mailbox[94] != 0)) {
+		castling[1] = -1;
 	}
-	if (mailbox[26] != 0 || mailbox[27] != 0) {
-		std::get<2>(castling) = false;
+	if (castling[2] == 1 && (mailbox[26] != 0 || mailbox[27] != 0)) {
+		castling[2] = -1;
 	}
-	if (mailbox[22] != 0 || mailbox[23] != 0 || mailbox[24] != 0) {
-		std::get<3>(castling) = false;
+	if (castling[3] == 1 && (mailbox[22] != 0 || mailbox[23] != 0 || mailbox[24] != 0)) {
+		castling[3] = -1;
 	}
 	for (int c = 0; c < moveVec.size(); ++c) {
 		int oldpos = moveVec[c].from;
 		//White king has moved
-		if (oldpos == 95) {
-			std::get<0>(castling) = false;
-			std::get<1>(castling) = false;
+		if (oldpos == 95 && (castling[0] != 0 || castling[1] != 0)) {
+			castling[0] = 0;
+			castling[1] = 0;;
 		}
 		//Black king has moved
-		if (oldpos == 25) {
-			std::get<2>(castling) = false;
-			std::get<3>(castling) = false;
+		if (oldpos == 25 && (castling[2] != 0 || castling[3] != 0)) {
+			castling[2] = 0;
+			castling[3] = 0;;
 		}
 		//White h-file rook has moved
-		if (oldpos == 98) {
-			std::get<0>(castling) = false;
+		if (oldpos == 98 && castling[0] != 0) {
+			castling[0] = 0;
 		}
 		//White a-file rook has moved
-		if (oldpos == 91) {
-			std::get<1>(castling) = false;
+		if (oldpos == 91 && castling[1] != 0) {
+			castling[1] = 0;
 		}
 		//Black h-file rook has moved
-		if (oldpos == 28) {
-			std::get<2>(castling) = false;
+		if (oldpos == 28 && castling[2] != 0) {
+			castling[2] = 0;
 		}
 		//Black a-file rook has moved
-		if (oldpos == 21) {
-			std::get<3>(castling) = false;
+		if (oldpos == 21 && castling[3] != 0) {
+			castling[3] = 0;
 		}
 	}
 	//King is under check
-	if ((std::get<0>(castling) || std::get<1>(castling)) && inCheck(WHITE)) {
-		std::get<0>(castling) = false;
-		std::get<1>(castling) = false;
+	if ((castling[0] == 1 || castling[1] == 1) && inCheck(WHITE)) {
+		castling[0] = -1;
+		castling[1] = -1;
 	}
-	if ((std::get<2>(castling) || std::get<3>(castling)) && inCheck(BLACK)) {
-		std::get<2>(castling) = false;
-		std::get<3>(castling) = false;
+	if ((castling[2] == 1 || castling[3] == 1) && inCheck(BLACK)) {
+		castling[2] = -1;
+		castling[3] = -1;
 	}
 	//Squares are attacked
 	for (int n = 21; n < 99; n++) {
-		if (mailbox[n] != -9 || mailbox[n] == 0) {
+		if (mailbox[n] != OOB || mailbox[n] == 0) {
 			if (mailbox[n] < 0) {
-				if (std::get<0>(castling) && (checkAttack(n, 96) || checkAttack(n, 97))) {
-					std::get<0>(castling) = false;
+				if (castling[0] == 1 && (checkAttack(n, 96) || checkAttack(n, 97))) {
+					castling[0] = -1;
 				}
-				if (std::get<1>(castling) && (checkAttack(n, 93) || checkAttack(n, 94))) {
-					std::get<1>(castling) = false;
+				if (castling[1] == 1 && (checkAttack(n, 93) || checkAttack(n, 94))) {
+					castling[1] = -1;
 				}
 			}
 			else {
-				if (std::get<2>(castling) && (checkAttack(n, 26) || checkAttack(n, 27))) {
-					std::get<2>(castling) = false;
+				if (castling[2] == 1 && (checkAttack(n, 26) || checkAttack(n, 27))) {
+					castling[2] = -1;
 				}
-				if (std::get<3>(castling) && (checkAttack(n, 23) || checkAttack(n, 24))) {
-					std::get<3>(castling) = false;
+				if (castling[3] == 1 && (checkAttack(n, 23) || checkAttack(n, 24))) {
+					castling[3] = -1;
 				}
 			}
 		}
 	}
-	return castling;
 }
 
 //Defines special behavior for en passant, castling and promotion
-void Board::specialMoves(int oldpos, int newpos, int last) {
-	//White en passant
-	if ((newpos - oldpos == -11 || newpos - oldpos == -9) && mailbox[newpos] == WP && !moveVec.empty()) {
-		if (moveVec[last - 1].to == newpos + 10 && mailbox[newpos + 10] == BP && moveVec[last - 1].from == newpos - 10) {
-			mailbox[newpos + 10] = 0;
-		}
+void Board::specialMoves(int oldpos, int newpos) {
+	//While en passant
+	if (mailbox[newpos] == WP && newpos == epSquare) {
+		mailbox[newpos + 10] = 0;
 	}
 	//Black en passant
-	else if ((newpos - oldpos == 11 || newpos - oldpos == 9) && mailbox[newpos] == BP && !moveVec.empty()) {
-		if (moveVec[last - 1].to == newpos - 10 && mailbox[newpos - 10] == WP && moveVec[last - 1].from == newpos + 10) {
-			mailbox[newpos - 10] = 0;
-		}
+	else if (mailbox[newpos] == BP && newpos == epSquare) {
+		mailbox[newpos - 10] = 0;
 	}
 	//Short castling
 	else if (oldpos - newpos == -2 && abs(mailbox[newpos]) == WK && abs(mailbox[newpos + 1]) == WR) {
@@ -584,12 +676,10 @@ void Board::specialMoves(int oldpos, int newpos, int last) {
 		//White
 		if (mailbox[newpos] > 0) {
 			mailbox[oldpos + 1] = WR;
-			castled[0] = true;
 		}
 		//Black
 		else {
 			mailbox[oldpos + 1] = BR;
-			castled[1] = true;
 		}
 	}
 	//Long castling
@@ -598,12 +688,10 @@ void Board::specialMoves(int oldpos, int newpos, int last) {
 		//White
 		if (mailbox[newpos] > 0) {
 			mailbox[oldpos - 1] = WR;
-			castled[0] = true;
 		}
 		//Black
 		else {
 			mailbox[oldpos - 1] = BR;
-			castled[1] = true;
 		}
 	}
 	//White promotion (to queen)
@@ -617,45 +705,40 @@ void Board::specialMoves(int oldpos, int newpos, int last) {
 void Board::move(int a, int b) {
 	assert(a >= 0 && a < 120);
 	assert(b >= 0 && b < 120);
-	std::copy(std::begin(mailbox), std::end(mailbox), std::begin(prev_mailbox));
-	prev_castled[0] = castled[0];
-	prev_castled[1] = castled[1];
+	setEnPassantSquare();
 	mailbox[b] = mailbox[a];
 	mailbox[a] = 0;
 	moveVec.emplace_back(Move(a, b));
-	specialMoves(a, b, moveVec.size() - 1);
+	specialMoves(a, b);
 
-	turn = (moveVec.size() % 2 == 0) ? WHITE : BLACK;
+	turn *= -1;
 }
-void Board::undo() {
-	std::copy(std::begin(prev_mailbox), std::end(prev_mailbox), std::begin(mailbox));
-	castled[0] = prev_castled[0];
-	castled[1] = prev_castled[1];
-
+void Board::undo(int mailbox_copy[], int castling_copy[]) {
+	memcpy(mailbox, mailbox_copy, sizeof(mailbox));
+	memcpy(castling, castling_copy, sizeof(castling));
 	if (!moveVec.empty()) {
 		moveVec.pop_back();
 	}
-	turn = (moveVec.size() % 2 == 0) ? WHITE : BLACK;
+	turn *= -1;
 }
 void Board::nullMove() {
-	std::copy(std::begin(mailbox), std::end(mailbox), std::begin(prev_mailbox));
-	prev_castled[0] = castled[0];
-	prev_castled[1] = castled[1];
-
 	moveVec.emplace_back(Move(0, 0));
-	turn = (moveVec.size() % 2 == 0) ? WHITE : BLACK;
+	turn *= -1;
+}
+void Board::undoNullMove() {
+	if (!moveVec.empty()) {
+		moveVec.pop_back();
+	}
+	turn *= -1;
 }
 void Board::setEnPassantSquare() {
-	if (moveVec.empty()) {
-		epSquare = -1;
-		return;
-	}
+	if (moveVec.empty()) { return; }
 
 	int oldsq = moveVec.back().from;
 	int newsq = moveVec.back().to;
 	int color = mailbox[newsq];
 
-	if (mailbox[newsq] != WP || mailbox[newsq] != BP) {
+	if (mailbox[newsq] != WP && mailbox[newsq] != BP) {
 		epSquare = -1;
 		return;
 	}
@@ -664,10 +747,6 @@ void Board::setEnPassantSquare() {
 		return;
 	}
 	if (mailbox[newsq + 1] != WP * -color && mailbox[newsq - 1] != WP * -color) {
-		epSquare = -1;
-		return;
-	}
-	if (mailbox[newsq + color * 10] != 0) {
 		epSquare = -1;
 		return;
 	}
@@ -723,12 +802,16 @@ void Board::outputBoard() const {
 		}
 	}
 }
-void Board::resetBoard() {
+//Reset board to starting position or empty board
+void Board::resetBoard(bool empty) {
 	for (int i = 21; i < 99; ++i) {
-		mailbox[i] = start[i];
+		if (mailbox[i] == OOB) { continue; }
+		mailbox[i] = (empty) ? 0 : start[i];
 	}
-	castled[0] = false;
-	castled[1] = false;
+	for (int i = 0; i < 4; ++i) {
+		castling[i] = !empty;
+	}
+	epSquare = -1;
 	moveVec.clear();
 }
 
@@ -737,9 +820,7 @@ void Board::setPosition() {
 	for (int i = 21; i < 99; ++i) {
 		mailbox[i] = start[i];
 	}
-	//Reset castled array
-	castled[0] = false;
-	castled[1] = false;
+
 	int oldc, newc;
 	int size = moveVec.size();
 
@@ -749,7 +830,7 @@ void Board::setPosition() {
 		mailbox[newc] = mailbox[oldc];
 		mailbox[oldc] = 0;
 		if (i > 0) {
-			specialMoves(oldc, newc, i);
+			specialMoves(oldc, newc);
 		}
 	}
 	turn = (size % 2 == 0) ? WHITE : BLACK;

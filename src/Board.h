@@ -6,8 +6,8 @@
 #include <vector>
 #include <tuple>
 #include <algorithm>
+#include <cstring>
 #include <assert.h>
-#include <SFML\System\Vector2.hpp>
 
 struct Move {
 	int from;
@@ -37,14 +37,15 @@ public:
 
 	enum Piece {
 		WP = 1, WN = 2, WB = 3, WR = 4, WQ = 5, WK = 6,
-		BP = -1, BN = -2, BB = -3, BR = -4, BQ = -5, BK = -6
+		BP = -1, BN = -2, BB = -3, BR = -4, BQ = -5, BK = -6,
+		OOB = -9
 	};
 
 	enum Color { WHITE = 1, BLACK = -1 };
 
 	enum Size { BOARD_SIZE = 8 };
 
-	std::tuple<bool, bool, bool, bool> castlingRights;
+	void parseFEN(std::string);
 
 	int toCoord(char, char);
 	int to64Coord(int) const;
@@ -52,7 +53,6 @@ public:
 
 	void reserveVectors();
 
-	void setPosition(std::vector<std::string>);
 	void setPosition();
 
 	int getTurn() const;
@@ -76,23 +76,22 @@ public:
 	void setKingSquare();
 	bool inCheck(int);
 	bool checkMoveCheck(int, int);
-	std::tuple<bool, bool, bool, bool> checkCastling();
+	void checkCastling();
 
 	void move(int, int);
-	void undo();
+	void undo(int[], int[]);
 	void nullMove();
-	void specialMoves(int, int, int);
+	void undoNullMove();
+	void specialMoves(int, int);
 	void setEnPassantSquare();
 
-	void resetBoard();
 	void outputBoard() const;
-
-private:
+	void resetBoard(bool);
 
 	int turn = WHITE;
-	bool castled[2] = { false, false };
-	bool prev_castled[2] = { false, false };
-	int epSquare;
+	int castling[4] = { 1, 1, 1, 1 };
+	int prev_castling[4] = { 1, 1, 1, 1 };
+	int epSquare = -1;
 	int kingSquareWhite, kingSquareBlack;
 	const int pieceMoves[3][10] = {
 		{-10, -20, -11, -9, 0, 0, 0, 0, 0, 0},     //Pawn
@@ -101,48 +100,50 @@ private:
 	};
 
 	int mailbox[120] = {
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, BR, BN, BB, BQ, BK, BB, BN, BR, -9,
-		-9, BP, BP, BP, BP, BP, BP, BP, BP, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9, WP, WP, WP, WP, WP, WP, WP, WP, -9,
-		-9, WR, WN, WB, WQ, WK, WB, WN, WR, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
+		OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
+		OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB
 	};
 
+private:
+
 	int prev_mailbox[120] = {
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, BR, BN, BB, BQ, BK, BB, BN, BR, -9,
-		-9, BP, BP, BP, BP, BP, BP, BP, BP, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9, WP, WP, WP, WP, WP, WP, WP, WP, -9,
-		-9, WR, WN, WB, WQ, WK, WB, WN, WR, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
+		OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
+		OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB
 	};
 
 	const int start[120] = {
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, BR, BN, BB, BQ, BK, BB, BN, BR, -9,
-		-9, BP, BP, BP, BP, BP, BP, BP, BP, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9,  0,  0,  0,  0,  0,  0,  0,  0, -9,
-		-9, WP, WP, WP, WP, WP, WP, WP, WP, -9,
-		-9, WR, WN, WB, WQ, WK, WB, WN, WR, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9,
-		-9, -9, -9, -9, -9, -9, -9, -9, -9, -9
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
+		OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+		OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
+		OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
+		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB
 	};
 
 	const int mailbox64[8][8] = {
