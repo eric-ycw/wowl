@@ -8,7 +8,6 @@ Wowl is a UCI chess engine written in C++.<br />
 * Iterative deepening with aspiration window
 * Transposition table
 * Quiescence search
-* Delta pruning
 * MVV-LVA
 * SEE
 * Killer moves

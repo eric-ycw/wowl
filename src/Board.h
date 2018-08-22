@@ -16,6 +16,11 @@ struct Move {
 	Move() {}
 	Move(int a, int b) : from(a), to(b) {}
 
+	void operator=(const Move& m) {
+		from = m.from;
+		to = m.to;
+	}
+
 	bool operator==(const Move& m) const {
 		return (from == m.from && to == m.to);
 	}
@@ -30,6 +35,8 @@ class Board
 	friend class Evaluation;
 	friend class Wowl;
 	friend class Hash;
+
+	class Evaluation;
 
 public:
 
@@ -58,28 +65,33 @@ public:
 	int getTurn() const;
 	int getSquarePiece(int) const;
 
-	bool checkLegal(int, int);
 	bool checkLegalPawn(int, int, int) const;
-	bool checkLegalKing(int, int, int);
-	void getLegalMoves();
-	void getCaptures();
+	void genPawnMoves(std::vector<Move>&, int);
+	void genKnightMoves(std::vector<Move>&, int);
+	void genSliderMoves(std::vector<Move>&, int, int);
+	void genKingMoves(std::vector<Move>&, int);
+	void genPawnCaptures(std::vector<Move>&, int);
+	void genKnightCaptures(std::vector<Move>&, int);
+	void genSliderCaptures(std::vector<Move>&, int, int);
+	void genKingCaptures(std::vector<Move>&, int);
+
+	std::vector<Move> getLegalMoves();
+	std::vector<Move> getCaptures();
 
 	bool checkAttack(int, int) const;
 	bool checkAttackPawn(int, int, int) const;
 	bool checkAttackKnight(int, int) const;
-	bool checkAttackBishop(int, int) const;
-	bool checkAttackRook(int, int) const;
-	bool checkAttackQueen(int, int) const;
+	bool checkAttackSlider(int, int, int) const;
 	bool checkAttackKing(int, int) const;
 	std::tuple<int, int> getSmallestAttacker(int, int);
 
-	void setKingSquare();
 	bool inCheck(int);
 	bool checkMoveCheck(int, int);
 	void checkCastling();
+	int checkCastlingForfeit();
 
 	void move(int, int);
-	void undo(int[], int[]);
+	void undo(int[], int[], int[]);
 	void nullMove();
 	void undoNullMove();
 	void specialMoves(int, int);
@@ -90,60 +102,66 @@ public:
 
 	int turn = WHITE;
 	int castling[4] = { 1, 1, 1, 1 };
-	int prev_castling[4] = { 1, 1, 1, 1 };
 	int epSquare = -1;
-	int kingSquareWhite, kingSquareBlack;
-	const int pieceMoves[3][10] = {
-		{-10, -20, -11, -9, 0, 0, 0, 0, 0, 0},     //Pawn
-		{-21, -19, -12, -8, 21, 19, 12, 8, 0, 0},  //Knight
-		{1, -1, 10, -10, 11, 9, -11, -9, 2, -2}    //King
+
+	int kingSquare[2] = { 95, 25 };
+
+	const int pieceMoves[6][10] = {
+		{-10, -20, -11, -9, 0, 0, 0, 0, 0, 0 },
+		{-21, -19, -12, -8, 21, 19, 12, 8, 0, 0 },
+		{ 11, 9, -11, -9, 0, 0, 0, 0, 0, 0 },
+		{ 10, 1, -10, -1, 0, 0, 0, 0, 0, 0 },
+		{ 10, 1, -10, -1, 11, 9, -11, -9, 0, 0 },
+		{1, -1, 10, -10, 11, 9, -11, -9, 2, -2 }
 	};
 
 	int mailbox[120] = {
 		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
 		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
-		OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
-		OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
+			OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
+			OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
+			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+			OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
+			OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
 		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
 		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB
 	};
+
+	int pieces[12];
 
 private:
-
-	int prev_mailbox[120] = {
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
-		OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
-		OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB
-	};
 
 	const int start[120] = {
 		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
 		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
-		OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-		OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
-		OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
+			OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
+			OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
+			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
+			OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
+			OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
 		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
 		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB
+	};
+
+	const int mailbox120[120] = {
+		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		-1,  0,  1,  2,  3,  4,  5,  6,  7, -1,
+		-1,  8,  9, 10, 11, 12, 13, 14, 15, -1,
+		-1, 16, 17, 18, 19, 20, 21, 22, 23, -1,
+		-1, 24, 25, 26, 27, 28, 29, 30, 31, -1,
+		-1, 32, 33, 34, 35, 36, 37, 38, 39, -1,
+		-1, 40, 41, 42, 43, 44, 45, 46, 47, -1,
+		-1, 48, 49, 50, 51, 52, 53, 54, 55, -1,
+		-1, 56, 57, 58, 59, 60, 61, 62, 63, -1,
+		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 	};
 
 	const int mailbox64[8][8] = {
@@ -157,8 +175,6 @@ private:
 	{ 91, 92, 93, 94, 95, 96, 97, 98 }
 	};
 
-	std::vector<Move> legalMoveVec;
-	std::vector<Move> captureVec;
 	std::vector<Move> moveVec;
 };
 

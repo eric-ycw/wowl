@@ -18,8 +18,7 @@ public:
 	int backwardPawns(const Board&, int);
 	int passedPawns(const Board&, int);
 
-	int baseMaterial(const Board&, int, int);
-	int structureMaterial(const Board&, int, int);
+	int material(const Board&, int, int);
 
 	int knightOutpost(const Board&, int, int);
 	int rookBehindPassed(const Board&, int, int);
@@ -29,24 +28,23 @@ public:
 	int PST(const Board&, int, int);
 
 	int mobilityKnight(const Board&, int, int);
-	int mobilityBishop(const Board&, int, int);
-	int mobilityRook(const Board&, int, int);
+	int mobilitySlider(const Board&, int, int, int);
 
 	int spaceArea(const Board&, int);
 
 	int kingShelter(Board&, int);
-	int bishopKingAttack(Board&, int, int);
-	int rookKingAttack(Board&, int, int);
 	int kingDangerProximity(Board&, int);
-	bool inKingRing(Board&, int, int);
+
+	int pawnPushThreat(const Board&, int, int);
 
 	bool attackedByEnemyPawn(const Board&, int, int);
 	int isOpenFile(const Board&, int);
 	int isPassed(const Board&, int, int);
 
-	int basicEval(const Board&, int);
+	int piecesAndMobility(const Board&, int);
 
 	int totalEvaluation(Board&, int);
+	int lazyEvaluation(const Board&, int);
 
 private:
 
@@ -66,21 +64,25 @@ private:
 	};
 
 	enum kingAttackerValue {
-		KNIGHT_KING_ATTACK = 35,
-		BISHOP_KING_ATTACK = 20,
-		ROOK_KING_ATTACK = 25,
-		QUEEN_KING_ATTACK = 15
+		KNIGHT_KING_ATTACKER = 60,
+		BISHOP_KING_ATTACKER = 45,
+		ROOK_KING_ATTACKER = 35,
+		QUEEN_KING_ATTACKER = 15
 	};
 
 	enum positionValue {
 		OPEN_CLOSED_POS_PIECE_VALUE = 3,
 		R_OPEN_FILE_BONUS = 20,
-		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -15, CASTLING_RIGHTS_LOSS_PENALTY = -30
+		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -15
+	};
+
+	enum threatValue {
+		PAWN_PUSH_THREAT_PENALTY = -28
 	};
 
 	const int pieceValues[6]
 	{
-		120, 480, 512, 768, 1520, 40000
+		120, 480, 512, 792, 1520, 40000
 	};
 	const int knightMobilityTable[9]
 	{
@@ -149,7 +151,7 @@ private:
 	const int queenTable[64]
 	{
 		-20,-10,-10, -5, -5,-10,-10,-20,
-		 -5,  0,  0,  0,  0,  0,  0, -5,
+		 -5,  3,  3,  3,  3,  3,  3, -5,
 		  0,  5,  5,  5,  5,  5,  5,  0,
 		  0,  5,  8, 10, 10,  8,  5,  0,
 		  0,  5,  8, 10, 10,  8,  5,  0,

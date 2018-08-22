@@ -20,8 +20,8 @@ public:
 		LMR_STARTING_DEPTH = 3,
 	};
 
-	Move bestMove, hashMove;
-	Move prevIDMoves[MAX_SEARCH_DEPTH];
+	Move bestMove;
+	Move IDMoves[MAX_SEARCH_DEPTH];
 	std::vector<U64> hashPosVec;
 	std::vector<U64> tempHashPosVec;
 
@@ -38,8 +38,8 @@ public:
 	void resetMoveHeuristics();
 	
 	bool timeOver(clock_t, double);
-	int qSearch(Board, Evaluation&, int, int, int);
-	int negaSearch(Board, int, int, int, int, int, bool, clock_t, double);
+	int qSearch(Board&, Evaluation&, int, int, int);
+	int negaSearch(Board&, int, int, int, int, int, bool, clock_t, double);
 	void ID(Board&, const Evaluation&, int, int, double);
 
 	int probeHashTable(const U64, int, int, int, int);
@@ -47,9 +47,8 @@ public:
 	void ageHash();
 
 	void getPVLine(Board, U64);
-	void outputSearchInfo(Board, const int, const int);
 
-	long perft(Board, int);
+	long perft(Board&, Evaluation&, int);
 
 private:
 
@@ -64,15 +63,13 @@ private:
 	};
 
 	int MVVLVAScores[6][6];
-	const int futilityMargin[5] = { 0, 175, 350, 525, 700 };
+	const int futilityMargin[4] = { 0, 300, 625, 950 };
 
 	int bestScore = 0;
 	Move PVLine[MAX_SEARCH_DEPTH];
 	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
 	int historyMoves[2][6][120];
 	int negaNodes, qSearchNodes;
-	double fh, fhf[4];
-	double qfh, qfhf[4];
 };
 
 #endif

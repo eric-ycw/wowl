@@ -18,24 +18,16 @@ void Hash::initHashKeys() {
 	}
 }
 U64 Hash::generatePosKey(Board& b) {
-
-	int sqval, piece, coord;
 	U64 finalKey = 0;
 
 	//Pieces
 	for (int sq = 21; sq < 99; ++sq) {
-		piece = b.mailbox[sq];
+		int piece = b.mailbox[sq];
 		if (piece == 0 || piece == b.OOB) {
 			continue;
 		}
-		if (piece > 0) {
-			piece -= 1;
-		}
-		else {
-			piece = piece * -1 + 5;
-		}
-		coord = b.to64Coord(sq);
-		finalKey ^= pieceKeys[piece][coord];
+		piece = (piece > 0) ? piece - 1 : -piece + 5;
+		finalKey ^= pieceKeys[piece][b.to64Coord(sq)];
 	}
 	
 	//Side to move
@@ -50,18 +42,38 @@ U64 Hash::generatePosKey(Board& b) {
 	}
 
 	//Castling
-	b.checkCastling();
-	if (b.castling[0] != 0) {
-		finalKey ^= castlingKey[0];
+	int forfeit = b.checkCastlingForfeit();
+	for (int bit = 0; bit < 4; ++bit, forfeit >>= 1) {
+		if ((forfeit & 1) == 1) {
+			finalKey ^= castlingKey[bit];
+		}
 	}
-	if (b.castling[1] != 0) {
-		finalKey ^= castlingKey[1];
+
+	return finalKey;
+}
+U64 Hash::updatePosKey(Board&b, const U64 key, const Move m, const int captured_piece) {
+	U64 finalKey = key;
+
+	finalKey ^= sideKey;
+
+	int piece = b.mailbox[m.to];
+	piece = (piece > 0) ? piece - 1 : -piece + 5;
+	finalKey ^= pieceKeys[piece][b.to64Coord(m.from)];
+	if (captured_piece != 0) {
+		piece = (captured_piece > 0) ? captured_piece - 1 : -captured_piece + 5;
+		finalKey ^= pieceKeys[captured_piece][b.to64Coord(m.to)];
 	}
-	if (b.castling[2] != 0) {
-		finalKey ^= castlingKey[2];
+
+	b.setEnPassantSquare();
+	if (b.epSquare != -1) {
+		finalKey ^= epKey;
 	}
-	if (b.castling[3] != 0) {
-		finalKey ^= castlingKey[3];
+
+	int forfeit = b.checkCastlingForfeit();
+	for (int bit = 0; bit < 4; ++bit, forfeit >>= 1) {
+		if ((forfeit & 1) == 1) {
+			finalKey ^= castlingKey[bit];
+		}
 	}
 
 	return finalKey;

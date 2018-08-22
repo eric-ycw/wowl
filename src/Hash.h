@@ -8,8 +8,12 @@
 typedef unsigned long long int U64;
 
 struct HashVal {
+	HashVal() {}
+	HashVal(int depth, int score, int flag, int age) : 
+		hashDepth(depth), hashScore(score), hashFlag(flag), hashAge(age) {}
+
 	int hashDepth, hashScore, hashFlag, hashAge;
-	Move hashBestMove;
+	Move hashBestMove = Move(-9, -9);
 };
 
 class Hash {
@@ -23,6 +27,7 @@ public:
 	U64 generateRand64();
 	void initHashKeys();
 	U64 generatePosKey(Board&);
+	U64 updatePosKey(Board&, const U64, const Move, const int);
 
 	std::unordered_map<U64, HashVal> tt;
 

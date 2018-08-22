@@ -53,11 +53,14 @@ void parsePosition(Board& b, Wowl& AI, std::string line) {
 		}
 	}
 
+
 	b.outputBoard();
+	Evaluation e;
+	std::cout << e.totalEvaluation(b, b.WHITE) << std::endl;
 }
 void parseGo(Board& b, Evaluation& e, Wowl& AI, std::string line) {
 	int depth = -1, movetime = -1, time = -1;
-	int movestogo = 50;
+	int movestogo = 40;
 	int increment = 0;
 
 	size_t pos;
@@ -97,7 +100,7 @@ void parseGo(Board& b, Evaluation& e, Wowl& AI, std::string line) {
 		depth = AI.MAX_SEARCH_DEPTH;
 	}
 
-	AI.ID(b, e, depth, b.getTurn(), time + increment);
+	AI.ID(b, e, depth, b.getTurn(), time + increment * 0.9);
 }
 
 void UCILoop() {
