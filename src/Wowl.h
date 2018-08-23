@@ -53,7 +53,7 @@ public:
 private:
 
 	enum Score {
-		WIN_SCORE = 999999,
+		WIN_SCORE = 1000000,
 		DRAW_SCORE = 0,
 	};
 
@@ -63,7 +63,7 @@ private:
 	};
 
 	int MVVLVAScores[6][6];
-	const int futilityMargin[4] = { 0, 300, 625, 950 };
+	const int futilityMargin[4] = { 0, 275, 525 };
 
 	int bestScore = 0;
 	Move PVLine[MAX_SEARCH_DEPTH];

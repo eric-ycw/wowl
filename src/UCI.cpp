@@ -99,7 +99,6 @@ void parseGo(Board& b, Evaluation& e, Wowl& AI, std::string line) {
 	if (depth == -1) {
 		depth = AI.MAX_SEARCH_DEPTH;
 	}
-
 	AI.ID(b, e, depth, b.getTurn(), time + increment * 0.9);
 }
 

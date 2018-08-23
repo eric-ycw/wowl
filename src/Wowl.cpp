@@ -262,6 +262,8 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 	}
 	
 	auto captures = b.getCaptures();
+	if (captures.empty()) { return stand_pat; }
+
 	orderCaptures(b, captures);
 
 	for (int i = 0; i < captures.size(); ++i) {
@@ -303,6 +305,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	U64 key = hashTable.generatePosKey(b);
 	int tempHashFlag = hashTable.HASH_ALPHA;
 	bool isInCheck = b.inCheck(color);
+	bool nearCheckmate = (alpha <= -WIN_SCORE);
 
 	if (checkThreefold(key)) { return DRAW_SCORE; }
 
@@ -328,7 +331,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 
 	//Null move pruning
 	int R = NULL_MOVE_REDUCTION + depth / 6;
-	if (depth - R - 1 > 0 && can_null && !isInCheck && phase > 0.25) {
+	if (depth > R + 1 && can_null && !isInCheck && phase > 0.25) {
 		b.nullMove();
 		score = -negaSearch(b, depth - 1 - R, initial, -color, -beta, -beta + 1, false, startTime, stopTime);
 		b.undoNullMove();
@@ -338,15 +341,13 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	}
 
 	//Futility pruning
-	bool f_prune = 0;
+	bool f_prune = false;
 	int f_prune_count = 0;
-	int futilityScore = WIN_SCORE;
-	if (depth <= 3 && !isInCheck) {
+	int futilityScore = -WIN_SCORE - MAX_SEARCH_DEPTH;
+	if (depth <= 2 && !isInCheck && !nearCheckmate) {
 		//We increase the futility margin as material decreases
-		futilityScore = WowlEval.totalEvaluation(b, color) + futilityMargin[depth] + static_cast<int>((1 - phase) * 100);
-		if (alpha > -WIN_SCORE && beta < WIN_SCORE) {
-			f_prune = 1;
-		}
+		futilityScore = WowlEval.totalEvaluation(b, color) + futilityMargin[depth] + static_cast<int>((1 - phase) * 50);
+		f_prune = true;
 	};
 
 
@@ -369,7 +370,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 
 		bool isDangerous = isPassed || isPromotion || isKiller || isInCheck;
 
-		if (f_prune == 1 && i > 0 && !isDangerous && futilityScore + WowlEval.pieceValues[abs(b.mailbox[m.to]) - 1] <= alpha) {
+		if (f_prune && !isDangerous && i > 0 && futilityScore + WowlEval.pieceValues[abs(b.mailbox[m.to]) - 1] <= alpha) {
 			f_prune_count++;
 			continue; 
 		}
@@ -411,7 +412,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 
 		b.undo(mailbox_copy, castling_copy, king_copy);
 		tempHashPosVec.pop_back();
-		if (timeOver(startTime, stopTime)) return alpha;
+		if (timeOver(startTime, stopTime) && depth != initial) return alpha;
 
 		if (score >= beta) {
 			if (can_null) {
@@ -430,8 +431,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		}
 		if (score > alpha) {
 			if (depth == initial && can_null) {
-				bestMove.from = m.from;
-				bestMove.to = m.to;
+				bestMove = m;
 			}
 			raised_alpha = true;
 			alpha = score;
@@ -450,12 +450,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		if (f_prune && f_prune_count == legalMoves.size()) {
 			return alpha;
 		}
-		if (isInCheck) {
-			return -WIN_SCORE;  //Checkmate
-		}
-		else {
-			return DRAW_SCORE;  //Stalemate
-		}
+		return (isInCheck) ? -WIN_SCORE - initial + depth : DRAW_SCORE;
 	}
 
 	if (can_null) {
@@ -480,6 +475,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 	bool first_search = true;
 
 	int totalNodes = 0;
+	int highestDepth = 0;
 
 	auto startTime = clock();
 	std::cout.precision(3);
@@ -494,12 +490,6 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 
 		bestScore = negaSearch(b, idepth, idepth, color, id_alpha, id_beta, true, startTime, moveTime);
 		totalNodes += negaNodes + qSearchNodes;
-
-		//Break when mate is found
-		if (bestScore == WIN_SCORE || bestScore == -WIN_SCORE) {
-			IDMoves[idepth - 1] = bestMove;
-			break;
-		}
 
 		//UCI output
 		std::cout << "info score cp " << bestScore << " depth " << idepth << " nodes " << negaNodes + qSearchNodes;
@@ -533,13 +523,18 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 			id_beta = bestScore + delta;
 		}
 		else {
-			id_alpha = -WIN_SCORE;
-			id_beta = WIN_SCORE;
+			id_alpha = -WIN_SCORE - MAX_SEARCH_DEPTH;
+			id_beta = WIN_SCORE + MAX_SEARCH_DEPTH;
 		}
 		first_search = true;
 
 		IDMoves[idepth - 1] = bestMove;
+		highestDepth++;
 	}
+
+	//We only use best moves from full searches
+	if (highestDepth < 0) { highestDepth = 0; }
+	bestMove = IDMoves[highestDepth - 1];
 
 	//PV failsafe
 	if (bestMove == NO_MOVE) { bestMove = PVLine[0]; }
@@ -603,6 +598,7 @@ long Wowl::perft(Board& b, Evaluation& e, int depth) {
 		}
 		haveMove = true;
 		nodes += perft(b, e, depth - 1);
+		std::cout << b.toNotation(i.from) << b.toNotation(i.to) << std::endl;
 		b.undo(mailbox_copy, castling_copy, king_copy);
 	}
 	if (!haveMove) {
