@@ -43,14 +43,14 @@ public:
 
 	int piecesAndMobility(const Board&, int);
 
-	int totalEvaluation(Board&, int);
+	int totalEvaluation(Board&, int, int[]);
 	int lazyEvaluation(const Board&, int);
 
 private:
 
 	enum pawnStructValue {
 		DOUBLED_P_PENALTY = -16, ISOLATED_P_PENALTY = -12,
-		SUPPORTED_P_BONUS = 6, PHALANX_P_BONUS = 6,
+		SUPPORTED_P_BONUS = 12, PHALANX_P_BONUS = 8,
 		BACKWARD_P_PENALTY = -14,
 		PASSED_P_BONUS = 3
 	};
@@ -73,7 +73,7 @@ private:
 	enum positionValue {
 		OPEN_CLOSED_POS_PIECE_VALUE = 3,
 		R_OPEN_FILE_BONUS = 20,
-		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -15
+		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -20
 	};
 
 	enum threatValue {

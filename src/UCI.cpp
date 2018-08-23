@@ -56,7 +56,9 @@ void parsePosition(Board& b, Wowl& AI, std::string line) {
 
 	b.outputBoard();
 	Evaluation e;
-	std::cout << e.totalEvaluation(b, b.WHITE) << std::endl;
+	b.lazyScore[0] = e.lazyEvaluation(b, b.WHITE);
+	b.lazyScore[1] = e.lazyEvaluation(b, b.BLACK);
+	std::cout << e.totalEvaluation(b, b.WHITE, b.lazyScore) << std::endl;
 }
 void parseGo(Board& b, Evaluation& e, Wowl& AI, std::string line) {
 	int depth = -1, movetime = -1, time = -1;

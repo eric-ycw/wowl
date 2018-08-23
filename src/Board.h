@@ -65,7 +65,7 @@ public:
 	int getTurn() const;
 	int getSquarePiece(int) const;
 
-	bool checkLegalPawn(int, int, int) const;
+	int checkLegalPawn(int, int, int) const;
 	void genPawnMoves(std::vector<Move>&, int);
 	void genKnightMoves(std::vector<Move>&, int);
 	void genSliderMoves(std::vector<Move>&, int, int);
@@ -91,7 +91,7 @@ public:
 	int checkCastlingForfeit();
 
 	void move(int, int);
-	void undo(int[], int[], int[]);
+	void undo(int[], int[], int[], int[]);
 	void nullMove();
 	void undoNullMove();
 	void specialMoves(int, int);
@@ -103,6 +103,7 @@ public:
 	int turn = WHITE;
 	int castling[4] = { 1, 1, 1, 1 };
 	int epSquare = -1;
+	int lazyScore[2] = { 0, 0 };
 
 	int kingSquare[2] = { 95, 25 };
 

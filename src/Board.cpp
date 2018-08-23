@@ -131,8 +131,7 @@ void Board::reserveVectors() {
 	moveVec.reserve(150);
 }
 
-bool Board::checkLegalPawn(int a, int b, int color) const {
-
+int Board::checkLegalPawn(int a, int b, int color) const {
 	int target = mailbox[b];
 	//Move forward one square
 	if (a - color * 10 == b && !target) {
@@ -164,7 +163,6 @@ bool Board::checkLegalPawn(int a, int b, int color) const {
 			}
 		}
 	}
-
 	return false;
 }
 
@@ -238,7 +236,7 @@ void Board::genPawnCaptures(std::vector<Move>& captures, int square) {
 		if (!i) { break; }
 		if (i == -10 || i == -20) { continue; }
 		int toVal = mailbox[square + i * fromVal];
-		if (toVal * turn >= 0 || toVal == OOB || abs(toVal) == WK) {
+		if (toVal == OOB || (toVal * turn >= 0 && square + i * fromVal != epSquare) || abs(toVal) == WK) {
 			continue;
 		}
 		if (checkLegalPawn(square, square + i * fromVal, fromVal)) {
@@ -507,10 +505,10 @@ bool Board::inCheck(int color) {
 bool Board::checkMoveCheck(int a, int b) {
 	move(a, b);
 	if (inCheck(turn * -1)) {
-		undo(mailbox, castling, kingSquare);
+		undo(mailbox, castling, kingSquare, lazyScore);
 		return true;
 	}
-	undo(mailbox, castling, kingSquare);
+	undo(mailbox, castling, kingSquare, lazyScore);
 	return false;
 }
 
@@ -692,10 +690,11 @@ void Board::move(int a, int b) {
 
 	turn *= -1;
 }
-void Board::undo(int mailbox_copy[], int castling_copy[], int king_copy[]) {
+void Board::undo(int mailbox_copy[], int castling_copy[], int king_copy[], int lazy_copy[]) {
 	memcpy(mailbox, mailbox_copy, sizeof(mailbox));
 	memcpy(castling, castling_copy, sizeof(castling));
 	memcpy(kingSquare, king_copy, sizeof(kingSquare));
+	memcpy(lazyScore, lazy_copy, sizeof(lazyScore));
 	if (!moveVec.empty()) {
 		moveVec.pop_back();
 	}
@@ -792,6 +791,11 @@ void Board::resetBoard(bool empty) {
 		castling[i] = !empty;
 	}
 	epSquare = -1;
+	//Note : if the board resets to starting position lazyScore is not updated
+	if (empty) {
+		lazyScore[0] = 0;
+		lazyScore[1] = 0;
+	}
 	moveVec.clear();
 }
 

@@ -32,7 +32,7 @@ int Wowl::SEE(Board& b, const Evaluation& e, int square, int color) const {
 				}
 				val = targetval - SEE(b, e, square, -color);
 			}
-			b.undo(mailbox_copy, castling_copy, king_copy);
+			b.undo(mailbox_copy, castling_copy, king_copy, b.lazyScore);
 		}
 	}
 	return val;
@@ -74,7 +74,8 @@ int Wowl::pstScore(const Board& b, Evaluation& e, const Move& m, int color) {
 }
 std::vector<int> Wowl::scoreMoves(Board& b, Evaluation& e, const std::vector<Move>& moves, const int color, const int depth, const U64 poskey, const bool is_root) {
 	
-	std::vector<int> scoreVec(moves.size(), 0);
+	int size = moves.size();
+	std::vector<int> scoreVec(size, 0);
 	Move hashMove = NO_MOVE;
 	
 	if (hashTable.tt.find(poskey) != hashTable.tt.end()) {
@@ -84,7 +85,7 @@ std::vector<int> Wowl::scoreMoves(Board& b, Evaluation& e, const std::vector<Mov
 	bool isCapture, isPassed, isPromotion;
 	e.phase = e.getPhase(b);
 
-	for (int i = 0; i < moves.size(); ++i) {
+	for (int i = 0; i < size; ++i) {
 		Move m = moves[i];
 		isCapture = b.mailbox[m.to] != 0;
 		isPassed = e.isPassed(b, m.from, color);
@@ -157,13 +158,15 @@ std::vector<int> Wowl::scoreMoves(Board& b, Evaluation& e, const std::vector<Mov
 	return scoreVec;
 }
 void Wowl::pickNextMove(std::vector<Move>& moveVec, std::vector<int>& scoreVec, int startpos) {
-	assert(moveVec.size() == scoreVec.size());
+	int size = scoreVec.size();
+	assert(moveVec.size() == size);
 	int best = -WIN_SCORE;
 	int bestMoveIndex = 0;
-	if (startpos == scoreVec.size() - 1) { return; }
-	for (int i = startpos; i < scoreVec.size(); ++i) {
-		if (scoreVec[i] > best) {
-			best = scoreVec[i];
+	if (startpos == size - 1) { return; }
+	for (int i = startpos; i < size; ++i) {
+		int score = scoreVec[i];
+		if (score > best) {
+			best = score;
 			bestMoveIndex = i;
 		}
 	}
@@ -173,9 +176,9 @@ void Wowl::pickNextMove(std::vector<Move>& moveVec, std::vector<int>& scoreVec, 
 }
 void Wowl::orderCaptures(Board& b, std::vector<Move>& caps) {
 	int best = -WIN_SCORE;
-	int score;
-	for (int i = 0; i < caps.size(); ++i) {
-		score = MVVLVAScores[abs(b.mailbox[caps[i].from]) - 1][abs(b.mailbox[caps[i].to]) - 1];
+	int size = caps.size();
+	for (int i = 0; i < size; ++i) {
+		int score = MVVLVAScores[abs(b.mailbox[caps[i].from]) - 1][abs(b.mailbox[caps[i].to]) - 1];
 		if (score > best) {
 			best = score;
 			std::swap(caps[0], caps[i]);
@@ -253,7 +256,7 @@ bool Wowl::timeOver(clock_t startTime, double moveTime) {
 }
 int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 
-	int stand_pat = e.totalEvaluation(b, color);
+	int stand_pat = e.totalEvaluation(b, color, b.lazyScore);
 	if (stand_pat >= beta) {
 		return beta;
 	}
@@ -266,8 +269,11 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 
 	orderCaptures(b, captures);
 
-	for (int i = 0; i < captures.size(); ++i) {
+	int size = captures.size();
+	for (int i = 0; i < size; ++i) {
 		Move c = captures[i];
+		bool isPromotion = b.mailbox[c.from] == b.WP * color && (c.to / 10 == 2 || c.to / 10 == 9);
+
 		//Negative SEE
 		if (SEE(b, e, c.to, color) < 0) {
 			continue;
@@ -276,17 +282,26 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 		int mailbox_copy[120];
 		int castling_copy[4];
 		int king_copy[2];
+		int lazy_copy[2];
 		memcpy(mailbox_copy, b.mailbox, sizeof(b.mailbox));
 		memcpy(castling_copy, b.castling, sizeof(b.castling));
 		memcpy(king_copy, b.kingSquare, sizeof(b.kingSquare));
+		memcpy(lazy_copy, b.lazyScore, sizeof(b.lazyScore));
 
+		int lazyIndex = !(color == b.WHITE);
+		b.lazyScore[!lazyIndex] -= e.pieceValues[abs(b.mailbox[c.to]) - 1];
+		b.lazyScore[!lazyIndex] -= e.PST(b, c.to, -color);
+		if (isPromotion) { b.lazyScore[lazyIndex] += e.pieceValues[4] - e.pieceValues[0]; }
+		int preMovePST = e.PST(b, c.from, color);
 		b.move(c.from, c.to);
+		b.lazyScore[lazyIndex] += e.PST(b, c.to, color) - preMovePST;
+
 		if (b.inCheck(b.getTurn() * -1)) {
-			b.undo(mailbox_copy, castling_copy, king_copy);
+			b.undo(mailbox_copy, castling_copy, king_copy, lazy_copy);
 			continue;
 		}
 		int score = -qSearch(b, e, -beta, -alpha, -color);
-		b.undo(mailbox_copy, castling_copy, king_copy);
+		b.undo(mailbox_copy, castling_copy, king_copy, lazy_copy);
 		if (score >= beta) {
 			return beta;
 		}
@@ -346,7 +361,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	int futilityScore = -WIN_SCORE - MAX_SEARCH_DEPTH;
 	if (depth <= 2 && !isInCheck && !nearCheckmate) {
 		//We increase the futility margin as material decreases
-		futilityScore = WowlEval.totalEvaluation(b, color) + futilityMargin[depth] + static_cast<int>((1 - phase) * 50);
+		futilityScore = WowlEval.totalEvaluation(b, color, b.lazyScore) + futilityMargin[depth] + static_cast<int>((1 - phase) * 50);
 		f_prune = true;
 	};
 
@@ -358,34 +373,56 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 
 	std::vector<int> scoreVec = scoreMoves(b, WowlEval, legalMoves, color, depth, key, (depth == initial));
 
-	for (int i = 0; i < legalMoves.size(); i++) {
+	int size = legalMoves.size();
+	for (int i = 0; i < size; i++) {
 
 		pickNextMove(legalMoves, scoreVec, i);
 
 		Move m = legalMoves[i];
-		bool isCapture = b.mailbox[m.to] != 0;
-		bool isPassed = WowlEval.isPassed(b, m.from, color);
-		bool isPromotion = b.mailbox[m.from] == b.WP * color && (m.to / 10 == 2 || m.to / 10 == 9);
+		int piece = b.mailbox[m.from];
+		int target = b.mailbox[m.to];
+
+		bool isCapture = target != 0;  //Does not consider en passant as capture
+		bool isEnPassant = piece == b.WP * color && !isCapture && (abs(m.from - m.to) == 11 || abs(m.from - m.to) == 9);
+		bool isPassed = piece == b.WP * color && WowlEval.isPassed(b, m.from, color);
+		bool isPromotion = piece == b.WP * color && (m.to / 10 == 2 || m.to / 10 == 9);
 		bool isKiller = killerMoves[0][depth] == m || killerMoves[1][depth] == m;
 
 		bool isDangerous = isPassed || isPromotion || isKiller || isInCheck;
 
-		if (f_prune && !isDangerous && i > 0 && futilityScore + WowlEval.pieceValues[abs(b.mailbox[m.to]) - 1] <= alpha) {
-			f_prune_count++;
-			continue; 
+
+		if (f_prune && !isDangerous && !isCapture && !isEnPassant && i > 0) {
+			if (futilityScore <= alpha) { continue; }
 		}
 
+		//Copy board state and info before making move
 		int mailbox_copy[120];
 		int castling_copy[4];
 		int king_copy[2];
+		int lazy_copy[2];
 		memcpy(mailbox_copy, b.mailbox, sizeof(b.mailbox));
 		memcpy(castling_copy, b.castling, sizeof(b.castling));
 		memcpy(king_copy, b.kingSquare, sizeof(b.kingSquare));
+		memcpy(lazy_copy, b.lazyScore, sizeof(b.lazyScore));
 
+		int lazyIndex = !(color == b.WHITE);
+		if (isCapture) { 
+			b.lazyScore[!lazyIndex] -= WowlEval.pieceValues[abs(target) - 1]; 
+			b.lazyScore[!lazyIndex] -= WowlEval.PST(b, m.to, -color);
+		}
+		if (isEnPassant) {
+			b.lazyScore[!lazyIndex] -= WowlEval.pieceValues[0];
+			b.lazyScore[!lazyIndex] -= WowlEval.PST(b, m.to + color * 10, -color);
+		}
+		//Currently treats queening as the only possible promotion
+		if (isPromotion) { b.lazyScore[lazyIndex] += WowlEval.pieceValues[4] - WowlEval.pieceValues[0]; }
+		int preMovePST = WowlEval.PST(b, m.from, color);  //We calculate the PST value before moving in case the piece changes (i.e. promotion)
 		b.move(m.from, m.to);
+		b.lazyScore[lazyIndex] += WowlEval.PST(b, m.to, color) - preMovePST;
+
 		if (b.inCheck(b.getTurn() * -1)) {
 			f_prune_count++;
-			b.undo(mailbox_copy, castling_copy, king_copy);
+			b.undo(mailbox_copy, castling_copy, king_copy, lazy_copy);
 			continue;
 		}
 		else {
@@ -394,7 +431,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 			haveMove = true;
 
 			//Late move reduction
-			if (i >= LMR_STARTING_MOVE && depth >= LMR_STARTING_DEPTH && !isCapture && !isDangerous && !b.inCheck(b.getTurn())) {
+			if (i >= LMR_STARTING_MOVE && depth >= LMR_STARTING_DEPTH && !isDangerous && !isCapture && !isEnPassant && !b.inCheck(b.getTurn())) {
 				int R = 1;
 				if (depth >= LMR_STARTING_DEPTH + 1) {
 					R += i / (LMR_STARTING_MOVE * 4);
@@ -410,7 +447,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 			}
 		}
 
-		b.undo(mailbox_copy, castling_copy, king_copy);
+		b.undo(mailbox_copy, castling_copy, king_copy, lazy_copy);
 		tempHashPosVec.pop_back();
 		if (timeOver(startTime, stopTime) && depth != initial) return alpha;
 
@@ -424,7 +461,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 						killerMoves[0][depth] = m;
 					}
 					//History heuristic
-					historyMoves[(color != b.WHITE)][abs(b.mailbox[m.from]) - 1][m.to] += depth * depth;
+					historyMoves[(color != b.WHITE)][abs(target) - 1][m.to] += depth * depth;
 				}
 			}
 			return score;
@@ -447,7 +484,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 			bestMove = NO_MOVE;
 		}
 		//No moves searched due to futility pruning
-		if (f_prune && f_prune_count == legalMoves.size()) {
+		if (f_prune && f_prune_count == size) {
 			return alpha;
 		}
 		return (isInCheck) ? -WIN_SCORE - initial + depth : DRAW_SCORE;
@@ -593,13 +630,13 @@ long Wowl::perft(Board& b, Evaluation& e, int depth) {
 		memcpy(king_copy, b.kingSquare, sizeof(b.kingSquare));
 		b.move(i.from, i.to);
 		if (b.inCheck(b.getTurn() * -1)) {
-			b.undo(mailbox_copy, castling_copy, king_copy);
+			b.undo(mailbox_copy, castling_copy, king_copy, b.lazyScore);
 			continue;
 		}
 		haveMove = true;
 		nodes += perft(b, e, depth - 1);
 		std::cout << b.toNotation(i.from) << b.toNotation(i.to) << std::endl;
-		b.undo(mailbox_copy, castling_copy, king_copy);
+		b.undo(mailbox_copy, castling_copy, king_copy, b.lazyScore);
 	}
 	if (!haveMove) {
 		return 1;

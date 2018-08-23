@@ -456,9 +456,10 @@ int Evaluation::piecesAndMobility(const Board&b, int color) {
 	return val;
 }
 
-int Evaluation::totalEvaluation(Board& b, int color) {
+int Evaluation::totalEvaluation(Board& b, int color, int lazyScore[]) {
 	phase = getPhase(b);
-	int lazy = lazyEvaluation(b, color) - lazyEvaluation(b, -color);
+	int lazyIndex = !(color == b.WHITE);
+	int lazy = lazyScore[lazyIndex] - lazyScore[!lazyIndex];
 	int pieces = piecesAndMobility(b, color) - piecesAndMobility(b, -color);
 	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color)
 		- doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - backwardPawns(b, -color) - passedPawns(b, -color);
@@ -467,6 +468,7 @@ int Evaluation::totalEvaluation(Board& b, int color) {
 	return lazy + pieces + pawns + space + king;
 }
 int Evaluation::lazyEvaluation(const Board& b, int color) {
+	phase = getPhase(b);
 	int val = 0;
 	for (int i = 21; i < 99; ++i) {
 		int piece = b.mailbox[i];
