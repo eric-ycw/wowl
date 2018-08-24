@@ -18,8 +18,6 @@ public:
 	int backwardPawns(const Board&, int);
 	int passedPawns(const Board&, int);
 
-	int material(const Board&, int, int);
-
 	int knightOutpost(const Board&, int, int);
 	int rookBehindPassed(const Board&, int, int);
 	int trappedRook(const Board&, int, int);
@@ -64,16 +62,16 @@ private:
 	};
 
 	enum kingAttackerValue {
-		KNIGHT_KING_ATTACKER = 60,
-		BISHOP_KING_ATTACKER = 45,
-		ROOK_KING_ATTACKER = 35,
-		QUEEN_KING_ATTACKER = 15
+		KNIGHT_KING_ATTACKER = 50,
+		BISHOP_KING_ATTACKER = 35,
+		ROOK_KING_ATTACKER = 30,
+		QUEEN_KING_ATTACKER = 12
 	};
 
 	enum positionValue {
 		OPEN_CLOSED_POS_PIECE_VALUE = 3,
 		R_OPEN_FILE_BONUS = 20,
-		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -20
+		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -24
 	};
 
 	enum threatValue {
@@ -168,7 +166,7 @@ private:
 		-70,-70,-70,-70,-70,-70,-70,-70,
 		-30,-70,-70,-50,-50,-70,-70,-30,
 		  0,  0,-30,-50,-50,-30,  0,  0,
-		  0,  0,  0,  0,  0,  0,  0,  0
+		  0,  0,-15,-30,-30,-15,  0,  0
 	};
 	const int kingEndTable[64]
 	{

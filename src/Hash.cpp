@@ -23,11 +23,11 @@ U64 Hash::generatePosKey(Board& b) {
 	//Pieces
 	for (int sq = 21; sq < 99; ++sq) {
 		int piece = b.mailbox[sq];
-		if (piece == 0 || piece == b.OOB) {
+		if (piece == 0 || piece == b.NN) {
 			continue;
 		}
 		piece = (piece > 0) ? piece - 1 : -piece + 5;
-		finalKey ^= pieceKeys[piece][b.to64Coord(sq)];
+		finalKey ^= pieceKeys[piece][b.mailbox120[sq]];
 	}
 	
 	//Side to move
@@ -58,10 +58,10 @@ U64 Hash::updatePosKey(Board&b, const U64 key, const Move m, const int captured_
 
 	int piece = b.mailbox[m.to];
 	piece = (piece > 0) ? piece - 1 : -piece + 5;
-	finalKey ^= pieceKeys[piece][b.to64Coord(m.from)];
+	finalKey ^= pieceKeys[piece][b.mailbox120[m.from]];
 	if (captured_piece != 0) {
 		piece = (captured_piece > 0) ? captured_piece - 1 : -captured_piece + 5;
-		finalKey ^= pieceKeys[captured_piece][b.to64Coord(m.to)];
+		finalKey ^= pieceKeys[captured_piece][b.mailbox120[m.to]];
 	}
 
 	b.setEnPassantSquare();

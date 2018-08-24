@@ -18,12 +18,10 @@ int Wowl::SEE(Board& b, const Evaluation& e, int square, int color) const {
 	if (piece > 0) {
 		if (target != 9 && target != 0) {
 			oldsqr = std::get<1>(b.getSmallestAttacker(square, color));
-			int mailbox_copy[120];
-			int castling_copy[4];
-			int king_copy[2];
-			memcpy(mailbox_copy, b.mailbox, sizeof(b.mailbox));
-			memcpy(castling_copy, b.castling, sizeof(b.castling));
-			memcpy(king_copy, b.kingSquare, sizeof(b.kingSquare));
+			int mailboxCopy[120], castlingCopy[4], kingCopy[2];
+			memcpy(mailboxCopy, b.mailbox, sizeof(b.mailbox));
+			memcpy(castlingCopy, b.castling, sizeof(b.castling));
+			memcpy(kingCopy, b.kingSquare, sizeof(b.kingSquare));
 			b.move(oldsqr, square);
 			if (!b.inCheck(color)) {
 				targetval = e.pieceValues[target - 1];
@@ -32,7 +30,7 @@ int Wowl::SEE(Board& b, const Evaluation& e, int square, int color) const {
 				}
 				val = targetval - SEE(b, e, square, -color);
 			}
-			b.undo(mailbox_copy, castling_copy, king_copy, b.lazyScore);
+			b.undo(mailboxCopy, castlingCopy, kingCopy, b.lazyScore);
 		}
 	}
 	return val;
@@ -46,8 +44,8 @@ bool Wowl::checkThreefold(const U64 key) const {
 }
 
 int Wowl::pstScore(const Board& b, Evaluation& e, const Move& m, int color) {
-	int old_coord = b.to64Coord((color == b.WHITE) ? m.from : e.flipTableValue(m.from));
-	int new_coord = b.to64Coord((color == b.WHITE) ? m.to : e.flipTableValue(m.to));
+	int old_coord = b.mailbox120[(color == b.WHITE) ? m.from : e.flipTableValue(m.from)];
+	int new_coord = b.mailbox120[(color == b.WHITE) ? m.to : e.flipTableValue(m.to)];
 	int pst_score = 0;
 	switch (abs(b.mailbox[m.from])) {
 	case b.WP:
@@ -279,14 +277,11 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 			continue;
 		}
 		qSearchNodes++;
-		int mailbox_copy[120];
-		int castling_copy[4];
-		int king_copy[2];
-		int lazy_copy[2];
-		memcpy(mailbox_copy, b.mailbox, sizeof(b.mailbox));
-		memcpy(castling_copy, b.castling, sizeof(b.castling));
-		memcpy(king_copy, b.kingSquare, sizeof(b.kingSquare));
-		memcpy(lazy_copy, b.lazyScore, sizeof(b.lazyScore));
+		int mailboxCopy[120], castlingCopy[4], kingCopy[2], lazyCopy[2];
+		memcpy(mailboxCopy, b.mailbox, sizeof(b.mailbox));
+		memcpy(castlingCopy, b.castling, sizeof(b.castling));
+		memcpy(kingCopy, b.kingSquare, sizeof(b.kingSquare));
+		memcpy(lazyCopy, b.lazyScore, sizeof(b.lazyScore));
 
 		int lazyIndex = !(color == b.WHITE);
 		b.lazyScore[!lazyIndex] -= e.pieceValues[abs(b.mailbox[c.to]) - 1];
@@ -297,11 +292,11 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 		b.lazyScore[lazyIndex] += e.PST(b, c.to, color) - preMovePST;
 
 		if (b.inCheck(b.getTurn() * -1)) {
-			b.undo(mailbox_copy, castling_copy, king_copy, lazy_copy);
+			b.undo(mailboxCopy, castlingCopy, kingCopy, lazyCopy);
 			continue;
 		}
 		int score = -qSearch(b, e, -beta, -alpha, -color);
-		b.undo(mailbox_copy, castling_copy, king_copy, lazy_copy);
+		b.undo(mailboxCopy, castlingCopy, kingCopy, lazyCopy);
 		if (score >= beta) {
 			return beta;
 		}
@@ -323,7 +318,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	bool nearCheckmate = (alpha <= -WIN_SCORE);
 
 	if (checkThreefold(key)) { return DRAW_SCORE; }
-
+	
 	int hashScore = probeHashTable(key, depth, initial, alpha, beta);
 	if (hashScore != VAL_UNKWOWN) {
 		return hashScore;
@@ -387,32 +382,35 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		bool isPassed = piece == b.WP * color && WowlEval.isPassed(b, m.from, color);
 		bool isPromotion = piece == b.WP * color && (m.to / 10 == 2 || m.to / 10 == 9);
 		bool isKiller = killerMoves[0][depth] == m || killerMoves[1][depth] == m;
+		bool isCastling = piece == b.WK * color && abs(m.from - m.to) == 2;
 
 		bool isDangerous = isPassed || isPromotion || isKiller || isInCheck;
 
 
-		if (f_prune && !isDangerous && !isCapture && !isEnPassant && i > 0) {
-			if (futilityScore <= alpha) { continue; }
+		if (f_prune && !isDangerous && !isEnPassant && i > 0) {
+			if (futilityScore + WowlEval.pieceValues[abs(target) - 1] <= alpha) { 
+				f_prune_count++;
+				continue; 
+			}
 		}
 
 		//Copy board state and info before making move
-		int mailbox_copy[120];
-		int castling_copy[4];
-		int king_copy[2];
-		int lazy_copy[2];
-		memcpy(mailbox_copy, b.mailbox, sizeof(b.mailbox));
-		memcpy(castling_copy, b.castling, sizeof(b.castling));
-		memcpy(king_copy, b.kingSquare, sizeof(b.kingSquare));
-		memcpy(lazy_copy, b.lazyScore, sizeof(b.lazyScore));
+		int mailboxCopy[120], castlingCopy[4], kingCopy[2], lazyCopy[2];
+		memcpy(mailboxCopy, b.mailbox, sizeof(b.mailbox));
+		memcpy(castlingCopy, b.castling, sizeof(b.castling));
+		memcpy(kingCopy, b.kingSquare, sizeof(b.kingSquare));
+		memcpy(lazyCopy, b.lazyScore, sizeof(b.lazyScore));
 
 		int lazyIndex = !(color == b.WHITE);
 		if (isCapture) { 
 			b.lazyScore[!lazyIndex] -= WowlEval.pieceValues[abs(target) - 1]; 
 			b.lazyScore[!lazyIndex] -= WowlEval.PST(b, m.to, -color);
-		}
-		if (isEnPassant) {
+		} else if (isEnPassant) {
 			b.lazyScore[!lazyIndex] -= WowlEval.pieceValues[0];
 			b.lazyScore[!lazyIndex] -= WowlEval.PST(b, m.to + color * 10, -color);
+		}
+		if (isCastling) {
+			b.lazyScore[lazyIndex] += 3;  //Hard-coded PST benefit from moving the rook during castling
 		}
 		//Currently treats queening as the only possible promotion
 		if (isPromotion) { b.lazyScore[lazyIndex] += WowlEval.pieceValues[4] - WowlEval.pieceValues[0]; }
@@ -422,7 +420,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 
 		if (b.inCheck(b.getTurn() * -1)) {
 			f_prune_count++;
-			b.undo(mailbox_copy, castling_copy, king_copy, lazy_copy);
+			b.undo(mailboxCopy, castlingCopy, kingCopy, lazyCopy);
 			continue;
 		}
 		else {
@@ -447,14 +445,14 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 			}
 		}
 
-		b.undo(mailbox_copy, castling_copy, king_copy, lazy_copy);
+		b.undo(mailboxCopy, castlingCopy, kingCopy, lazyCopy);
 		tempHashPosVec.pop_back();
 		if (timeOver(startTime, stopTime) && depth != initial) return alpha;
 
 		if (score >= beta) {
 			if (can_null) {
 				recordHash(key, depth, beta, hashTable.HASH_BETA);
-				if (!isCapture && !isPromotion) {
+				if (!isCapture && !isPromotion && isEnPassant) {
 					//Killer moves
 					if (m != killerMoves[0][depth]) {
 						killerMoves[1][depth] = killerMoves[0][depth];
@@ -506,10 +504,10 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 		IDMoves[i] = NO_MOVE;
 	}
 
-	int id_alpha = -WIN_SCORE;
-	int id_beta = WIN_SCORE;
+	int idAlpha = -WIN_SCORE;
+	int idBeta = WIN_SCORE;
 	int delta = ASPIRATION_WINDOW;
-	bool first_search = true;
+	int failed = 0;
 
 	int totalNodes = 0;
 	int highestDepth = 0;
@@ -525,7 +523,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 
 		tempHashPosVec = hashPosVec;
 
-		bestScore = negaSearch(b, idepth, idepth, color, id_alpha, id_beta, true, startTime, moveTime);
+		bestScore = negaSearch(b, idepth, idepth, color, idAlpha, idBeta, true, startTime, moveTime);
 		totalNodes += negaNodes + qSearchNodes;
 
 		//UCI output
@@ -545,25 +543,24 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 		}
 		std::cout << "\n";
 
-		if ((bestScore <= id_alpha) || (bestScore >= id_beta)) {
-			id_beta += delta;
-			id_alpha -= delta;
+		if ((bestScore <= idAlpha) || (bestScore >= idBeta)) {
+			idBeta += delta;
+			idAlpha -= delta;
 			delta += delta / 2;
 			idepth--;
-			first_search = false;
 			continue;
 		}
 
 		delta = ASPIRATION_WINDOW;
 		if (idepth >= 5) {
-			id_alpha = bestScore - delta;
-			id_beta = bestScore + delta;
+			idAlpha = bestScore - delta;
+			idBeta = bestScore + delta;
 		}
 		else {
-			id_alpha = -WIN_SCORE - MAX_SEARCH_DEPTH;
-			id_beta = WIN_SCORE + MAX_SEARCH_DEPTH;
+			idAlpha = -WIN_SCORE - MAX_SEARCH_DEPTH;
+			idBeta = WIN_SCORE + MAX_SEARCH_DEPTH;
 		}
-		first_search = true;
+		failed = 0;
 
 		IDMoves[idepth - 1] = bestMove;
 		highestDepth++;
@@ -622,21 +619,19 @@ long Wowl::perft(Board& b, Evaluation& e, int depth) {
 	bool haveMove = false;
 
 	for (const auto& i : legalMoves) {
-		int mailbox_copy[120];
-		int castling_copy[4];
-		int king_copy[2];
-		memcpy(mailbox_copy, b.mailbox, sizeof(b.mailbox));
-		memcpy(castling_copy, b.castling, sizeof(b.castling));
-		memcpy(king_copy, b.kingSquare, sizeof(b.kingSquare));
+		int mailboxCopy[120], castlingCopy[4], kingCopy[2];
+		memcpy(mailboxCopy, b.mailbox, sizeof(b.mailbox));
+		memcpy(castlingCopy, b.castling, sizeof(b.castling));
+		memcpy(kingCopy, b.kingSquare, sizeof(b.kingSquare));
 		b.move(i.from, i.to);
 		if (b.inCheck(b.getTurn() * -1)) {
-			b.undo(mailbox_copy, castling_copy, king_copy, b.lazyScore);
+			b.undo(mailboxCopy, castlingCopy, kingCopy, b.lazyScore);
 			continue;
 		}
 		haveMove = true;
 		nodes += perft(b, e, depth - 1);
 		std::cout << b.toNotation(i.from) << b.toNotation(i.to) << std::endl;
-		b.undo(mailbox_copy, castling_copy, king_copy, b.lazyScore);
+		b.undo(mailboxCopy, castlingCopy, kingCopy, b.lazyScore);
 	}
 	if (!haveMove) {
 		return 1;

@@ -63,7 +63,7 @@ private:
 	};
 
 	int MVVLVAScores[6][6];
-	const int futilityMargin[4] = { 0, 275, 525 };
+	const int futilityMargin[4] = { 0, 300, 550 };
 
 	int bestScore = 0;
 	Move PVLine[MAX_SEARCH_DEPTH];

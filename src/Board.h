@@ -45,7 +45,7 @@ public:
 	enum Piece {
 		WP = 1, WN = 2, WB = 3, WR = 4, WQ = 5, WK = 6,
 		BP = -1, BN = -2, BB = -3, BR = -4, BQ = -5, BK = -6,
-		OOB = -9
+		NN = -9
 	};
 
 	enum Color { WHITE = 1, BLACK = -1 };
@@ -55,7 +55,6 @@ public:
 	void parseFEN(std::string);
 
 	int toCoord(char, char);
-	int to64Coord(int) const;
 	std::string toNotation(int) const;
 
 	void reserveVectors();
@@ -86,7 +85,7 @@ public:
 	std::tuple<int, int> getSmallestAttacker(int, int);
 
 	bool inCheck(int);
-	bool checkMoveCheck(int, int);
+
 	void checkCastling();
 	int checkCastlingForfeit();
 
@@ -117,18 +116,18 @@ public:
 	};
 
 	int mailbox[120] = {
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-			OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
-			OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
-			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-			OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
-			OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB
+		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN,
+		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN,
+		NN, BR, BN, BB, BQ, BK, BB, BN, BR, NN,
+		NN, BP, BP, BP, BP, BP, BP, BP, BP, NN,
+		NN,  0,  0,  0,  0,  0,  0,  0,  0, NN,
+		NN,  0,  0,  0,  0,  0,  0,  0,  0, NN,
+		NN,  0,  0,  0,  0,  0,  0,  0,  0, NN,
+		NN,  0,  0,  0,  0,  0,  0,  0,  0, NN,
+		NN, WP, WP, WP, WP, WP, WP, WP, WP, NN,
+		NN, WR, WN, WB, WQ, WK, WB, WN, WR, NN,
+		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN,
+		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN
 	};
 
 	int pieces[12];
@@ -136,18 +135,18 @@ public:
 private:
 
 	const int start[120] = {
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-			OOB, BR, BN, BB, BQ, BK, BB, BN, BR, OOB,
-			OOB, BP, BP, BP, BP, BP, BP, BP, BP, OOB,
-			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-			OOB,  0,  0,  0,  0,  0,  0,  0,  0, OOB,
-			OOB, WP, WP, WP, WP, WP, WP, WP, WP, OOB,
-			OOB, WR, WN, WB, WQ, WK, WB, WN, WR, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB,
-		OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB, OOB
+		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN,
+		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN,
+		NN, BR, BN, BB, BQ, BK, BB, BN, BR, NN,
+		NN, BP, BP, BP, BP, BP, BP, BP, BP, NN,
+		NN,  0,  0,  0,  0,  0,  0,  0,  0, NN,
+		NN,  0,  0,  0,  0,  0,  0,  0,  0, NN,
+		NN,  0,  0,  0,  0,  0,  0,  0,  0, NN,
+		NN,  0,  0,  0,  0,  0,  0,  0,  0, NN,
+		NN, WP, WP, WP, WP, WP, WP, WP, WP, NN,
+		NN, WR, WN, WB, WQ, WK, WB, WN, WR, NN,
+		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN,
+		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN
 	};
 
 	const int mailbox120[120] = {
