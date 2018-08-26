@@ -34,12 +34,13 @@ public:
 	int kingDangerProximity(Board&, int);
 
 	int pawnPushThreat(const Board&, int, int);
+	int pawnAttackThreat(const Board&, int, int);
+
+	int piecesEval(const Board&, int);
 
 	bool attackedByEnemyPawn(const Board&, int, int);
 	int isOpenFile(const Board&, int);
 	int isPassed(const Board&, int, int);
-
-	int piecesAndMobility(const Board&, int);
 
 	int totalEvaluation(Board&, int, int[]);
 	int lazyEvaluation(const Board&, int);
@@ -47,7 +48,7 @@ public:
 private:
 
 	enum pawnStructValue {
-		DOUBLED_P_PENALTY = -16, ISOLATED_P_PENALTY = -12,
+		DOUBLED_P_PENALTY = -12, ISOLATED_P_PENALTY = -8,
 		SUPPORTED_P_BONUS = 12, PHALANX_P_BONUS = 8,
 		BACKWARD_P_PENALTY = -14,
 		PASSED_P_BONUS = 3
@@ -69,18 +70,19 @@ private:
 	};
 
 	enum positionValue {
-		OPEN_CLOSED_POS_PIECE_VALUE = 3,
+		CLOSED_POSITION_BONUS = 3,
 		R_OPEN_FILE_BONUS = 20,
 		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -24
 	};
 
 	enum threatValue {
-		PAWN_PUSH_THREAT_PENALTY = -28
+		PAWN_PUSH_THREAT_PENALTY = -28,
+		PAWN_ATTACK_THREAT_PENALTY = -80
 	};
 
 	const int pieceValues[6]
 	{
-		120, 480, 512, 792, 1520, 40000
+		120, 480, 512, 802, 1520, 40000
 	};
 	const int knightMobilityTable[9]
 	{
@@ -107,8 +109,8 @@ private:
 		99, 99, 99, 99, 99, 99, 99, 99,
 		40, 50, 50, 50, 50, 50, 50, 40,
 		25, 30, 35, 45, 45, 35, 30, 25,
-		10, 10, 15, 25, 25, 15, 10, 10,
-		 0,  0, 15, 20, 20, 15,  0,  0,
+		10, 10, 20, 25, 25, 20, 10, 10,
+		 0,  0, 17, 22, 22, 17,  0,  0,
 		 0,  0, 10, 12, 12, 10,  0,  0,
 		 0,  5,  5,  0,  0,  5,  5,  0,
 		 0,  0,  0,  0,  0,  0,  0,  0

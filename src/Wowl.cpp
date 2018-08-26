@@ -80,14 +80,13 @@ std::vector<int> Wowl::scoreMoves(Board& b, Evaluation& e, const std::vector<Mov
 		hashMove = hashTable.tt.at(poskey).hashBestMove;
 	}
 
-	bool isCapture, isPassed, isPromotion;
 	e.phase = e.getPhase(b);
 
 	for (int i = 0; i < size; ++i) {
 		Move m = moves[i];
-		isCapture = b.mailbox[m.to] != 0;
-		isPassed = e.isPassed(b, m.from, color);
-		isPromotion = b.mailbox[m.from] == b.WP * color && (m.to / 10 == 2 || m.to / 10 == 9);
+		bool isCapture = b.mailbox[m.to] != 0;
+		bool isPassed = e.isPassed(b, m.from, color);
+		bool isPromotion = b.mailbox[m.from] == b.WP * color && (m.to / 10 == 2 || m.to / 10 == 9);
 
 		//Hash table move
 		if (m == hashMove) {
@@ -261,6 +260,8 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 	if (stand_pat > alpha) {
 		alpha = stand_pat;
 	}
+
+	bool isInCheck = b.inCheck(color);
 	
 	auto captures = b.getCaptures();
 	if (captures.empty()) { return stand_pat; }
@@ -272,10 +273,17 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 		Move c = captures[i];
 		bool isPromotion = b.mailbox[c.from] == b.WP * color && (c.to / 10 == 2 || c.to / 10 == 9);
 
-		//Negative SEE
-		if (SEE(b, e, c.to, color) < 0) {
+		//Delta pruning
+		if (!isInCheck && !isPromotion && e.phase > 0.25 && 
+			stand_pat + e.pieceValues[abs(c.to) - 1] + DELTA_MARGIN < alpha) {
 			continue;
 		}
+
+		//Negative SEE pruning
+		if (SEE(b, e, c.to, color) < 0 && !isInCheck) {
+			continue;
+		}
+
 		qSearchNodes++;
 		int mailboxCopy[120], castlingCopy[4], kingCopy[2], lazyCopy[2];
 		memcpy(mailboxCopy, b.mailbox, sizeof(b.mailbox));
@@ -351,13 +359,13 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	}
 
 	//Futility pruning
-	bool f_prune = false;
-	int f_prune_count = 0;
+	bool fPrune = false;
+	int fPruneCount = 0;
 	int futilityScore = -WIN_SCORE - MAX_SEARCH_DEPTH;
 	if (depth <= 2 && !isInCheck && !nearCheckmate) {
 		//We increase the futility margin as material decreases
 		futilityScore = WowlEval.totalEvaluation(b, color, b.lazyScore) + futilityMargin[depth] + static_cast<int>((1 - phase) * 50);
-		f_prune = true;
+		fPrune = true;
 	};
 
 
@@ -387,9 +395,9 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		bool isDangerous = isPassed || isPromotion || isKiller || isInCheck;
 
 
-		if (f_prune && !isDangerous && !isEnPassant && i > 0) {
+		if (fPrune && !isDangerous && !isEnPassant && i > 0) {
 			if (futilityScore + WowlEval.pieceValues[abs(target) - 1] <= alpha) { 
-				f_prune_count++;
+				fPruneCount++;
 				continue; 
 			}
 		}
@@ -419,7 +427,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		b.lazyScore[lazyIndex] += WowlEval.PST(b, m.to, color) - preMovePST;
 
 		if (b.inCheck(b.getTurn() * -1)) {
-			f_prune_count++;
+			fPruneCount++;
 			b.undo(mailboxCopy, castlingCopy, kingCopy, lazyCopy);
 			continue;
 		}
@@ -482,7 +490,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 			bestMove = NO_MOVE;
 		}
 		//No moves searched due to futility pruning
-		if (f_prune && f_prune_count == size) {
+		if (fPrune && fPruneCount == size) {
 			return alpha;
 		}
 		return (isInCheck) ? -WIN_SCORE - initial + depth : DRAW_SCORE;
@@ -630,7 +638,6 @@ long Wowl::perft(Board& b, Evaluation& e, int depth) {
 		}
 		haveMove = true;
 		nodes += perft(b, e, depth - 1);
-		std::cout << b.toNotation(i.from) << b.toNotation(i.to) << std::endl;
 		b.undo(mailboxCopy, castlingCopy, kingCopy, b.lazyScore);
 	}
 	if (!haveMove) {

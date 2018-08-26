@@ -190,8 +190,8 @@ void Board::genSliderMoves(std::vector<Move>& legalMoves, int square, int piece)
 	assert(piece == WB || piece == WR || piece == WQ);
 	for (const int i : pieceMoves[piece - 1]) {
 		if (!i) { break; }
-		for (int j = 0; j < 8; ++j) {
-			int to = square + (j + 1) * i;
+		for (int j = 1; j < 8; ++j) {
+			int to = square + j * i;
 			int toVal = mailbox[to];
 			if (toVal * turn > 0 || toVal == NN || abs(toVal) == WK) {
 				break;
@@ -253,8 +253,8 @@ void Board::genSliderCaptures(std::vector<Move>& captures, int square, int piece
 	assert(piece == WB || piece == WR || piece == WQ);
 	for (const int i : pieceMoves[piece - 1]) {
 		if (!i) { break; }
-		for (int j = 0; j < 8; ++j) {
-			int to = square + (j + 1) * i;
+		for (int j = 1; j < 8; ++j) {
+			int to = square + j * i;
 			int toVal = mailbox[to];
 			if (toVal * turn > 0 || toVal == NN || abs(toVal) == WK) {
 				break;
@@ -384,15 +384,20 @@ bool Board::checkAttackKnight(int a, int b) const {
 	return (a - 21 == b || a - 19 == b || a - 12 == b || a - 8 == b || a + 19 == b || a + 21 == b || a + 8 == b || a + 12 == b);
 }
 bool Board::checkAttackSlider(int a, int b, int piece) const {
-	bool notRook = (a - b) % 10 != 0 && abs(a - b) > 7;
-	if (piece == WR && notRook) { return false; }
-	bool notBishop = (a - b) % 9 != 0 && (a - b) % 11 != 0;
-	if (piece == WB && notBishop) { return false; }
+	bool notRook, notBishop;
+	if (piece != WB) {
+		notRook = (a - b) % 10 != 0 && abs(a - b) > 7;
+		if (piece == WR && notRook) { return false; }
+	}
+	if (piece != WR) {
+		notBishop = (a - b) % 9 != 0 && (a - b) % 11 != 0;
+		if (piece == WB && notBishop) { return false; }
+	}
 	if (piece == WQ && notBishop && notRook) { return false; }
 	for (const int i : pieceMoves[piece - 1]) {
 		if (!i) { break; }
-		for (int j = 0; j < 8; ++j) {
-			int to = a + (j + 1) * i;
+		for (int j = 1; j < 8; ++j) {
+			int to = a + j * i;
 			if (to == b) { return true; }
 			int toVal = mailbox[to];
 			if (toVal * turn != 0) { break; }
