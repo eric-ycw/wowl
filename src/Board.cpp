@@ -6,7 +6,6 @@ void Board::parseFEN(std::string fen) {
 	//Completely empty the board
 	resetBoard(true);
 
-	int start = 21;
 	int piece = 0;
 
 	//The FEN string starts on the eight rank but startinng the counter at zero is more convenient

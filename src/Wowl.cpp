@@ -64,29 +64,31 @@ int Wowl::pstScore(const Board& b, Evaluation& e, const Move& m, int color) {
 		pst_score = e.queenTable[new_coord] - e.queenTable[old_coord];
 		break;
 	case b.WK:
-		pst_score = static_cast<int>((e.kingTable[new_coord] - e.kingTable[old_coord]) * e.phase +
-									 (e.kingEndTable[new_coord] - e.kingEndTable[old_coord]) * (1 - e.phase));
+		pst_score = (e.kingTable[new_coord] - e.kingTable[old_coord]) * e.phase +
+				    (e.kingEndTable[new_coord] - e.kingEndTable[old_coord]) * (1 - e.phase);
 		break;
 	}
 	return pst_score;
 }
 std::vector<int> Wowl::scoreMoves(Board& b, Evaluation& e, const std::vector<Move>& moves, const int color, const int depth, const U64 poskey, const bool is_root) {
-	
 	int size = moves.size();
 	std::vector<int> scoreVec(size, 0);
 	Move hashMove = NO_MOVE;
 	
-	if (hashTable.tt.find(poskey) != hashTable.tt.end()) {
-		hashMove = hashTable.tt.at(poskey).hashBestMove;
+	if (tt.hashTable.find(poskey) != tt.hashTable.end()) {
+		hashMove = tt.hashTable.at(poskey).hashBestMove;
 	}
 
 	e.phase = e.getPhase(b);
 
 	for (int i = 0; i < size; ++i) {
+
 		Move m = moves[i];
-		bool isCapture = b.mailbox[m.to] != 0;
-		bool isPassed = e.isPassed(b, m.from, color);
-		bool isPromotion = b.mailbox[m.from] == b.WP * color && (m.to / 10 == 2 || m.to / 10 == 9);
+		int piece = b.mailbox[m.from];
+		int target = b.mailbox[m.to];
+
+		bool isCapture = target != 0;
+		bool isPromotion = piece == b.WP * color && (m.to / 10 == 2 || m.to / 10 == 9);
 
 		//Hash table move
 		if (m == hashMove) {
@@ -105,11 +107,6 @@ std::vector<int> Wowl::scoreMoves(Board& b, Evaluation& e, const std::vector<Mov
 			}
 			if (found) { continue; }
 		}
-		//Promotion
-		if (isPromotion) {
-			scoreVec[i] = 50000;
-			continue;
-		}
 		//Captures
 		if (isCapture) {
 			int see_score = SEE(b, e, m.to, color);
@@ -121,6 +118,11 @@ std::vector<int> Wowl::scoreMoves(Board& b, Evaluation& e, const std::vector<Mov
 				//Winning or equal captures
 				scoreVec[i] = see_score + 30000;
 			}
+			continue;
+		}
+		//Promotions
+		if (isPromotion) {
+			scoreVec[i] = 25000;
 			continue;
 		}
 		//Killer moves
@@ -142,13 +144,10 @@ std::vector<int> Wowl::scoreMoves(Board& b, Evaluation& e, const std::vector<Mov
 				continue;
 			}
 		}
-		//Passed pawn move
-		if (isPassed) {
-			scoreVec[i] = 10000;
-			continue;
-		}
 		//History heuristic
-		scoreVec[i] += historyMoves[(color!= b.WHITE)][abs(b.mailbox[m.from]) - 1][m.to];
+		int historyScore = historyMoves[(color != b.WHITE)][abs(piece) - 1][m.to];
+		if (historyScore >= HISTORY_MAX) { reduceHistory(); }
+		scoreVec[i] += historyScore;
 		//Piece-square tables
 		scoreVec[i] += pstScore(b, e, m, color);
 	}
@@ -195,21 +194,30 @@ void Wowl::resetMoveHeuristics() {
 		}
 	}
 }
+void Wowl::reduceHistory() {
+	for (int i = 0; i < 2; ++i) {
+		for (int j = 0; j < 6; ++j) {
+			for (int k = 0; k < 120; k++) {
+				historyMoves[i][j][k] /= 2;
+			}
+		}
+	}
+}
 
 int Wowl::probeHashTable(const U64 key, int depth, int initial, int alpha, int beta) {
-	auto it = hashTable.tt.find(key);
-	if (it != hashTable.tt.end()) {
+	auto it = tt.hashTable.find(key);
+	if (it != tt.hashTable.end()) {
 		if (it->second.hashDepth >= depth) {
-			if (it->second.hashFlag == hashTable.HASH_EXACT) {
+			if (it->second.hashFlag == tt.HASH_EXACT) {
 				if (depth == initial) { bestMove = it->second.hashBestMove; }
 				return it->second.hashScore;
 			}
-			else if (it->second.hashFlag == hashTable.HASH_ALPHA) {
+			else if (it->second.hashFlag == tt.HASH_ALPHA) {
 				if (it->second.hashScore <= alpha) {
 					return alpha;
 				}
 			}
-			else if (it->second.hashFlag == hashTable.HASH_BETA) {
+			else if (it->second.hashFlag == tt.HASH_BETA) {
 				if (it->second.hashScore >= beta) {
 					return beta;
 				}
@@ -219,8 +227,8 @@ int Wowl::probeHashTable(const U64 key, int depth, int initial, int alpha, int b
 	return VAL_UNKWOWN;
 }
 void Wowl::recordHash(const U64 key, int depth, int score, int flag) {
-	auto it = hashTable.tt.find(key);
-	if (it != hashTable.tt.end()) {
+	auto it = tt.hashTable.find(key);
+	if (it != tt.hashTable.end()) {
 		if (it->second.hashDepth <= depth) {
 			it->second.hashDepth = depth;
 			it->second.hashScore = score;
@@ -228,17 +236,17 @@ void Wowl::recordHash(const U64 key, int depth, int score, int flag) {
 		}
 	}
 	else {
-		hashTable.tt[key] = HashVal(depth, score, flag, 0);
+		tt.hashTable[key] = ttInfo(depth, score, flag, 0);
 	}
 }
 void Wowl::ageHash() {
-	for (auto it = hashTable.tt.begin(); it != hashTable.tt.end();) {
+	for (auto it = tt.hashTable.begin(); it != tt.hashTable.end();) {
 		if (it->second.hashAge < TT_CLEAR_AGE) {
 			it->second.hashAge++;
 			it++;
 		}
 		else {
-			it = hashTable.tt.erase(it);
+			it = tt.hashTable.erase(it);
 		}
 	}
 }
@@ -273,12 +281,6 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 		Move c = captures[i];
 		bool isPromotion = b.mailbox[c.from] == b.WP * color && (c.to / 10 == 2 || c.to / 10 == 9);
 
-		//Delta pruning
-		if (!isInCheck && !isPromotion && e.phase > 0.25 && 
-			stand_pat + e.pieceValues[abs(c.to) - 1] + DELTA_MARGIN < alpha) {
-			continue;
-		}
-
 		//Negative SEE pruning
 		if (SEE(b, e, c.to, color) < 0 && !isInCheck) {
 			continue;
@@ -312,7 +314,6 @@ int Wowl::qSearch(Board& b, Evaluation& e, int alpha, int beta, int color) {
 			alpha = score;
 		}
 	}
-
 	return alpha;
 }
 int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int beta, bool can_null, clock_t startTime, double stopTime) {
@@ -320,8 +321,8 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	if (timeOver(startTime, stopTime)) return alpha;
 
 	Evaluation WowlEval;
-	U64 key = hashTable.generatePosKey(b);
-	int tempHashFlag = hashTable.HASH_ALPHA;
+	U64 key = tt.generatePosKey(b);
+	int tempHashFlag = tt.HASH_ALPHA;
 	bool isInCheck = b.inCheck(color);
 	bool nearCheckmate = (alpha <= -WIN_SCORE);
 
@@ -336,7 +337,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		if (!isInCheck) {
 			negaNodes++;
 			int qScore = qSearch(b, WowlEval, alpha, beta, color);
-			recordHash(key, depth, qScore, hashTable.HASH_EXACT);
+			recordHash(key, depth, qScore, tt.HASH_EXACT);
 			return qScore;
 		}
 		else if (depth + 1 < initial) {
@@ -348,10 +349,10 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	double phase = WowlEval.getPhase(b);
 
 	//Null move pruning
-	int R = NULL_MOVE_REDUCTION + depth / 6;
-	if (depth > R + 1 && can_null && !isInCheck && phase > 0.25) {
+	int nullR = NULL_MOVE_REDUCTION + depth / 6;
+	if (depth > nullR + 1 && can_null && !isInCheck && phase > 0.25) {
 		b.nullMove();
-		score = -negaSearch(b, depth - 1 - R, initial, -color, -beta, -beta + 1, false, startTime, stopTime);
+		score = -negaSearch(b, depth - 1 - nullR, initial, -color, -beta, -beta + 1, false, startTime, stopTime);
 		b.undoNullMove();
 		if (score >= beta) {
 			return score;
@@ -362,7 +363,7 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	bool fPrune = false;
 	int fPruneCount = 0;
 	int futilityScore = -WIN_SCORE - MAX_SEARCH_DEPTH;
-	if (depth <= 2 && !isInCheck && !nearCheckmate) {
+	if (depth <= 4 && !isInCheck && !nearCheckmate) {
 		//We increase the futility margin as material decreases
 		futilityScore = WowlEval.totalEvaluation(b, color, b.lazyScore) + futilityMargin[depth] + static_cast<int>((1 - phase) * 50);
 		fPrune = true;
@@ -371,13 +372,14 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 
 	auto legalMoves = b.getLegalMoves();
 
+	int movesSearched = 0;
 	bool haveMove = false;
 	bool raised_alpha = false;
 
 	std::vector<int> scoreVec = scoreMoves(b, WowlEval, legalMoves, color, depth, key, (depth == initial));
 
 	int size = legalMoves.size();
-	for (int i = 0; i < size; i++) {
+	for (int i = 0; i < size; ++i) {
 
 		pickNextMove(legalMoves, scoreVec, i);
 
@@ -393,7 +395,6 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		bool isCastling = piece == b.WK * color && abs(m.from - m.to) == 2;
 
 		bool isDangerous = isPassed || isPromotion || isKiller || isInCheck;
-
 
 		if (fPrune && !isDangerous && !isEnPassant && i > 0) {
 			if (futilityScore + WowlEval.pieceValues[abs(target) - 1] <= alpha) { 
@@ -431,57 +432,58 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 			b.undo(mailboxCopy, castlingCopy, kingCopy, lazyCopy);
 			continue;
 		}
-		else {
-			negaNodes++;
-			tempHashPosVec.emplace_back(key);
-			haveMove = true;
 
-			//Late move reduction
-			if (i >= LMR_STARTING_MOVE && depth >= LMR_STARTING_DEPTH && !isDangerous && !isCapture && !isEnPassant && !b.inCheck(b.getTurn())) {
-				int R = 1;
-				if (depth >= LMR_STARTING_DEPTH + 1) {
-					R += i / (LMR_STARTING_MOVE * 4);
-					if (R > 2) { R = 2; }
-				}
-				score = -negaSearch(b, depth - R - 1, initial, -color, -alpha - 1, -alpha, true, startTime, stopTime);
+		negaNodes++;
+		tempHashPosVec.emplace_back(key);
+		haveMove = true;
+
+		//Late move reduction
+		if (movesSearched >= LMR_STARTING_MOVE && depth >= LMR_STARTING_DEPTH && !isDangerous && !isCapture && !isEnPassant && !b.inCheck(b.getTurn())) {
+			int lateR = 1;
+			if (depth >= LMR_STARTING_DEPTH + 1) {
+				lateR += movesSearched / (LMR_STARTING_MOVE * 4);
+				if (lateR > 2) { lateR = 2; }
 			}
-			else {
-				score = alpha + 1;
-			}
-			if (score > alpha) {
-				score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha, true, startTime, stopTime);
-			}
+			score = -negaSearch(b, depth - lateR - 1, initial, -color, -alpha - 1, -alpha, true, startTime, stopTime);
+		}
+		else {
+			score = alpha + 1;
+		}
+		if (score > alpha) {
+			score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha, true, startTime, stopTime);
 		}
 
+		movesSearched++;
 		b.undo(mailboxCopy, castlingCopy, kingCopy, lazyCopy);
 		tempHashPosVec.pop_back();
 		if (timeOver(startTime, stopTime) && depth != initial) return alpha;
 
 		if (score >= beta) {
-			if (can_null) {
-				recordHash(key, depth, beta, hashTable.HASH_BETA);
-				if (!isCapture && !isPromotion && isEnPassant) {
-					//Killer moves
-					if (m != killerMoves[0][depth]) {
-						killerMoves[1][depth] = killerMoves[0][depth];
-						killerMoves[0][depth] = m;
-					}
-					//History heuristic
-					historyMoves[(color != b.WHITE)][abs(target) - 1][m.to] += depth * depth;
+			if (depth > 2) {
+				if (movesSearched == 1) { failHighFirst++; }
+				failHigh++;
+			}
+
+			recordHash(key, depth, beta, tt.HASH_BETA);
+			if (!isCapture && !isEnPassant && !isPromotion) {
+				//Killer moves
+				if (m != killerMoves[0][depth]) {
+					killerMoves[1][depth] = killerMoves[0][depth];
+					killerMoves[0][depth] = m;
 				}
+				//History heuristic
+				historyMoves[(color != b.WHITE)][abs(piece) - 1][m.to] += depth * depth;
 			}
 			return score;
 		}
 		if (score > alpha) {
-			if (depth == initial && can_null) {
+			if (depth == initial) {
 				bestMove = m;
 			}
 			raised_alpha = true;
 			alpha = score;
-			if (can_null) {
-				hashTable.tt[key].hashBestMove = m;
-				tempHashFlag = hashTable.HASH_EXACT;
-			}
+			tt.hashTable[key].hashBestMove = m;
+			tempHashFlag = tt.HASH_EXACT;
 		}
 	}
 
@@ -514,8 +516,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 
 	int idAlpha = -WIN_SCORE;
 	int idBeta = WIN_SCORE;
-	int delta = ASPIRATION_WINDOW;
-	int failed = 0;
+	int window = ASPIRATION_WINDOW;
 
 	int totalNodes = 0;
 	int highestDepth = 0;
@@ -525,7 +526,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 
 	for (int idepth = 1; idepth <= max_depth; ++idepth) {
 
-		negaNodes = 0, qSearchNodes = 0;
+		negaNodes = 0, qSearchNodes = 0, failHigh = 0, failHighFirst = 0;
 
 		if (double(clock() - startTime) / (CLOCKS_PER_SEC / 1000) >= moveTime) { break; }
 
@@ -538,7 +539,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 		std::cout << "info score cp " << bestScore << " depth " << idepth << " nodes " << negaNodes + qSearchNodes;
 		std::cout << " time " << (clock() - startTime) / (CLOCKS_PER_SEC / 1000);
 		std::cout << " pv ";
-		getPVLine(b, hashTable.generatePosKey(b));
+		getPVLine(b, tt.generatePosKey(b));
 		for (int i = 0; i < idepth; ++i) {
 			if (PVLine[i] != NO_MOVE) {
 				bool isPromotion = abs(b.mailbox[PVLine[i].from] == b.WP) && (PVLine[i].to / 10 == 2 || PVLine[i].to / 10 == 9);
@@ -550,25 +551,25 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 			}
 		}
 		std::cout << "\n";
+		//std::cout << "Move ordering : " << double(failHighFirst) / failHigh << std::endl;
 
 		if ((bestScore <= idAlpha) || (bestScore >= idBeta)) {
-			idBeta += delta;
-			idAlpha -= delta;
-			delta += delta / 2;
+			idBeta += window;
+			idAlpha -= window;
+			window += window / 2;
 			idepth--;
 			continue;
 		}
 
-		delta = ASPIRATION_WINDOW;
+		window = ASPIRATION_WINDOW;
 		if (idepth >= 5) {
-			idAlpha = bestScore - delta;
-			idBeta = bestScore + delta;
+			idAlpha = bestScore - window;
+			idBeta = bestScore + window;
 		}
 		else {
 			idAlpha = -WIN_SCORE - MAX_SEARCH_DEPTH;
 			idBeta = WIN_SCORE + MAX_SEARCH_DEPTH;
 		}
-		failed = 0;
 
 		IDMoves[idepth - 1] = bestMove;
 		highestDepth++;
@@ -599,8 +600,8 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 
 void Wowl::getPVLine(Board b, U64 key) {
 	Move move = NO_MOVE;
-	if (hashTable.tt.find(key) != hashTable.tt.end()) {
-		move = hashTable.tt.at(key).hashBestMove;
+	if (tt.hashTable.find(key) != tt.hashTable.end()) {
+		move = tt.hashTable.at(key).hashBestMove;
 	}
 	int count = 0;
 	while (move != NO_MOVE) {
@@ -608,10 +609,10 @@ void Wowl::getPVLine(Board b, U64 key) {
 		PVLine[count] = move;
 		count++;
 		b.move(move.from, move.to);
-		U64 poskey = hashTable.generatePosKey(b);
+		U64 poskey = tt.generatePosKey(b);
 		move = NO_MOVE;
-		if (hashTable.tt.find(poskey) != hashTable.tt.end()) {
-			move = hashTable.tt.at(poskey).hashBestMove;
+		if (tt.hashTable.find(poskey) != tt.hashTable.end()) {
+			move = tt.hashTable.at(poskey).hashBestMove;
 		}
 	}
 }

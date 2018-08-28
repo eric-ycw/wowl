@@ -59,7 +59,7 @@ private:
 		KNIGHT_OUTPOST_BONUS = 24,
 		BISHOP_PAIR_BONUS = 35,
 		ROOK_BEHIND_PASSED_P_BONUS = 30,
-		TRAPPED_ROOK_PENALTY = -16
+		TRAPPED_ROOK_PENALTY = -12
 	};
 
 	enum kingAttackerValue {
@@ -80,13 +80,19 @@ private:
 		PAWN_ATTACK_THREAT_PENALTY = -80
 	};
 
+	const int kingRing[25] = {
+		0, 1, -1, 10, -10, 11, 9, -11, 9,
+		2, -2, 20, -20, 22, 18, -22, 18,
+		12, 8, -12, -8, 21, -21, 19, -19
+	};
+
 	const int pieceValues[6]
 	{
 		120, 480, 512, 802, 1520, 40000
 	};
 	const int knightMobilityTable[9]
 	{
-		-45, -30, -10, 0, 5, 10, 12, 15, 18
+		-45, -30, -10, -2, 5, 10, 15, 20, 25
 	};
 
 	const int bishopMobilityTable[14]
@@ -96,12 +102,12 @@ private:
 
 	const int rookMobilityTable[15]
 	{
-		-35, -25, -15, -5, 5, 10, 15, 20, 30, 40, 50, 55, 60, 64, 64
+		-25, -18, -12, -8, -4, 2, 7, 12, 16, 20, 23, 26, 29, 31, 34
 	};
 
 	const int queenMobilityTable[28]
 	{
-		-30, -15, -10, -5, 0, 5, 10, 15, 18, 21, 24, 27, 33, 39, 42, 45, 50, 55, 60, 64, 68, 72, 75, 78, 80, 80, 82, 82
+		-30, -15, -10, -5, 0, 5, 9, 12, 15, 18, 21, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 45, 45, 46, 46, 47, 47
 	};
 
 	const int pawnTable[64]

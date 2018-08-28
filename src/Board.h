@@ -36,8 +36,6 @@ class Board
 	friend class Wowl;
 	friend class Hash;
 
-	class Evaluation;
-
 public:
 
 	Board() { reserveVectors(); }

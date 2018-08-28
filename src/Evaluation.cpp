@@ -95,11 +95,9 @@ int Evaluation::backwardPawns(const Board& b, int color) {
 }
 int Evaluation::passedPawns(const Board& b, int color) {
 	int pcount = 0;
-	int rank, file;
 	for (int i = 31; i < 89; ++i) {
 		if (b.mailbox[i] == b.WP * color) {
-			file = i % 10;
-			rank = i / 10;
+			int rank = i / 10;
 			if (isPassed(b, i, color)) {
 				int reverse_dis = color == b.WHITE ? 9 - rank : rank - 2;
 				//Reduce rank by one if blocked
@@ -159,7 +157,6 @@ int Evaluation::rookBehindPassed(const Board& b, int square, int color) {
 }
 int Evaluation::trappedRook(const Board&b, int square, int color) {
 	int blocked = 0;
-	int castle_id = (color == b.WHITE) ? 0 : 1;
 	if (b.mailbox[square + 1] != 0) {
 		blocked++;
 	}
@@ -172,12 +169,7 @@ int Evaluation::trappedRook(const Board&b, int square, int color) {
 	if (b.mailbox[square - 10] != 0) {
 		blocked++;
 	}
-	if (blocked > 1) {
-		return blocked * TRAPPED_ROOK_PENALTY;
-	}
-	else {
-		return 0;
-	}
+	return (blocked > 1) * blocked * TRAPPED_ROOK_PENALTY;
 }
 
 int Evaluation::flipTableValue(int square) const {
@@ -239,25 +231,21 @@ int Evaluation::mobilitySlider(const Board&b, int square, int color, int piece) 
 
 int Evaluation::spaceArea(const Board&b, int color) {
 	int sval = 0;
-	int pieces = 0;
-
-	for (int i = 21; i < 99; ++i) {
+	for (int i = 33 + (color == b.WHITE) * 30; i <= 56 + (color == b.WHITE) * 30; ++i) {
+		int file = i % 10;
+		if (file < 3 || file > 6) { continue;; }
 		int piece = b.mailbox[i];
-		if (piece == b.NN) { continue; }
-		if (piece * color > 0) { pieces++; }
-		if (i >= 43 && i <= 76) {
-			if (attackedByEnemyPawn(b, i, color)) { continue; }
-			sval++;
-			//Increase space value if square is behind own pawn by 1-3 squares
-			for (int j = 0; j < 2; ++j) {
-				if (b.mailbox[i - color * 10 * j] == color * b.WP) {
-					sval++;
-					break;
-				}
+		if (piece == b.NN || piece == b.WP * color) { continue; }
+		if (attackedByEnemyPawn(b, i, color)) { continue; }
+		sval++;
+		//Increase space value if square is behind own pawn by 1-3 squares
+		for (int j = 1; j <= 3; ++j) {
+			if (b.mailbox[i - color * 10 * j] == b.WP * color) {
+				sval++;
 			}
 		}
 	}
-	return static_cast<int>(sval * pieces * 1.5);
+	return static_cast<int>(sval * phase * 8);
 }
 
 int Evaluation::kingShelter(Board& b, int color) {
@@ -282,11 +270,6 @@ int Evaluation::kingShelter(Board& b, int color) {
 }
 int Evaluation::kingDangerProximity(Board& b, int color) {
 	int kingsqr = (color == b.WHITE) ? b.kingSquare[1] : b.kingSquare[0];
-	int kingRing[25] = {
-		0, 1, -1, 10, -10, 11, 9, -11, 9,
-		2, -2, 20, -20, 22, 18, -22, 18,
-		12, 8, -12, -8, 21, -21, 19, -19
-	};
 	int attack = 0;
 	int attackers = 0;
 
@@ -451,34 +434,28 @@ int Evaluation::isOpenFile(const Board& b, int square) {
 	}
 }
 int Evaluation::isPassed(const Board&b, int square, int color) {
-	if (b.mailbox[square] == b.WP * color) {
-		bool passed = true;
-		int file = square % 10;
-		int rank = (square - file) / 10;
-		int sqr = square;
-		while (sqr >= 31 && sqr <= 88) {
-			sqr += -color * 10;
-			if (b.mailbox[sqr] == b.WP * -color || b.mailbox[sqr - 1] == b.WP * -color || b.mailbox[sqr + 1] == b.WP * -color) {
-				passed = false;
-			}
-		}
-		if (passed) {
-			return true;
+	if (b.mailbox[square] != b.WP * color) { return false; }
+	bool passed = true;
+	int sqr = square;
+	while (sqr >= 31 && sqr <= 88) {
+		sqr -= color * 10;
+		if (b.mailbox[sqr] == b.WP * -color || b.mailbox[sqr - 1] == b.WP * -color || b.mailbox[sqr + 1] == b.WP * -color) {
+			passed = false;
+			break;
 		}
 	}
-	return false;
+	return passed;
 }
 
 int Evaluation::totalEvaluation(Board& b, int color, int lazyScore[]) {
 	phase = getPhase(b);
 	int lazyIndex = !(color == b.WHITE);
 	int lazy = lazyScore[lazyIndex] - lazyScore[!lazyIndex];
-
 	int pieces = piecesEval(b, color) - piecesEval(b, -color);
 	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color)
 		- doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - backwardPawns(b, -color) - passedPawns(b, -color);
 	int space = spaceArea(b, color) - spaceArea(b, -color);
-	int king = kingShelter(b, color) - kingShelter(b, -color) + kingDangerProximity(b, color) - kingDangerProximity(b, -color);
+	int king = kingShelter(b, color) - kingShelter(b, -color) + kingDangerProximity(b, color) - kingDangerProximity(b, -color);;
 	return lazy + pieces + pawns + space + king;
 }
 int Evaluation::lazyEvaluation(const Board& b, int color) {

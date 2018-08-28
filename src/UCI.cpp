@@ -49,7 +49,7 @@ void parsePosition(Board& b, Wowl& AI, std::string line) {
 			std::cout << movestr << std::endl;
 			int move_coords[2] = { b.toCoord(movestr[0], movestr[1]), b.toCoord(movestr[2], movestr[3]) };
 			b.move(move_coords[0], move_coords[1]);
-			AI.hashPosVec.emplace_back(AI.hashTable.generatePosKey(b));
+			AI.hashPosVec.emplace_back(AI.tt.generatePosKey(b));
 		}
 	}
 

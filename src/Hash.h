@@ -1,15 +1,15 @@
 #ifndef HASH_INCLUDED
 #define HASH_INCLUDED
 
-#include "Evaluation.h"
+#include "Board.h"
 #include <random>
 #include <unordered_map>
 
 typedef unsigned long long int U64;
 
-struct HashVal {
-	HashVal() {}
-	HashVal(int depth, int score, int flag, int age) : 
+struct ttInfo {
+	ttInfo() {}
+	ttInfo(int depth, int score, int flag, int age) : 
 		hashDepth(depth), hashScore(score), hashFlag(flag), hashAge(age) {}
 
 	int hashDepth, hashScore, hashFlag, hashAge;
@@ -29,7 +29,7 @@ public:
 	U64 generatePosKey(Board&);
 	U64 updatePosKey(Board&, const U64, const Move, const int);
 
-	std::unordered_map<U64, HashVal> tt;
+	std::unordered_map<U64, ttInfo> hashTable;
 
 private:
 

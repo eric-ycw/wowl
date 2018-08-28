@@ -14,10 +14,10 @@ public:
 	enum Search {
 		MAX_SEARCH_DEPTH = 50,
 		ASPIRATION_WINDOW = 50,
-		DELTA_MARGIN = 240,
 		NULL_MOVE_REDUCTION = 2,
 		LMR_STARTING_MOVE = 4,
 		LMR_STARTING_DEPTH = 3,
+		HISTORY_MAX = 10000
 	};
 
 	Move bestMove;
@@ -25,7 +25,7 @@ public:
 	std::vector<U64> hashPosVec;
 	std::vector<U64> tempHashPosVec;
 
-	Hash hashTable;
+	Hash tt;
 
 	void initMVVLVA(const Board& b, const Evaluation& e);
 	int SEE(Board&, const Evaluation&, int, int) const;
@@ -36,6 +36,7 @@ public:
 	void pickNextMove(std::vector<Move>&, std::vector<int>&, int);
 	void orderCaptures(Board&, std::vector<Move>&);
 	void resetMoveHeuristics();
+	void reduceHistory();
 	
 	bool timeOver(clock_t, double);
 	int qSearch(Board&, Evaluation&, int, int, int);
@@ -58,18 +59,19 @@ private:
 	};
 
 	enum HashConstants {
-		TT_CLEAR_AGE = 12,
+		TT_CLEAR_AGE = 6,
 		VAL_UNKWOWN = 0
 	};
 
 	int MVVLVAScores[6][6];
-	const int futilityMargin[4] = { 0, 300, 550 };
+	const int futilityMargin[5] = { 0, 300, 350, 600, 650 };
 
 	int bestScore = 0;
 	Move PVLine[MAX_SEARCH_DEPTH];
 	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
 	int historyMoves[2][6][120];
 	int negaNodes, qSearchNodes;
+	int failHigh, failHighFirst;
 };
 
 #endif
