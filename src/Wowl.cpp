@@ -334,14 +334,14 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	}
 
 	if (depth <= 0) {
-		if (!isInCheck) {
+		if (isInCheck && depth + 1 < initial) {
+			depth++;
+		}
+		else {
 			negaNodes++;
 			int qScore = qSearch(b, WowlEval, alpha, beta, color);
 			recordHash(key, depth, qScore, tt.HASH_EXACT);
 			return qScore;
-		}
-		else if (depth + 1 < initial) {
-			depth++;
 		}
 	}
 
@@ -349,7 +349,8 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	double phase = WowlEval.getPhase(b);
 
 	//Null move pruning
-	int nullR = NULL_MOVE_REDUCTION + depth / 6;
+	int nullR = 2 + depth / 6;
+	if (nullR > 4) { nullR = 4; }
 	if (depth > nullR + 1 && can_null && !isInCheck && phase > 0.25) {
 		b.nullMove();
 		score = -negaSearch(b, depth - 1 - nullR, initial, -color, -beta, -beta + 1, false, startTime, stopTime);
@@ -365,8 +366,8 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 	int futilityScore = -WIN_SCORE - MAX_SEARCH_DEPTH;
 	if (depth <= 4 && !isInCheck && !nearCheckmate) {
 		//We increase the futility margin as material decreases
-		futilityScore = WowlEval.totalEvaluation(b, color, b.lazyScore) + futilityMargin[depth] + static_cast<int>((1 - phase) * 50);
-		fPrune = true;
+		futilityScore = WowlEval.totalEvaluation(b, color, b.lazyScore) + futilityMargin[depth] + int((1 - phase) * 50);
+		fPrune = (futilityScore <= alpha);
 	};
 
 
@@ -393,13 +394,14 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		bool isPromotion = piece == b.WP * color && (m.to / 10 == 2 || m.to / 10 == 9);
 		bool isKiller = killerMoves[0][depth] == m || killerMoves[1][depth] == m;
 		bool isCastling = piece == b.WK * color && abs(m.from - m.to) == 2;
+		bool wouldCheck = b.wouldCheck(m, color);
 
-		bool isDangerous = isPassed || isPromotion || isKiller || isInCheck;
+		bool isDangerous = isPassed || isPromotion || isInCheck || wouldCheck;
 
 		if (fPrune && !isDangerous && !isEnPassant && i > 0) {
-			if (futilityScore + WowlEval.pieceValues[abs(target) - 1] <= alpha) { 
+			if (!isCapture || (isCapture && futilityScore + WowlEval.pieceValues[abs(target) - 1] <= alpha)) {
 				fPruneCount++;
-				continue; 
+				continue;
 			}
 		}
 
@@ -438,32 +440,28 @@ int Wowl::negaSearch(Board& b, int depth, int initial, int color, int alpha, int
 		haveMove = true;
 
 		//Late move reduction
-		if (movesSearched >= LMR_STARTING_MOVE && depth >= LMR_STARTING_DEPTH && !isDangerous && !isCapture && !isEnPassant && !b.inCheck(b.getTurn())) {
+		if (movesSearched >= 4 && depth >= 3 && !isDangerous && !isCapture && !isEnPassant && !isKiller) {
 			int lateR = 1;
-			if (depth >= LMR_STARTING_DEPTH + 1) {
-				lateR += movesSearched / (LMR_STARTING_MOVE * 4);
+			if (depth >= 4) {
+				lateR += movesSearched / 16;
 				if (lateR > 2) { lateR = 2; }
 			}
 			score = -negaSearch(b, depth - lateR - 1, initial, -color, -alpha - 1, -alpha, true, startTime, stopTime);
+			if (score > alpha) {
+				score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha, true, startTime, stopTime);
+			}
 		}
 		else {
-			score = alpha + 1;
-		}
-		if (score > alpha) {
 			score = -negaSearch(b, depth - 1, initial, -color, -beta, -alpha, true, startTime, stopTime);
 		}
 
 		movesSearched++;
 		b.undo(mailboxCopy, castlingCopy, kingCopy, lazyCopy);
 		tempHashPosVec.pop_back();
+
 		if (timeOver(startTime, stopTime) && depth != initial) return alpha;
 
 		if (score >= beta) {
-			if (depth > 2) {
-				if (movesSearched == 1) { failHighFirst++; }
-				failHigh++;
-			}
-
 			recordHash(key, depth, beta, tt.HASH_BETA);
 			if (!isCapture && !isEnPassant && !isPromotion) {
 				//Killer moves
@@ -516,7 +514,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 
 	int idAlpha = -WIN_SCORE;
 	int idBeta = WIN_SCORE;
-	int window = ASPIRATION_WINDOW;
+	int window = 50;
 
 	int totalNodes = 0;
 	int highestDepth = 0;
@@ -536,7 +534,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 		totalNodes += negaNodes + qSearchNodes;
 
 		//UCI output
-		std::cout << "info score cp " << bestScore << " depth " << idepth << " nodes " << negaNodes + qSearchNodes;
+		std::cout << "info score cp " << int(bestScore / 1.2) << " depth " << idepth << " nodes " << negaNodes + qSearchNodes;
 		std::cout << " time " << (clock() - startTime) / (CLOCKS_PER_SEC / 1000);
 		std::cout << " pv ";
 		getPVLine(b, tt.generatePosKey(b));
@@ -551,7 +549,6 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 			}
 		}
 		std::cout << "\n";
-		//std::cout << "Move ordering : " << double(failHighFirst) / failHigh << std::endl;
 
 		if ((bestScore <= idAlpha) || (bestScore >= idBeta)) {
 			idBeta += window;
@@ -561,7 +558,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 			continue;
 		}
 
-		window = ASPIRATION_WINDOW;
+		window = 50;
 		if (idepth >= 5) {
 			idAlpha = bestScore - window;
 			idBeta = bestScore + window;

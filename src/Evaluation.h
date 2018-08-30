@@ -92,12 +92,12 @@ private:
 	};
 	const int knightMobilityTable[9]
 	{
-		-45, -30, -10, -2, 5, 10, 15, 20, 25
+		-50, -35, -10, -2, 5, 10, 15, 20, 25
 	};
 
 	const int bishopMobilityTable[14]
 	{
-		-30, -15, -5, 0, 5, 10, 15, 20, 24, 28, 30, 34, 38, 42
+		-35, -20, -5, 0, 5, 10, 15, 20, 24, 28, 30, 34, 38, 42
 	};
 
 	const int rookMobilityTable[15]

@@ -489,16 +489,28 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 }
 
 bool Board::inCheck(int color) {
-	int kingsqr = (color == WHITE) ? kingSquare[0] : kingSquare[1];
-	for (int n = 21; n < 99; n++) {
-		if (n % 10 == 0 || n % 10 == 9 || mailbox[n] * color >= 0) {
+	int kingsqr = kingSquare[!(color == WHITE)];
+	for (int i = 21; i < 99; ++i) {
+		int piece = mailbox[i];
+		if (piece == NN || piece * color >= 0) {
 			continue;
 		}
-		if (checkAttack(n, kingsqr)) {
+		if (checkAttack(i, kingsqr)) {
 			return true;
 		}
 	}
 	return false;
+}
+bool Board::wouldCheck(Move m, int color) {
+	int mailboxCopy[120], castlingCopy[4], kingCopy[2];
+	memcpy(mailboxCopy, mailbox, sizeof(mailbox));
+	memcpy(castlingCopy, castling, sizeof(castling));
+	memcpy(kingCopy, kingSquare, sizeof(kingSquare));
+
+	move(m.from, m.to);
+	bool isinCheck = inCheck(-color);
+	undo(mailboxCopy, castlingCopy, kingCopy, lazyScore);
+	return isinCheck;
 }
 
 //Updates castling rights
@@ -663,8 +675,6 @@ void Board::specialMoves(int oldpos, int newpos) {
 	}
 }
 void Board::move(int a, int b) {
-	assert(a >= 0 && a < 120);
-	assert(b >= 0 && b < 120);
 	setEnPassantSquare();
 	mailbox[b] = mailbox[a];
 	mailbox[a] = 0;
@@ -676,7 +686,6 @@ void Board::move(int a, int b) {
 	}
 	moveVec.emplace_back(Move(a, b));
 	specialMoves(a, b);
-
 	turn *= -1;
 }
 void Board::undo(int mailboxCopy[], int castlingCopy[], int kingCopy[], int lazyCopy[]) {

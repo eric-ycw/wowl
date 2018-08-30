@@ -83,6 +83,7 @@ public:
 	std::tuple<int, int> getSmallestAttacker(int, int);
 
 	bool inCheck(int);
+	bool wouldCheck(Move, int);
 
 	void checkCastling();
 	int checkCastlingForfeit();
@@ -104,13 +105,15 @@ public:
 
 	int kingSquare[2] = { 95, 25 };
 
+private:
+
 	const int pieceMoves[6][10] = {
-		{-10, -20, -11, -9, 0, 0, 0, 0, 0, 0 },
-		{-21, -19, -12, -8, 21, 19, 12, 8, 0, 0 },
-		{ 11, 9, -11, -9, 0, 0, 0, 0, 0, 0 },
-		{ 10, 1, -10, -1, 0, 0, 0, 0, 0, 0 },
-		{ 10, 1, -10, -1, 11, 9, -11, -9, 0, 0 },
-		{1, -1, 10, -10, 11, 9, -11, -9, 2, -2 }
+	{ -10, -20, -11, -9, 0, 0, 0, 0, 0, 0 },
+	{ -21, -19, -12, -8, 21, 19, 12, 8, 0, 0 },
+	{ 11, 9, -11, -9, 0, 0, 0, 0, 0, 0 },
+	{ 10, 1, -10, -1, 0, 0, 0, 0, 0, 0 },
+	{ 10, 1, -10, -1, 11, 9, -11, -9, 0, 0 },
+	{ 1, -1, 10, -10, 11, 9, -11, -9, 2, -2 }
 	};
 
 	int mailbox[120] = {
@@ -127,10 +130,6 @@ public:
 		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN,
 		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN
 	};
-
-	int pieces[12];
-
-private:
 
 	const int start[120] = {
 		NN, NN, NN, NN, NN, NN, NN, NN, NN, NN,
