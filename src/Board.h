@@ -72,13 +72,15 @@ public:
 	void genSliderCaptures(std::vector<Move>&, int, int);
 	void genKingCaptures(std::vector<Move>&, int);
 
-	std::vector<Move> getLegalMoves();
+	std::vector<Move> getMoves();
 	std::vector<Move> getCaptures();
 
-	bool checkAttack(int, int) const;
+	bool checkAttack(int, int, int) const;
 	bool checkAttackPawn(int, int, int) const;
 	bool checkAttackKnight(int, int) const;
-	bool checkAttackSlider(int, int, int) const;
+	bool checkAttackBishop(int, int) const;
+	bool checkAttackRook(int, int) const;
+	bool checkAttackQueen(int, int) const;
 	bool checkAttackKing(int, int) const;
 	std::tuple<int, int> getSmallestAttacker(int, int);
 
@@ -88,8 +90,8 @@ public:
 	void checkCastling();
 	int checkCastlingForfeit();
 
-	void move(int, int);
-	void undo(int[], int[], int[], int[]);
+	void move(int, int, bool);
+	void undo(int[], int[], int[], int[], int, bool);
 	void nullMove();
 	void undoNullMove();
 	void specialMoves(int, int);
@@ -101,6 +103,7 @@ public:
 	int turn = WHITE;
 	int castling[4] = { 1, 1, 1, 1 };
 	int epSquare = -1;
+	int epSquareFEN = -1;
 	int lazyScore[2] = { 0, 0 };
 
 	int kingSquare[2] = { 95, 25 };
@@ -112,7 +115,7 @@ private:
 	{ -21, -19, -12, -8, 21, 19, 12, 8, 0, 0 },
 	{ 11, 9, -11, -9, 0, 0, 0, 0, 0, 0 },
 	{ 10, 1, -10, -1, 0, 0, 0, 0, 0, 0 },
-	{ 10, 1, -10, -1, 11, 9, -11, -9, 0, 0 },
+	{ 10, 1, 11, 9, -10, -1, -11, -9, 0, 0 },
 	{ 1, -1, 10, -10, 11, 9, -11, -9, 2, -2 }
 	};
 

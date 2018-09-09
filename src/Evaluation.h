@@ -14,13 +14,15 @@ public:
 	double getPhase(const Board&);
 	int blockedPawns(const Board&);
 	int doubledAndIsolatedPawns(const Board&, int);
-	int connectedPawns(const Board&, int);
 	int backwardPawns(const Board&, int);
-	int passedPawns(const Board&, int);
+
+	int pawnEval(const Board&);
 
 	int knightOutpost(const Board&, int, int);
 	int rookBehindPassed(const Board&, int, int);
 	int trappedRook(const Board&, int, int);
+
+	int pieceEval(const Board&);
 
 	int flipTableValue(int) const;
 	int PST(const Board&, int, int);
@@ -31,12 +33,9 @@ public:
 	int spaceArea(const Board&, int);
 
 	int kingShelter(Board&, int);
-	int kingDangerProximity(Board&, int);
 
 	int pawnPushThreat(const Board&, int, int);
 	int pawnAttackThreat(const Board&, int, int);
-
-	int piecesEval(const Board&, int);
 
 	bool attackedByEnemyPawn(const Board&, int, int);
 	int isOpenFile(const Board&, int);
@@ -47,43 +46,39 @@ public:
 
 private:
 
-	enum pawnStructValue {
-		DOUBLED_P_PENALTY = -12, ISOLATED_P_PENALTY = -8,
-		SUPPORTED_P_BONUS = 12, PHALANX_P_BONUS = 8,
-		BACKWARD_P_PENALTY = -14,
-		PASSED_P_BONUS = 3
+	static constexpr int doubledPawnPenalty = -12;
+	static constexpr int isolatedPawnPenalty = -8;
+	static constexpr int backwardPawnPenalty = -14;
+	static constexpr int supportedPawnBonus = 12;
+	static constexpr int phalanxPawnBonus = 8;
+
+	const int passedPawnBonus[7]
+	{
+		0, 18, 26, 48, 144, 342, 568
 	};
 
-	enum piecesBonusValue {
-		MINOR_BEHIND_PAWN_BONUS = 12,
-		KNIGHT_OUTPOST_BONUS = 24,
-		BISHOP_PAIR_BONUS = 35,
-		ROOK_BEHIND_PASSED_P_BONUS = 30,
-		TRAPPED_ROOK_PENALTY = -12
-	};
+	static constexpr int minorBehindPawnBonus = 12;
+	static constexpr int knightOutpostBonus = 24;
+	static constexpr int bishopPairBonus = 35;
+	static constexpr int rookOpenFileBonus = 20;
+	static constexpr int rookBehindPassedBonus = 30;
+	static constexpr int trappedRookPenalty = -12;
 
-	enum kingAttackerValue {
-		KNIGHT_KING_ATTACKER = 50,
-		BISHOP_KING_ATTACKER = 35,
-		ROOK_KING_ATTACKER = 30,
-		QUEEN_KING_ATTACKER = 12
-	};
+	static constexpr int knightKingAttacker = 50;
+	static constexpr int bishopKingAttacker = 40;
+	static constexpr int rookKingAttacker = 35;
+	static constexpr int queenKingAttacker = 20;
 
-	enum positionValue {
-		CLOSED_POSITION_BONUS = 3,
-		R_OPEN_FILE_BONUS = 20,
-		K_OPEN_FILE_PENALTY = -28, K_P_SHIELD_PENALTY = -24
-	};
+	static constexpr int closedPositionBonus = 3;
 
-	enum threatValue {
-		PAWN_PUSH_THREAT_PENALTY = -28,
-		PAWN_ATTACK_THREAT_PENALTY = -80
-	};
+	static constexpr int kingOpenFilePenalty = -28;
+	static constexpr int kingWeakPawnShieldPenalty = -24;
 
-	const int kingRing[25] = {
-		0, 1, -1, 10, -10, 11, 9, -11, 9,
-		2, -2, 20, -20, 22, 18, -22, 18,
-		12, 8, -12, -8, 21, -21, 19, -19
+	static constexpr int pawnPushThreatPenalty = -28;
+	static constexpr int pawnAttackThreatPenalty = -80;
+
+	const int kingRing[9] = {
+		0, 1, -1, 10, -10, 11, 9, -11, 9
 	};
 
 	const int pieceValues[6]

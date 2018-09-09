@@ -48,7 +48,7 @@ void parsePosition(Board& b, Wowl& AI, std::string line) {
 			movestr = moveStrVec[i];
 			std::cout << movestr << std::endl;
 			int move_coords[2] = { b.toCoord(movestr[0], movestr[1]), b.toCoord(movestr[2], movestr[3]) };
-			b.move(move_coords[0], move_coords[1]);
+			b.move(move_coords[0], move_coords[1], false);
 			AI.hashPosVec.emplace_back(AI.tt.generatePosKey(b));
 		}
 	}
@@ -58,6 +58,7 @@ void parsePosition(Board& b, Wowl& AI, std::string line) {
 	b.lazyScore[0] = e.lazyEvaluation(b, b.WHITE);
 	b.lazyScore[1] = e.lazyEvaluation(b, b.BLACK);
 	std::cout << e.totalEvaluation(b, b.WHITE, b.lazyScore) << std::endl;
+	b.setEnPassantSquare();
 }
 void parseGo(Board& b, Evaluation& e, Wowl& AI, std::string line) {
 	int depth = -1, movetime = -1, time = -1;
@@ -100,7 +101,7 @@ void parseGo(Board& b, Evaluation& e, Wowl& AI, std::string line) {
 	}
 
 	if (depth == -1) {
-		depth = AI.MAX_SEARCH_DEPTH;
+		depth = AI.maxSearchDepth;
 	}
 
 	double total = time + increment * 0.9;
@@ -110,7 +111,7 @@ void parseGo(Board& b, Evaluation& e, Wowl& AI, std::string line) {
 	AI.ID(b, e, depth, b.getTurn(), total);
 }
 
-void UCILoop() {
+int main() {
 	Board b;
 	Evaluation e;
 	Wowl AI;
@@ -141,6 +142,11 @@ void UCILoop() {
 			std::cout << "id name Wowl\n";
 			std::cout << "id author Plan B\n";
 			std::cout << "uciok\n";
+		}
+		else if (!input.compare(0, 5, "perft")) {
+			size_t pos = input.find("perft");
+			int depth = std::stoi(input.substr(pos + 6));
+			AI.perft(b, e, depth, depth);
 		}
 		else if (!input.compare(0, 4, "quit")) {
 			break;

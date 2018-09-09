@@ -13,7 +13,9 @@ Wowl is a UCI chess engine written in C++.<br />
 * Killer moves
 * History heuristic
 * Null move pruning
+* Reverse futility pruning
 * Futility pruning
+* Delta pruning
 * Late move reduction
 
 ## Evaluation

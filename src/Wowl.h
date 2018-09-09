@@ -9,26 +9,23 @@ class Wowl {
 
 public:
 
+	static constexpr int maxSearchDepth = 50;
+
 	const Move NO_MOVE = Move(-9, -9);
 
-	enum Search {
-		MAX_SEARCH_DEPTH = 50,
-		HISTORY_MAX = 10000
-	};
-
 	Move bestMove;
-	Move IDMoves[MAX_SEARCH_DEPTH];
+	Move IDMoves[maxSearchDepth];
 	std::vector<U64> hashPosVec;
 	std::vector<U64> tempHashPosVec;
 
 	Hash tt;
 
-	void initMVVLVA(const Board& b, const Evaluation& e);
-	int SEE(Board&, const Evaluation&, int, int) const;
 	bool checkThreefold(const U64) const;
 
-	int pstScore(const Board&, Evaluation&, const Move&, const int);
-	std::vector<int> scoreMoves(Board&, Evaluation& e, const std::vector<Move>&, const int, const int, const U64, const bool is_root);
+	void initMVVLVA(const Board& b, const Evaluation& e);
+	int SEE(Board&, const Evaluation&, int, int) const;
+
+	std::vector<int> scoreMoves(Board&, Evaluation& e, const std::vector<Move>&, const int, const int, const U64, const bool isRoot);
 	void pickNextMove(std::vector<Move>&, std::vector<int>&, int);
 	void orderCaptures(Board&, std::vector<Move>&);
 	void resetMoveHeuristics();
@@ -45,26 +42,26 @@ public:
 
 	void getPVLine(Board, U64);
 
-	long perft(Board&, Evaluation&, int);
+	long perft(Board&, Evaluation&, int, int);
 
 private:
 
-	enum Score {
-		WIN_SCORE = 1000000,
-		DRAW_SCORE = 0,
-	};
+	static constexpr int mateScore = 100000;
 
-	enum HashConstants {
-		TT_CLEAR_AGE = 6,
-		VAL_UNKWOWN = 0
-	};
+	static constexpr int historyMax = 10000;
 
-	int MVVLVAScores[6][6];
-	const int futilityMargin[5] = { 0, 300, 350, 600, 650 };
+	static constexpr int futilityMargin[6] = { 0, 240, 300, 480, 550, 720 };
+	static constexpr int deltaMargin = 125;
+
+	static constexpr int ttAgeLimit = 6;
+	static constexpr int NO_ENTRY = mateScore * 2;
 
 	int bestScore = 0;
-	Move PVLine[MAX_SEARCH_DEPTH];
-	Move killerMoves[2][MAX_SEARCH_DEPTH + 1];
+	int pvCounter = 0;
+	Move hashMove;
+	Move PVLine[maxSearchDepth];
+	Move killerMoves[2][maxSearchDepth + 1];
+	int MVVLVAScores[6][6];
 	int historyMoves[2][6][120];
 	int negaNodes, qSearchNodes;
 	int failHigh, failHighFirst;

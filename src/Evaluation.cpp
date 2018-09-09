@@ -14,7 +14,7 @@ double Evaluation::getPhase(const Board& b) {
 int Evaluation::blockedPawns(const Board& b) {
 	int bpcount = 0;
 	for (int i = 31; i < 89; ++i) {
-		if (b.mailbox[i] == b.WP && b.mailbox[i - 10] == b.BP 
+		if (b.mailbox[i] == b.WP && b.mailbox[i - 10] == b.BP
 			&& b.mailbox[i - 11] != b.BP && b.mailbox[i - 9] != b.BP
 			&& b.mailbox[i - 1] != b.WP && b.mailbox[i + 1] != b.WP) {
 			bpcount += 2;
@@ -49,20 +49,7 @@ int Evaluation::doubledAndIsolatedPawns(const Board& b, int color) {
 			}
 		}
 	}
-	return dpcount * DOUBLED_P_PENALTY + ipcount * ISOLATED_P_PENALTY;
-}
-int Evaluation::connectedPawns(const Board&b, int color) {
-	int supported = 0;
-	int phalanx = 0;
-	for (int i = 31; i < 89; ++i) {
-		if (b.mailbox[i] == b.WP * color) {
-			supported += (b.mailbox[i + color * 10 + 1] == b.WP * color)
-				+ (b.mailbox[i + color * 10 - 1] == b.WP * color);
-			phalanx += (b.mailbox[i + 1] == b.WP * color)
-				+ (b.mailbox[i - 1] == b.WP * color);
-		}
-	}
-	return supported * SUPPORTED_P_BONUS + phalanx * PHALANX_P_BONUS;
+	return dpcount * doubledPawnPenalty + ipcount * isolatedPawnPenalty;
 }
 int Evaluation::backwardPawns(const Board& b, int color) {
 	int bpcount = 0;
@@ -91,30 +78,27 @@ int Evaluation::backwardPawns(const Board& b, int color) {
 		}
 		if (backward) { bpcount++; }
 	}
-	return bpcount * BACKWARD_P_PENALTY;
+	return bpcount * backwardPawnPenalty;
 }
-int Evaluation::passedPawns(const Board& b, int color) {
-	int pcount = 0;
+
+int Evaluation::pawnEval(const Board& b) {
+	int val = 0;
 	for (int i = 31; i < 89; ++i) {
-		if (b.mailbox[i] == b.WP * color) {
-			int rank = i / 10;
-			if (isPassed(b, i, color)) {
-				int reverse_dis = color == b.WHITE ? 9 - rank : rank - 2;
-				//Reduce rank by one if blocked
-				if (b.mailbox[i - color * 10] != 0) { reverse_dis -= 1; }
-				if (reverse_dis < 5) {
-					pcount += reverse_dis * 2 * PASSED_P_BONUS;
-				}
-				else if (reverse_dis == 5) {
-					pcount += pow(reverse_dis, 2) * PASSED_P_BONUS;
-				}
-				else {
-					pcount += pow(reverse_dis, 2.25) * PASSED_P_BONUS;
-				}
-			}
-		}
+		int piece = b.mailbox[i];
+		if (piece != b.WP && piece != b.BP) { continue; }
+
+		//Connected pawns
+		val += ((b.mailbox[i + piece * 11] == piece) + (b.mailbox[i + piece * 9] == piece)) * supportedPawnBonus * piece;
+		val += ((b.mailbox[i + 1] == piece) + (b.mailbox[i - 1] == piece)) * phalanxPawnBonus * piece;
+
+		//Passed pawns
+		if (!isPassed(b, i, piece)) { continue; }
+		int rank = i / 10;
+		rank = (piece == b.WP) ? 9 - rank : rank - 2;
+		if (b.mailbox[i - piece * 10] != 0) { rank -= 1; }  //Reduce bonus if blocked
+		val += passedPawnBonus[rank] * piece;
 	}
-	return static_cast<int>(pcount * PASSED_P_BONUS);
+	return val;
 }
 
 int Evaluation::knightOutpost(const Board& b, int square, int color) {
@@ -129,7 +113,7 @@ int Evaluation::knightOutpost(const Board& b, int square, int color) {
 			if (b.mailbox[j] == b.WP * -color) { secure[1] = false; }
 		}
 		if (secure[0] && secure[1]) {
-			val += support * KNIGHT_OUTPOST_BONUS;
+			val += support * knightOutpostBonus;
 		}
 	}
 	return val;
@@ -153,9 +137,9 @@ int Evaluation::rookBehindPassed(const Board& b, int square, int color) {
 			break;
 		}
 	}
-	return rcount * ROOK_BEHIND_PASSED_P_BONUS;
+	return rcount * rookBehindPassedBonus;
 }
-int Evaluation::trappedRook(const Board&b, int square, int color) {
+int Evaluation::trappedRook(const Board& b, int square, int color) {
 	int blocked = 0;
 	if (b.mailbox[square + 1] != 0) {
 		blocked++;
@@ -169,7 +153,83 @@ int Evaluation::trappedRook(const Board&b, int square, int color) {
 	if (b.mailbox[square - 10] != 0) {
 		blocked++;
 	}
-	return (blocked > 1) * blocked * TRAPPED_ROOK_PENALTY;
+	return (blocked > 1) * blocked * trappedRookPenalty;
+}
+
+int Evaluation::pieceEval(const Board& b) {
+	int val = 0;
+	int bcount[2] = { 0, 0 };
+	int attack[2] = { 0, 0 };
+	int attackers[2] = { 0, 0 };
+	int blocked = blockedPawns(b) * closedPositionBonus;
+
+	for (int i = 21; i < 99; ++i) {
+		int piece = b.mailbox[i];
+		if (piece == b.NN || piece == 0) { continue; }
+		int color = (piece > 0) ? b.WHITE : b.BLACK;
+		int index = !(color == b.WHITE);
+		int absPiece = piece * color;
+		if (absPiece == b.WP) { continue; }
+		switch (absPiece) {
+		case b.WN:
+			val += (blocked + minorBehindPawnBonus * (b.mailbox[i - 10 * color] == b.WP * color) +
+					knightOutpost(b, i, color) + knightMobilityTable[mobilityKnight(b, i, color)]) * color;
+			for (int j = 0; j < 9; ++j) {
+				int square = b.kingSquare[!index] + kingRing[j];
+				if (b.mailbox[square] == b.NN) { continue; }
+				if (b.checkAttackKnight(i, square)) {
+					attack[index] += knightKingAttacker;
+					attackers[index]++;
+					break;
+				}
+			}
+			break;
+		case b.WB:
+			bcount[index]++;
+			val += (-blocked + minorBehindPawnBonus * (b.mailbox[i - 10 * color] == b.WP * color) +
+					bishopMobilityTable[mobilitySlider(b, i, color, b.WB)]) * color;
+			for (int j = 0; j < 9; ++j) {
+				int square = b.kingSquare[!index] + kingRing[j];
+				if (b.mailbox[square] == b.NN) { continue; }
+				if (b.checkAttackBishop(i, square)) {
+					attack[index] += bishopKingAttacker;
+					attackers[index]++;
+					break;
+				}
+			}
+			break;
+		case b.WR:
+			val += (-blocked + isOpenFile(b, i) * rookOpenFileBonus +
+					rookBehindPassed(b, i, color) + trappedRook(b, i, color) +
+					rookMobilityTable[mobilitySlider(b, i, color, b.WR)]) * color;
+			for (int j = 0; j < 9; ++j) {
+				int square = b.kingSquare[!index] + kingRing[j];
+				if (b.mailbox[square] == b.NN) { continue; }
+				if (b.checkAttackRook(i, square)) {
+					attack[index] += rookKingAttacker;
+					attackers[index]++;
+					break;
+				}
+			}
+			break;
+		case b.WQ:
+			val += queenMobilityTable[mobilitySlider(b, i, color, b.WQ)] * color;
+			for (int j = 0; j < 9; ++j) {
+				int square = b.kingSquare[!index] + kingRing[j];
+				if (b.mailbox[square] == b.NN) { continue; }
+				if (b.checkAttackQueen(i, square)) {
+					attack[index] += queenKingAttacker;
+					attackers[index]++;
+					break;
+				}
+			}
+			break;
+		}
+		val += (pawnPushThreat(b, i, color) + pawnAttackThreat(b, i, color)) * color;
+	}
+	val += bishopPairBonus * ((bcount[0] >= 2) - (bcount[1] >= 2));
+	val += attack[0] * (attackers[0] > 1) - attack[1] * (attackers[1] > 1);
+	return val;
 }
 
 int Evaluation::flipTableValue(int square) const {
@@ -201,9 +261,9 @@ int Evaluation::PST(const Board& b, int square, int color) {
 	return val;
 }
 
-int Evaluation::mobilityKnight(const Board&b, int square, int color) {
+int Evaluation::mobilityKnight(const Board& b, int square, int color) {
 	int mobility = 0;
-	for (const int i : b.pieceMoves[1]) {
+	for (const int& i : b.pieceMoves[1]) {
 		if (!i) { break; }
 		int toVal = b.mailbox[square + i];
 		if (toVal == b.NN || toVal * color > 0 || attackedByEnemyPawn(b, square + i, color)) {
@@ -213,23 +273,25 @@ int Evaluation::mobilityKnight(const Board&b, int square, int color) {
 	}
 	return mobility;
 }
-int Evaluation::mobilitySlider(const Board&b, int square, int color, int piece) {
+int Evaluation::mobilitySlider(const Board& b, int square, int color, int piece) {
 	int mobility = 0;
-	for (const int i : b.pieceMoves[piece - 1]) {
+	for (const int& i : b.pieceMoves[piece - 1]) {
 		if (!i) { break; }
 		for (int j = 1; j < 8; ++j) {
-			int toVal = b.mailbox[square + j * i];
-			if (toVal == b.NN || toVal * color > 0 || attackedByEnemyPawn(b, square + i, color)) {
+			int target = b.mailbox[square + j * i];
+			if (target == b.NN || target * color > 0) {
 				break;
 			}
-			mobility++;
-			if (toVal * color < 0) { break; }
+			if (!attackedByEnemyPawn(b, square + j * i, color)) {
+				mobility++;
+			}
+			if (target * color < 0) { break; }
 		}
 	}
 	return mobility;
 }
 
-int Evaluation::spaceArea(const Board&b, int color) {
+int Evaluation::spaceArea(const Board& b , int color) {
 	int sval = 0;
 	for (int i = 33 + (color == b.WHITE) * 30; i <= 56 + (color == b.WHITE) * 30; ++i) {
 		int file = i % 10;
@@ -266,147 +328,46 @@ int Evaluation::kingShelter(Board& b, int color) {
 		pval++;
 	}
 
-	return static_cast<int>((rval * K_OPEN_FILE_PENALTY + pval * K_P_SHIELD_PENALTY) * phase);
-}
-int Evaluation::kingDangerProximity(Board& b, int color) {
-	int kingsqr = (color == b.WHITE) ? b.kingSquare[1] : b.kingSquare[0];
-	int attack = 0;
-	int attackers = 0;
-
-	for (int i = 21; i < 99; ++i) {
-		int piece = b.mailbox[i];
-		if (piece == b.NN || piece * color <= b.WP) { continue; }
-		switch (piece * color) {
-		case b.WN:
-			for (int j = 0; j < 25; ++j) {
-				int square = kingsqr + kingRing[j];
-				if (square < 21 || square > 98 || b.mailbox[square] == b.NN) { continue; }
-				if (b.checkAttackKnight(i, square)) {
-					attack += KNIGHT_KING_ATTACKER;
-					attackers++;
-					break;
-				}
-			}
-			break;
-		case b.WB:
-			for (int j = 0; j < 25; ++j) {
-				int square = kingsqr + kingRing[j];
-				if (square < 21 || square > 98 || b.mailbox[square] == b.NN) { continue; }
-				if (b.checkAttackSlider(i, square, b.WB)) {
-					attack += BISHOP_KING_ATTACKER;
-					attackers++;
-					break;
-				}
-			}
-			break;
-		case b.WR:
-			for (int j = 0; j < 25; ++j) {
-				int square = kingsqr + kingRing[j];
-				if (square < 21 || square > 98 || b.mailbox[square] == b.NN) { continue; }
-				if (b.checkAttackSlider(i, square, b.WR)) {
-					attack += ROOK_KING_ATTACKER;
-					attackers++;
-					break;
-				}
-			}
-			break;
-		case b.WQ:
-			for (int j = 0; j < 25; ++j) {
-				int square = kingsqr + kingRing[j];
-				if (square < 21 || square > 98 || b.mailbox[square] == b.NN) { continue; }
-				if (b.checkAttackSlider(i, square, b.WQ)) {
-					attack += QUEEN_KING_ATTACKER;
-					attackers++;
-					break;
-				}
-			}
-			break;
-		}
-	}
-	return attack * (attackers > 1);
+	return static_cast<int>((rval * kingOpenFilePenalty + pval * kingWeakPawnShieldPenalty) * phase);
 }
 
 int Evaluation::pawnPushThreat(const Board& b, int square, int color) {
 	if (b.mailbox[square - 19 * color] == b.WP * -color && attackedByEnemyPawn(b, square - 9 * color, color)) {
-		return PAWN_PUSH_THREAT_PENALTY;
+		return pawnPushThreatPenalty;
 	}
 	if (b.mailbox[square - 21 * color] == b.WP * -color && attackedByEnemyPawn(b, square - 11 * color, color)) {
-		return PAWN_PUSH_THREAT_PENALTY;
+		return pawnPushThreatPenalty;
 	}
 	return 0;
 }
 int Evaluation::pawnAttackThreat(const Board& b, int square, int color) {
 	if (!attackedByEnemyPawn(b, square, color)) { return 0; }
-	if (attackedByEnemyPawn(b, square - 11 * color, color) || 
+	if (attackedByEnemyPawn(b, square - 11 * color, color) ||
 		attackedByEnemyPawn(b, square - 9 * color, color)) {
-		return PAWN_ATTACK_THREAT_PENALTY;
+		return pawnAttackThreatPenalty;
 	}
 	for (int i = 21; i < 99; ++i) {
 		int piece = b.mailbox[i];
 		if (piece == b.NN || piece * color >= b.BP) { continue; }
 		switch (piece * color) {
 		case b.BN:
-			if (b.checkAttackKnight(i, square)) { return PAWN_ATTACK_THREAT_PENALTY; }
+			if (b.checkAttackKnight(i, square)) { return pawnAttackThreatPenalty; }
 			break;
 		case b.BB:
-			if (b.checkAttackSlider(i, square, b.WB)) { return PAWN_ATTACK_THREAT_PENALTY; }
+			if (b.checkAttackBishop(i, square)) { return pawnAttackThreatPenalty; }
 			break;
 		case b.BR:
-			if (b.checkAttackSlider(i, square, b.WR)) { return PAWN_ATTACK_THREAT_PENALTY; }
+			if (b.checkAttackRook(i, square)) { return pawnAttackThreatPenalty; }
 			break;
 		case b.BQ:
-			if (b.checkAttackSlider(i, square, b.WQ)) { return PAWN_ATTACK_THREAT_PENALTY; }
+			if (b.checkAttackQueen(i, square)) { return pawnAttackThreatPenalty; }
 			break;
 		case b.BK:
-			if (b.checkAttackKing(i, square)) { return PAWN_ATTACK_THREAT_PENALTY; }
+			if (b.checkAttackKing(i, square)) { return pawnAttackThreatPenalty; }
 			break;
 		}
 	}
 	return 0;
-}
-
-int Evaluation::piecesEval(const Board&b, int color) {
-	int val = 0;
-	int bcount = 0;
-	int blocked = blockedPawns(b);
-	for (int i = 21; i < 99; ++i) {
-		int piece = b.mailbox[i];
-		int abs_piece = color * piece;
-		if (piece == b.NN || abs_piece <= b.WP) { continue; }
-		switch (abs_piece) {
-		case b.WN:
-			val += blocked * CLOSED_POSITION_BONUS;
-			val += MINOR_BEHIND_PAWN_BONUS * (b.mailbox[i - 10 * color] == b.WP * color);
-			val += pawnPushThreat(b, i, color) + pawnAttackThreat(b, i, color);
-			val += knightOutpost(b, i, color);
-			val += knightMobilityTable[mobilityKnight(b, i, color)];
-			break;
-		case b.WB:
-			bcount++;
-			val -= blocked * CLOSED_POSITION_BONUS;
-			val += MINOR_BEHIND_PAWN_BONUS * (b.mailbox[i - 10 * color] == b.WP * color);
-			val += pawnPushThreat(b, i, color) + pawnAttackThreat(b, i, color);
-			val += bishopMobilityTable[mobilitySlider(b, i, color, b.WB)];
-			break;
-		case b.WR:
-			val -= blocked * CLOSED_POSITION_BONUS;
-			val += isOpenFile(b, i) * R_OPEN_FILE_BONUS;
-			val += rookBehindPassed(b, i, color) + trappedRook(b, i, color);
-			val += pawnPushThreat(b, i, color) + pawnAttackThreat(b, i, color);
-			val += rookMobilityTable[mobilitySlider(b, i, color, b.WR)];
-			break;
-		case b.WQ:
-			val += pawnPushThreat(b, i, color) + pawnAttackThreat(b, i, color);
-			val += queenMobilityTable[mobilitySlider(b, i, color, b.WQ)];
-			break;
-		case b.WK:
-			val += pawnPushThreat(b, i, color) + pawnAttackThreat(b, i, color);
-		}
-	}
-	if (bcount >= 2) {
-		val += BISHOP_PAIR_BONUS;
-	}
-	return val;
 }
 
 bool Evaluation::attackedByEnemyPawn(const Board& b, int square, int color) {
@@ -433,7 +394,7 @@ int Evaluation::isOpenFile(const Board& b, int square) {
 		return 2;
 	}
 }
-int Evaluation::isPassed(const Board&b, int square, int color) {
+int Evaluation::isPassed(const Board& b, int square, int color) {
 	if (b.mailbox[square] != b.WP * color) { return false; }
 	bool passed = true;
 	int sqr = square;
@@ -451,11 +412,11 @@ int Evaluation::totalEvaluation(Board& b, int color, int lazyScore[]) {
 	phase = getPhase(b);
 	int lazyIndex = !(color == b.WHITE);
 	int lazy = lazyScore[lazyIndex] - lazyScore[!lazyIndex];
-	int pieces = piecesEval(b, color) - piecesEval(b, -color);
-	int pawns = doubledAndIsolatedPawns(b, color) + connectedPawns(b, color) + backwardPawns(b, color) + passedPawns(b, color)
-		- doubledAndIsolatedPawns(b, -color) - connectedPawns(b, -color) - backwardPawns(b, -color) - passedPawns(b, -color);
+	int pieces = pieceEval(b) * color;
+	int pawns = pawnEval(b) * color + doubledAndIsolatedPawns(b, color) - doubledAndIsolatedPawns(b, -color) +
+		backwardPawns(b, color) - backwardPawns(b, -color);
 	int space = spaceArea(b, color) - spaceArea(b, -color);
-	int king = kingShelter(b, color) - kingShelter(b, -color) + kingDangerProximity(b, color) - kingDangerProximity(b, -color);;
+	int king = kingShelter(b, color) - kingShelter(b, -color);
 	return lazy + pieces + pawns + space + king;
 }
 int Evaluation::lazyEvaluation(const Board& b, int color) {
@@ -463,8 +424,8 @@ int Evaluation::lazyEvaluation(const Board& b, int color) {
 	int val = 0;
 	for (int i = 21; i < 99; ++i) {
 		int piece = b.mailbox[i];
-		int abs_piece = color * piece;
-		if (piece == b.NN || abs_piece <= 0) { continue; }
+		int absPiece = color * piece;
+		if (piece == b.NN || absPiece <= 0) { continue; }
 		val += pieceValues[abs(piece) - 1] + PST(b, i, color);
 	}
 	return val;

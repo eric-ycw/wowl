@@ -5,6 +5,5 @@
 
 void parsePosition(Board&, Wowl&, std::string);
 void parseGo(Board&, Evaluation&, Wowl&, std::string);
-void UCILoop();
 
 #endif

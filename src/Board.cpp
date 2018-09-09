@@ -98,10 +98,10 @@ void Board::parseFEN(std::string fen) {
 		rank = fen[1] = '8' - fen[1];
 		assert(file >= 0 && file < 8);
 		assert(rank >= 0 && rank < 8);
-		epSquare = mailbox64[rank][file];
+		epSquareFEN = mailbox64[rank][file];
 	}
 	else {
-		epSquare = -1;
+		epSquareFEN = -1;
 	}
 }
 
@@ -122,7 +122,7 @@ std::string Board::toNotation(int square) const {
 }
 
 void Board::reserveVectors() {
-	moveVec.reserve(150);
+	moveVec.reserve(100);
 }
 
 int Board::checkLegalPawn(int a, int b, int color) const {
@@ -141,21 +141,9 @@ int Board::checkLegalPawn(int a, int b, int color) const {
 			return true;
 		}
 	}
-	
 	//En passant
-	if (color == WHITE) {
-		if (a <= 58 && a >= 51 && !target) {
-			if (((mailbox[a - 1] == BP && b == a - 11) || (mailbox[a + 1] == BP && b == a - 11)) && b == epSquare) {
-				return true;
-			}
-		}
-	}
-	else if (color == BLACK) {
-		if (a <= 68 && a >= 61 && !target) {
-			if (((mailbox[a - 1] == WP && b == a + 9) || (mailbox[a + 1] == WP && b == a + 11)) && b == epSquare) {
-				return true;
-			}
-		}
+	if (b == epSquare && (b == a - color * 11 || b == a - color * 9) && !target) {
+		return true;
 	}
 	return false;
 }
@@ -164,7 +152,7 @@ void Board::genPawnMoves(std::vector<Move>& legalMoves, int square) {
 	int fromVal = mailbox[square];
 	assert(fromVal == WHITE || fromVal == BLACK);
 
-	for (const int i : pieceMoves[0]) {
+	for (const int& i : pieceMoves[0]) {
 		if (!i) { break; }
 		int toVal = mailbox[square + i * fromVal];
 		if (toVal * turn > 0 || toVal == NN || abs(toVal) == WK) {
@@ -176,7 +164,7 @@ void Board::genPawnMoves(std::vector<Move>& legalMoves, int square) {
 	}
 }
 void Board::genKnightMoves(std::vector<Move>& legalMoves, int square) {
-	for (const int i : pieceMoves[1]) {
+	for (const int& i : pieceMoves[1]) {
 		if (!i) { break; }
 		int toVal = mailbox[square + i];
 		if (toVal * turn > 0 || toVal == NN || abs(toVal) == WK) {
@@ -187,7 +175,7 @@ void Board::genKnightMoves(std::vector<Move>& legalMoves, int square) {
 }
 void Board::genSliderMoves(std::vector<Move>& legalMoves, int square, int piece) {
 	assert(piece == WB || piece == WR || piece == WQ);
-	for (const int i : pieceMoves[piece - 1]) {
+	for (const int& i : pieceMoves[piece - 1]) {
 		if (!i) { break; }
 		for (int j = 1; j < 8; ++j) {
 			int to = square + j * i;
@@ -203,7 +191,7 @@ void Board::genSliderMoves(std::vector<Move>& legalMoves, int square, int piece)
 	}
 }
 void Board::genKingMoves(std::vector<Move>& legalMoves, int square) {
-	for (const int i : pieceMoves[5]) {
+	for (const int& i : pieceMoves[5]) {
 		if (!i) { break; }
 		int toVal = mailbox[square + i];
 		if (toVal * turn > 0 || toVal == NN || abs(toVal) == WK) {
@@ -226,7 +214,7 @@ void Board::genPawnCaptures(std::vector<Move>& captures, int square) {
 	int fromVal = mailbox[square];
 	assert(fromVal == WHITE || fromVal == BLACK);
 
-	for (const int i : pieceMoves[0]) {
+	for (const int& i : pieceMoves[0]) {
 		if (!i) { break; }
 		if (i == -10 || i == -20) { continue; }
 		int toVal = mailbox[square + i * fromVal];
@@ -239,7 +227,7 @@ void Board::genPawnCaptures(std::vector<Move>& captures, int square) {
 	}
 }
 void Board::genKnightCaptures(std::vector<Move>& captures, int square) {
-	for (const int i : pieceMoves[1]) {
+	for (const int& i : pieceMoves[1]) {
 		if (!i) { break; }
 		int toVal = mailbox[square + i];
 		if (toVal * turn >= 0 || toVal == NN || abs(toVal) == WK) {
@@ -250,7 +238,7 @@ void Board::genKnightCaptures(std::vector<Move>& captures, int square) {
 }
 void Board::genSliderCaptures(std::vector<Move>& captures, int square, int piece) {
 	assert(piece == WB || piece == WR || piece == WQ);
-	for (const int i : pieceMoves[piece - 1]) {
+	for (const int& i : pieceMoves[piece - 1]) {
 		if (!i) { break; }
 		for (int j = 1; j < 8; ++j) {
 			int to = square + j * i;
@@ -266,7 +254,7 @@ void Board::genSliderCaptures(std::vector<Move>& captures, int square, int piece
 	}
 }
 void Board::genKingCaptures(std::vector<Move>& captures, int square) {
-	for (const int i : pieceMoves[5]) {
+	for (const int& i : pieceMoves[5]) {
 		if (!i) { break; }
 		if (i == 2 || i == -2) { continue; }
 		int toVal = mailbox[square + i];
@@ -277,17 +265,16 @@ void Board::genKingCaptures(std::vector<Move>& captures, int square) {
 	}
 }
 
-//Get all pseudolegal moves
-std::vector<Move> Board::getLegalMoves() {
+std::vector<Move> Board::getMoves() {
 	std::vector<Move> legalMoves;
 	legalMoves.reserve(50);
 	setEnPassantSquare();
 
 	for (int i = 21; i < 99; ++i) {
 		int piece = mailbox[i];
-		int abs_piece = piece * turn;
-		if (piece == NN || abs_piece <= 0) { continue; }
-		switch (abs_piece) {
+		int absPiece = piece * turn;
+		if (piece == NN || absPiece <= 0) { continue; }
+		switch (absPiece) {
 		case WP:
 			genPawnMoves(legalMoves, i);
 			break;
@@ -312,14 +299,14 @@ std::vector<Move> Board::getLegalMoves() {
 }
 std::vector<Move> Board::getCaptures() {
 	std::vector<Move> captures;
-	captures.reserve(20);
+	captures.reserve(10);
 	setEnPassantSquare();
 
 	for (int i = 21; i < 99; ++i) {
 		int piece = mailbox[i];
-		int abs_piece = piece * turn;
-		if (piece == NN || abs_piece <= 0) { continue; }
-		switch (abs_piece) {
+		int absPiece = piece * turn;
+		if (piece == NN || absPiece <= 0) { continue; }
+		switch (absPiece) {
 		case WP:
 			genPawnCaptures(captures, i);
 			break;
@@ -343,16 +330,13 @@ std::vector<Move> Board::getCaptures() {
 	return captures;
 }
 
-bool Board::checkAttack(int a, int b) const {
-	int fromVal = mailbox[a];
-	int toVal = mailbox[b];
-
-	if (toVal == NN || fromVal * toVal > 0) { return false; }
-
-	int sval = (fromVal > 0) ? fromVal : fromVal * -1;
-	switch (sval) {
+bool Board::checkAttack(int a, int b, int piece) const {
+	int target = mailbox[b];
+	if (target == NN) { return false; }
+	
+	switch (abs(piece)) {
 	case WP:
-		return checkAttackPawn(a, b, fromVal);
+		return checkAttackPawn(a, b, piece);
 		break;
 
 	case WN:
@@ -360,15 +344,15 @@ bool Board::checkAttack(int a, int b) const {
 		break;
 
 	case WB:
-		return checkAttackSlider(a, b, WB);
+		return checkAttackBishop(a, b);
 		break;
 
 	case WR:
-		return checkAttackSlider(a, b, WR);
+		return checkAttackRook(a, b);
 		break;
 
 	case WQ:
-		return checkAttackSlider(a, b, WQ);
+		return checkAttackQueen(a, b);
 		break;
 
 	case WK:
@@ -382,24 +366,41 @@ bool Board::checkAttackPawn(int a, int b, int color) const {
 bool Board::checkAttackKnight(int a, int b) const {
 	return (a - 21 == b || a - 19 == b || a - 12 == b || a - 8 == b || a + 19 == b || a + 21 == b || a + 8 == b || a + 12 == b);
 }
-bool Board::checkAttackSlider(int a, int b, int piece) const {
-	bool notRook, notBishop;
-	if (piece != WB) {
-		notRook = (a - b) % 10 != 0 && abs(a - b) > 7;
-		if (piece == WR && notRook) { return false; }
-	}
-	if (piece != WR) {
-		notBishop = (a - b) % 9 != 0 && (a - b) % 11 != 0;
-		if (piece == WB && notBishop) { return false; }
-	}
-	if (piece == WQ && notBishop && notRook) { return false; }
-	for (const int i : pieceMoves[piece - 1]) {
-		if (!i) { break; }
+bool Board::checkAttackBishop(int a, int b) const {
+	int diff = a - b;
+	if (diff % 9 != 0 && diff % 11 != 0) { return false; }
+	int up = (a > b) * 2;
+	for (int i = 0 + up; i <= 1 + up; ++i) {
 		for (int j = 1; j < 8; ++j) {
-			int to = a + j * i;
+			int to = a + j * pieceMoves[2][i];
 			if (to == b) { return true; }
-			int toVal = mailbox[to];
-			if (toVal * turn != 0) { break; }
+			if (mailbox[to] != 0) { break; }
+		}
+	}
+	return false;
+}
+bool Board::checkAttackRook(int a, int b) const {
+	int diff = a - b;
+	if (abs(diff) > 7 && diff % 10 != 0) { return false; }
+	int up = (a > b) * 2;
+	for (int i = 0 + up; i <= 1 + up; ++i) {
+		for (int j = 1; j < 8; ++j) {
+			int to = a + j * pieceMoves[3][i];
+			if (to == b) { return true; }
+			if (mailbox[to] != 0) { break; }
+		}
+	}
+	return false;
+}
+bool Board::checkAttackQueen(int a, int b) const {
+	int diff = a - b;
+	if (abs(diff) > 7 && diff % 10 != 0 && diff % 9 != 0 && diff % 11 != 0) { return false; }
+	int up = (a > b) * 4;
+	for (int i = 0 + up; i <= 3 + up; ++i) {
+		for (int j = 1; j < 8; ++j) {
+			int to = a + j * pieceMoves[4][i];
+			if (to == b) { return true; }
+			if (mailbox[to] != 0) { break; }
 		}
 	}
 	return false;
@@ -416,8 +417,6 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 	}
 
 	if (mailbox[square] * color >= 0) {
-		assert(std::get<0>(attackerArray[0]) == 0);
-		assert(std::get<1>(attackerArray[0]) == 0);
 		return attackerArray[0];
 	}
 
@@ -425,66 +424,61 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 
 	for (int i = 21; i < 99; ++i) {
 		int piece = mailbox[i];
-		if (piece == NN || piece * color <= 0) {
+		if (piece * color <= 0 || piece == NN) {
 			continue;
 		}
-		piece = (piece > 0) ? piece : -piece;
-		if (piece >= smallest) {
-			continue;
-		}
+		piece *= color;
+		if (piece > smallest) { continue; }
 		switch (piece) {
 		case WP:
 			if (checkAttackPawn(i, square, mailbox[i])) {
-				std::get<0>(attackerArray[0])++;
+				std::get<0>(attackerArray[0]) = WP;
 				std::get<1>(attackerArray[0]) = i;
+				smallest = WP;
 			}
-			smallest = WP;
 			break;
 		case WN:
 			if (checkAttackKnight(i, square)) {
-				std::get<0>(attackerArray[1])++;
+				std::get<0>(attackerArray[1]) = WN;
 				std::get<1>(attackerArray[1]) = i;
+				smallest = WB;
 			}
-			smallest = WN;
 			break;
 		case WB:
-			if (checkAttackSlider(i, square, WB)) {
-				std::get<0>(attackerArray[1])++;
+			if (checkAttackBishop(i, square)) {
+				std::get<0>(attackerArray[1]) = WN;
 				std::get<1>(attackerArray[1]) = i;
-			}
-			smallest = WN;  //Same value for knight and bishop
+				smallest = WB;  //Same value for knight and bishop
+			};
 			break;
 		case WR:
-			if (checkAttackSlider(i, square, WR)) {
-				std::get<0>(attackerArray[2])++;
+			if (checkAttackRook(i, square)) {
+				std::get<0>(attackerArray[2]) = WR - 1;
 				std::get<1>(attackerArray[2]) = i;
+				smallest = WR;
 			}
-			smallest = WR;
 			break;
 		case WQ:
-			if (checkAttackSlider(i, square, WQ)) {
-				std::get<0>(attackerArray[3])++;
+			if (checkAttackQueen(i, square)) {
+				std::get<0>(attackerArray[3]) = WQ - 1;
 				std::get<1>(attackerArray[3]) = i;
+				smallest = WQ;
 			}
-			smallest = WQ;
 			break;
 		case WK:
 			if (checkAttackKing(i, square)) {
-				std::get<0>(attackerArray[4])++;
+				std::get<0>(attackerArray[4]) = WK - 1;
+				std::get<1>(attackerArray[4]) = i;
 			}
-			smallest = WK;
 			break;
 		}
 	}
 
 	for (int i = 0; i < 5; ++i) {
 		if (std::get<0>(attackerArray[i]) > 0) {
-			std::get<0>(attackerArray[i]) = i + 1;
 			return attackerArray[i];
 		}
 	}
-	assert(std::get<0>(attackerArray[0]) == 0);
-	assert(std::get<1>(attackerArray[0]) == 0);
 	return attackerArray[0];
 }
 
@@ -495,7 +489,7 @@ bool Board::inCheck(int color) {
 		if (piece == NN || piece * color >= 0) {
 			continue;
 		}
-		if (checkAttack(i, kingsqr)) {
+		if (checkAttack(i, kingsqr, piece)) {
 			return true;
 		}
 	}
@@ -506,10 +500,11 @@ bool Board::wouldCheck(Move m, int color) {
 	memcpy(mailboxCopy, mailbox, sizeof(mailbox));
 	memcpy(castlingCopy, castling, sizeof(castling));
 	memcpy(kingCopy, kingSquare, sizeof(kingSquare));
+	int epCopy = epSquare;
 
-	move(m.from, m.to);
+	move(m.from, m.to, true);
 	bool isinCheck = inCheck(-color);
-	undo(mailboxCopy, castlingCopy, kingCopy, lazyScore);
+	undo(mailboxCopy, castlingCopy, kingCopy, lazyScore, epCopy, true);
 	return isinCheck;
 }
 
@@ -574,27 +569,27 @@ void Board::checkCastling() {
 		if (piece == NN || piece == 0) { continue; }
 		if (piece < 0) {
 			//In check
-			if ((castling[0] == 1 || castling[1] == 1) && checkAttack(n, kingSquare[0])) {
+			if ((castling[0] == 1 || castling[1] == 1) && checkAttack(n, kingSquare[0], piece)) {
 				castling[0] = -1;
 				castling[1] = -1;
 			}
 			//Squares are attacked
-			if (castling[0] == 1 && (checkAttack(n, 96) || checkAttack(n, 97))) {
+			if (castling[0] == 1 && (checkAttack(n, 96, piece) || checkAttack(n, 97, piece))) {
 				castling[0] = -1;
 			}
-			if (castling[1] == 1 && (checkAttack(n, 93) || checkAttack(n, 94))) {
+			if (castling[1] == 1 && (checkAttack(n, 93, piece) || checkAttack(n, 94, piece))) {
 				castling[1] = -1;
 			}
 		}
 		else {
-			if ((castling[2] == 1 || castling[3] == 1) && checkAttack(n, kingSquare[1])) {
+			if ((castling[2] == 1 || castling[3] == 1) && checkAttack(n, kingSquare[1], piece)) {
 				castling[2] = -1;
 				castling[3] = -1;
 			}
-			if (castling[2] == 1 && (checkAttack(n, 26) || checkAttack(n, 27))) {
+			if (castling[2] == 1 && (checkAttack(n, 26, piece) || checkAttack(n, 27, piece))) {
 				castling[2] = -1;
 			}
-			if (castling[3] == 1 && (checkAttack(n, 23) || checkAttack(n, 24))) {
+			if (castling[3] == 1 && (checkAttack(n, 23, piece) || checkAttack(n, 24, piece))) {
 				castling[3] = -1;
 			}
 		}
@@ -674,7 +669,7 @@ void Board::specialMoves(int oldpos, int newpos) {
 		mailbox[newpos] = BQ;
 	}
 }
-void Board::move(int a, int b) {
+void Board::move(int a, int b, bool temp) {
 	setEnPassantSquare();
 	mailbox[b] = mailbox[a];
 	mailbox[a] = 0;
@@ -684,19 +679,18 @@ void Board::move(int a, int b) {
 	else if (mailbox[b] == BK) {
 		kingSquare[1] = b;
 	}
-	moveVec.emplace_back(Move(a, b));
 	specialMoves(a, b);
 	turn *= -1;
+	if (!temp) { moveVec.emplace_back(Move(a, b)); }
 }
-void Board::undo(int mailboxCopy[], int castlingCopy[], int kingCopy[], int lazyCopy[]) {
+void Board::undo(int mailboxCopy[], int castlingCopy[], int kingCopy[], int lazyCopy[], int epCopy, bool temp) {
 	memcpy(mailbox, mailboxCopy, sizeof(mailbox));
 	memcpy(castling, castlingCopy, sizeof(castling));
 	memcpy(kingSquare, kingCopy, sizeof(kingSquare));
 	memcpy(lazyScore, lazyCopy, sizeof(lazyScore));
-	if (!moveVec.empty()) {
-		moveVec.pop_back();
-	}
+	epSquare = epCopy;
 	turn *= -1;
+	if (!temp && !moveVec.empty()) { moveVec.pop_back(); }
 }
 void Board::nullMove() {
 	moveVec.emplace_back(Move(0, 0));
@@ -709,7 +703,10 @@ void Board::undoNullMove() {
 	turn *= -1;
 }
 void Board::setEnPassantSquare() {
-	if (moveVec.empty()) { return; }
+	if (moveVec.empty()) { 
+		epSquare = epSquareFEN;
+		return; 
+	}
 
 	int oldsq = moveVec.back().from;
 	int newsq = moveVec.back().to;
