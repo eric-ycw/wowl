@@ -87,15 +87,15 @@ int Evaluation::pawnEval(const Board& b) {
 		int piece = b.mailbox[i];
 		if (piece != b.WP && piece != b.BP) { continue; }
 
-		//Connected pawns
+		// Connected pawns
 		val += ((b.mailbox[i + piece * 11] == piece) + (b.mailbox[i + piece * 9] == piece)) * supportedPawnBonus * piece;
 		val += ((b.mailbox[i + 1] == piece) + (b.mailbox[i - 1] == piece)) * phalanxPawnBonus * piece;
 
-		//Passed pawns
+		// Passed pawns
 		if (!isPassed(b, i, piece)) { continue; }
 		int rank = i / 10;
 		rank = (piece == b.WP) ? 9 - rank : rank - 2;
-		if (b.mailbox[i - piece * 10] != 0) { rank -= 1; }  //Reduce bonus if blocked
+		if (b.mailbox[i - piece * 10] != 0) { rank -= 1; }  // Reduce bonus if blocked
 		val += passedPawnBonus[rank] * piece;
 	}
 	return val;
@@ -122,7 +122,7 @@ int Evaluation::rookBehindPassed(const Board& b, int square, int color) {
 	int rcount = 0;
 	int sqr = square;
 	while (sqr >= 31 && sqr <= 88) {
-		//Supporting friendly passed pawn or blocking enemy passed pawn
+		// Supporting friendly passed pawn or blocking enemy passed pawn
 		sqr += -color * 10;
 		if (isPassed(b, sqr, color) || isPassed(b, sqr, -color)) {
 			rcount += 1;
@@ -130,7 +130,7 @@ int Evaluation::rookBehindPassed(const Board& b, int square, int color) {
 		}
 	}
 	while (sqr >= 31 && sqr <= 88) {
-		//Behind enemy passed pawn
+		// Behind enemy passed pawn
 		sqr += color * 10;
 		if (isPassed(b, sqr, -color)) {
 			rcount += 1;
@@ -300,7 +300,7 @@ int Evaluation::spaceArea(const Board& b , int color) {
 		if (piece == b.NN || piece == b.WP * color) { continue; }
 		if (attackedByEnemyPawn(b, i, color)) { continue; }
 		sval++;
-		//Increase space value if square is behind own pawn by 1-3 squares
+		// Increase space value if square is behind own pawn by 1-3 squares
 		for (int j = 1; j <= 3; ++j) {
 			if (b.mailbox[i - color * 10 * j] == b.WP * color) {
 				sval++;
@@ -315,9 +315,9 @@ int Evaluation::kingShelter(Board& b, int color) {
 	int pval = 0;
 	int kingsqr = (color == b.WHITE) ? b.kingSquare[0] : b.kingSquare[1];
 
-	//Open files
+	// Open files
 	rval = isOpenFile(b, kingsqr) + isOpenFile(b, kingsqr + 1) * 0.75 + isOpenFile(b, kingsqr - 1) * 0.75;
-	//Pawn shield in front of king
+	// Pawn shield in front of king
 	if (b.mailbox[kingsqr - 10 * color] != b.WP * color) {
 		pval++;
 	}

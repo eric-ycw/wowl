@@ -9,10 +9,11 @@ typedef unsigned long long int U64;
 
 struct ttInfo {
 	ttInfo() {}
-	ttInfo(int depth, int score, int flag, int age) : 
-		hashDepth(depth), hashScore(score), hashFlag(flag), hashAge(age) {}
+	ttInfo(int a, int b, int c, int d) : 
+		depth(a), score(b), flag(c), age(d) {}
 
-	int hashDepth, hashScore, hashFlag, hashAge;
+	int depth, score, flag, age;
+	int eval = 100000;
 	Move hashBestMove = Move(-9, -9);
 };
 

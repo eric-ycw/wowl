@@ -3,12 +3,12 @@
 void Board::parseFEN(std::string fen) {
 	if (fen.empty()) { return; }
 
-	//Completely empty the board
+	// Completely empty the board
 	resetBoard(true);
 
 	int piece = 0;
 
-	//The FEN string starts on the eight rank but startinng the counter at zero is more convenient
+	// The FEN string starts on the eight rank but startinng the counter at zero is more convenient
 	int rank = 0;  
 	int file = 0;
 	int strip_pos = 0;
@@ -127,21 +127,21 @@ void Board::reserveVectors() {
 
 int Board::checkLegalPawn(int a, int b, int color) const {
 	int target = mailbox[b];
-	//Move forward one square
+	// Move forward one square
 	if (a - color * 10 == b && !target) {
 		return true;
 	}
-	//Diagonal capture
+	// Diagonal capture
 	if ((a - color * 11 == b || a - color * 9 == b) && target * color < 0) {
 		return true;
 	}
-	//Second-rank pawns
+	// Second-rank pawns
 	if (a - 20 * color == b && a <= 38 + (color == WHITE) * 50 && a >= 31 + (color == WHITE) * 50) {
 		if (!target && !mailbox[b + 10 * color]) {
 			return true;
 		}
 	}
-	//En passant
+	// En passant
 	if (b == epSquare && (b == a - color * 11 || b == a - color * 9) && !target) {
 		return true;
 	}
@@ -448,7 +448,7 @@ std::tuple<int, int> Board::getSmallestAttacker(int square, int color) {
 			if (checkAttackBishop(i, square)) {
 				std::get<0>(attackerArray[1]) = WN;
 				std::get<1>(attackerArray[1]) = i;
-				smallest = WB;  //Same value for knight and bishop
+				smallest = WB;  // Same value for knight and bishop
 			};
 			break;
 		case WR:
@@ -508,19 +508,19 @@ bool Board::wouldCheck(Move m, int color) {
 	return isinCheck;
 }
 
-//Updates castling rights
+// Updates castling rights
 void Board::checkCastling() {
-	//No one can castle
+	// No one can castle
 	if (!castling[0] && !castling[1] && !castling[2] && !castling[3]) { return; }
 
-	//Temporarily reset castling permissions if castling rights were not forfeited
+	// Temporarily reset castling permissions if castling rights were not forfeited
 	for (int i = 0; i < 4; i++) {
 		if (castling[i] == -1) {
 			castling[i] = 1;
 		}
 	}
 
-	//Blocked by pieces
+	// Blocked by pieces
 	if (castling[0] == 1 && (mailbox[96] != 0 || mailbox[97] != 0)) {
 		castling[0] = -1;
 	}
@@ -536,29 +536,29 @@ void Board::checkCastling() {
 
 	for (int i = 0; i < moveVec.size(); ++i) {
 		int from = moveVec[i].from;
-		//White king has moved
+		// White king has moved
 		if (from == 95 && (castling[0] != 0 || castling[1] != 0)) {
 			castling[0] = 0;
 			castling[1] = 0;;
 		}
-		//Black king has moved
+		// Black king has moved
 		if (from == 25 && (castling[2] != 0 || castling[3] != 0)) {
 			castling[2] = 0;
 			castling[3] = 0;;
 		}
-		//White h-file rook has moved
+		// White h-file rook has moved
 		if (from == 98 && castling[0] != 0) {
 			castling[0] = 0;
 		}
-		//White a-file rook has moved
+		// White a-file rook has moved
 		if (from == 91 && castling[1] != 0) {
 			castling[1] = 0;
 		}
-		//Black h-file rook has moved
+		// Black h-file rook has moved
 		if (from == 28 && castling[2] != 0) {
 			castling[2] = 0;
 		}
-		//Black a-file rook has moved
+		// Black a-file rook has moved
 		if (from == 21 && castling[3] != 0) {
 			castling[3] = 0;
 		}
@@ -568,12 +568,12 @@ void Board::checkCastling() {
 		int piece = mailbox[n];
 		if (piece == NN || piece == 0) { continue; }
 		if (piece < 0) {
-			//In check
+			// In check
 			if ((castling[0] == 1 || castling[1] == 1) && checkAttack(n, kingSquare[0], piece)) {
 				castling[0] = -1;
 				castling[1] = -1;
 			}
-			//Squares are attacked
+			// Squares are attacked
 			if (castling[0] == 1 && (checkAttack(n, 96, piece) || checkAttack(n, 97, piece))) {
 				castling[0] = -1;
 			}
@@ -595,7 +595,7 @@ void Board::checkCastling() {
 		}
 	}
 }
-//Return an int representing which castling rights have been forfeited
+// Return an int representing which castling rights have been forfeited
 int Board::checkCastlingForfeit() {
 	int forfeit[4];
 	for (int i = 0; i < 4; ++i) {
@@ -627,41 +627,41 @@ int Board::checkCastlingForfeit() {
 	return 0 ^ (forfeit[0]) ^ (forfeit[1] * 2) ^ (forfeit[2] * 4) ^ (forfeit[3] * 8);
 }
 
-//Defines special behavior for en passant, castling and promotion
+// Defines special behavior for en passant, castling and promotion
 void Board::specialMoves(int oldpos, int newpos) {
-	//While en passant
+	// While en passant
 	if (mailbox[newpos] == WP && newpos == epSquare) {
 		mailbox[newpos + 10] = 0;
 	}
-	//Black en passant
+	// Black en passant
 	else if (mailbox[newpos] == BP && newpos == epSquare) {
 		mailbox[newpos - 10] = 0;
 	}
-	//Short castling
+	// Short castling
 	else if (oldpos - newpos == -2 && abs(mailbox[newpos]) == WK && abs(mailbox[newpos + 1]) == WR) {
 		mailbox[newpos + 1] = 0;
-		//White
+		// White
 		if (mailbox[newpos] > 0) {
 			mailbox[oldpos + 1] = WR;
 		}
-		//Black
+		// Black
 		else {
 			mailbox[oldpos + 1] = BR;
 		}
 	}
-	//Long castling
+	// Long castling
 	else if (oldpos - newpos == 2 && abs(mailbox[newpos]) == WK && abs(mailbox[newpos - 2]) == WR) {
 		mailbox[newpos - 2] = 0;
-		//White
+		// White
 		if (mailbox[newpos] > 0) {
 			mailbox[oldpos - 1] = WR;
 		}
-		//Black
+		// Black
 		else {
 			mailbox[oldpos - 1] = BR;
 		}
 	}
-	//White promotion (to queen)
+	// White promotion (to queen)
 	if (mailbox[newpos] == WP && newpos >= 21 && newpos <= 28) {
 		mailbox[newpos] = WQ;
 	}
@@ -776,7 +776,7 @@ void Board::outputBoard() const {
 		}
 	}
 }
-//Reset board to starting position or empty board
+// Reset board to starting position or empty board
 void Board::resetBoard(bool empty) {
 	for (int i = 21; i < 99; ++i) {
 		if (mailbox[i] == NN) { continue; }
@@ -786,7 +786,7 @@ void Board::resetBoard(bool empty) {
 		castling[i] = !empty;
 	}
 	epSquare = -1;
-	//Note : if the board resets to starting position lazyScore is not updated
+	// Note : if the board resets to starting position lazyScore is not updated
 	if (empty) {
 		lazyScore[0] = 0;
 		lazyScore[1] = 0;
@@ -794,7 +794,7 @@ void Board::resetBoard(bool empty) {
 	moveVec.clear();
 }
 
-//Set board position from move vector
+// Set board position from move vector
 void Board::setPosition() {
 	for (int i = 21; i < 99; ++i) {
 		mailbox[i] = start[i];

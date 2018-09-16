@@ -20,7 +20,7 @@ void Hash::initHashKeys() {
 U64 Hash::generatePosKey(Board& b) {
 	U64 finalKey = 0;
 
-	//Pieces
+	// Pieces
 	for (int sq = 21; sq < 99; ++sq) {
 		int piece = b.mailbox[sq];
 		if (piece == 0 || piece == b.NN) {
@@ -30,18 +30,18 @@ U64 Hash::generatePosKey(Board& b) {
 		finalKey ^= pieceKeys[piece][b.mailbox120[sq]];
 	}
 	
-	//Side to move
+	// Side to move
 	if (b.getTurn() == b.WHITE) {
 		finalKey ^= sideKey;
 	}
 
-	//En passant
+	// En passant
 	b.setEnPassantSquare();
 	if (b.epSquare != -1) {
 		finalKey ^= epKey;
 	}
 
-	//Castling
+	// Castling
 	int forfeit = b.checkCastlingForfeit();
 	for (int bit = 0; bit < 4; ++bit, forfeit >>= 1) {
 		if ((forfeit & 1) == 1) {

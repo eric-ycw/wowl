@@ -36,9 +36,9 @@ public:
 	int negaSearch(Board&, int, int, int, int, int, bool, clock_t, double);
 	void ID(Board&, const Evaluation&, int, int, double);
 
-	int probeHashTable(const U64, int, int, int, int);
-	void recordHash(const U64, int, int, int);
-	void ageHash();
+	int probeTT(const U64, int, int, int, int);
+	void storeTT(const U64, int, int, int);
+	void ageTT();
 
 	void getPVLine(Board, U64);
 
@@ -50,15 +50,16 @@ private:
 
 	static constexpr int historyMax = 10000;
 
-	static constexpr int futilityMargin[6] = { 0, 240, 300, 480, 550, 720 };
-	static constexpr int deltaMargin = 125;
+	static constexpr int reverseFutilityMargin = 120;
+	static constexpr int futilityMargin = 150;
+	static constexpr int deltaMargin = 120;
 
 	static constexpr int ttAgeLimit = 6;
 	static constexpr int NO_ENTRY = mateScore * 2;
 
 	int bestScore = 0;
 	int pvCounter = 0;
-	Move hashMove;
+	Move ttMove;
 	Move PVLine[maxSearchDepth];
 	Move killerMoves[2][maxSearchDepth + 1];
 	int MVVLVAScores[6][6];

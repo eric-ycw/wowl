@@ -3,7 +3,7 @@
 #define MAX_INPUT = 2048;
 
 void parsePosition(Board& b, Wowl& AI, std::string line) {
-	//Remove "position " from input
+	// Remove "position " from input
 	line.erase(0, 9);
 
 	if (!line.compare(0, 8, "startpos")) {
@@ -15,7 +15,7 @@ void parsePosition(Board& b, Wowl& AI, std::string line) {
 			b.parseFEN(line);
 		}
 		else {
-			//Default to startpos
+			// Default to startpos
 			b.parseFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\n");
 		}
 	}
@@ -28,21 +28,21 @@ void parsePosition(Board& b, Wowl& AI, std::string line) {
 	if ((pos = line.find("moves")) != std::string::npos) {
 		line.erase(0, pos + 6);
 
-		//Failsafe if last character is not newline
+		// Failsafe if last character is not newline
 		if (line.back() != '\n') {
 			line.insert(line.end(), '\n');
 		}
-		line.insert(line.end() - 1, ' ');  //Insert space after the last move so it can be parsed
+		line.insert(line.end() - 1, ' ');  // Insert space after the last move so it can be parsed
 
 		while ((pos = line.find(' ')) != std::string::npos) {
 			movestr = line.substr(0, pos);
-			assert(movestr.length() == 4 || movestr.length() == 5);  //Underpromotions default to queen
+			assert(movestr.length() == 4 || movestr.length() == 5);  // Underpromotions default to queen
 			moveStrVec.emplace_back(movestr);
 			line.erase(0, pos + 1);
 		}
 	}
 
-	//Play out moves
+	// Play out moves
 	if (!moveStrVec.empty()) {
 		for (int i = 0; i < moveStrVec.size(); ++i) {
 			movestr = moveStrVec[i];
