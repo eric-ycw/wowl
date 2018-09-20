@@ -575,9 +575,10 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 		if (isPromotion) {
 			std::cout << "q";
 		}
+		std::cout << " ";
 	}
 	else {
-		std::cout << "bestmove 0000";
+		std::cout << "bestmove 0000 ";
 	}
 	std::cout << "\n";
 
