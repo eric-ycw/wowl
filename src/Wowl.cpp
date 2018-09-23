@@ -514,7 +514,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 
 		tempHashPosVec = hashPosVec;
 
-		bestScore = negaSearch(b, idepth, idepth, color, idAlpha, idBeta, true, startTime, moveTime);
+		bestScore = negaSearch(b, idepth, 0, color, idAlpha, idBeta, true, startTime, moveTime);
 		totalNodes += negaNodes + qSearchNodes;
 
 		// UCI output
