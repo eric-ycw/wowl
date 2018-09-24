@@ -524,7 +524,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 		getPVLine(b, tt.generatePosKey(b));
 		for (int i = 0; i < idepth; ++i) {
 			if (PVLine[i] != NO_MOVE) {
-				bool isPromotion = abs(b.mailbox[PVLine[i].from] == b.WP) && (PVLine[i].to / 10 == 2 || PVLine[i].to / 10 == 9);
+				bool isPromotion = abs(b.mailbox[PVLine[i].from]) == b.WP && (PVLine[i].to / 10 == 2 || PVLine[i].to / 10 == 9);
 				std::cout << b.toNotation(PVLine[i].from) << b.toNotation(PVLine[i].to);
 				if (isPromotion) {
 					std::cout << "q";
@@ -570,7 +570,7 @@ void Wowl::ID(Board& b, const Evaluation& e, int max_depth, int color, double mo
 
 	if (bestMove != NO_MOVE) {
 		// Add q suffix to move output if promotion
-		bool isPromotion = abs(b.mailbox[bestMove.from] == b.WP) && (bestMove.to / 10 == 2 || bestMove.to / 10 == 9);
+		bool isPromotion = abs(b.mailbox[bestMove.from]) == b.WP && (bestMove.to / 10 == 2 || bestMove.to / 10 == 9);
 		std::cout << "bestmove " << b.toNotation(bestMove.from) << b.toNotation(bestMove.to);
 		if (isPromotion) {
 			std::cout << "q";
