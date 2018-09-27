@@ -304,14 +304,14 @@ int Wowl::negaSearch(Board& b, int depth, int ply, int color, int alpha, int bet
 
 	if (depth <= 0) {
 		if (isInCheck) {
-			depth++;
+			depth = 1;
 		}
 		else {
+			depth = 0;
 			int qScore = qSearch(b, WowlEval, alpha, beta, color);
 			storeTT(key, depth, qScore, tt.HASH_EXACT);
 			return qScore;
 		}
-		depth = 0;
 	}
 
 	int eval;
@@ -331,7 +331,7 @@ int Wowl::negaSearch(Board& b, int depth, int ply, int color, int alpha, int bet
 	}
 
 	// Reverse futility pruning
-	if (depth <= 6 && !isInCheck && eval - reverseFutilityMargin * depth > beta) {
+	if (depth <= 6 && !isInCheck && eval - reverseFutilityMargin * depth > beta && !isRoot) {
 		return eval - reverseFutilityMargin * depth;
 	}
 

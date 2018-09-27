@@ -520,6 +520,20 @@ void Board::checkCastling() {
 		}
 	}
 
+	// Check if rooks are on required squares
+	if (castling[0] == 1 && mailbox[98] != WR) {
+		castling[0] = -1;
+	}
+	if (castling[1] == 1 && mailbox[91] != WR) {
+		castling[1] = -1;
+	}
+	if (castling[2] == 1 && mailbox[28] != BR) {
+		castling[2] = -1;
+	}
+	if (castling[3] == 1 && mailbox[21] != BR) {
+		castling[3] = -1;
+	}
+
 	// Blocked by pieces
 	if (castling[0] == 1 && (mailbox[96] != 0 || mailbox[97] != 0)) {
 		castling[0] = -1;
